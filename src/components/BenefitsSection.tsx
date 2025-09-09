@@ -4,23 +4,23 @@ const BenefitsSection = () => {
   const benefits = [
     {
       icon: DollarSign,
-      title: "Aumente suas vendas",
-      description: "Converta mais visitantes em clientes com atendimento 24/7 e respostas inteligentes que geram interesse."
+      title: "Venda mais",
+      description: "Converta visitantes em clientes com respostas rápidas e inteligentes 24/7."
     },
     {
       icon: Clock,
-      title: "Economize tempo",
-      description: "Automatize respostas repetitivas e agendamentos, liberando sua equipe para focar no que realmente importa."
+      title: "Ganhe tempo",
+      description: "Deixe o bot cuidar das tarefas repetitivas e foque no que realmente importa."
     },
     {
       icon: Users,
-      title: "Melhore a experiência",
-      description: "Ofereça atendimento instantâneo e personalizado, aumentando a satisfação dos seus clientes."
+      title: "Encante clientes",
+      description: "Atendimento instantâneo, personalizado e humanizado."
     },
     {
       icon: Zap,
-      title: "Integração completa",
-      description: "Funciona com WhatsApp, Instagram, site e outras plataformas que você já usa no seu negócio."
+      title: "Conecte tudo",
+      description: "Integração com WhatsApp, Instagram, site e muito mais."
     }
   ];
 

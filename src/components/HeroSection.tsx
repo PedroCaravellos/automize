@@ -22,22 +22,22 @@ const HeroSection = () => {
 
           {/* Main Headline */}
           <h1 className="text-5xl md:text-7xl font-heading font-bold text-primary-foreground mb-6 leading-tight">
-            Seu negócio no
+            Seu negócio rodando
             <span className="block bg-gradient-to-r from-secondary to-secondary-glow bg-clip-text text-transparent">
-              piloto automático
+              sozinho, 24/7
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto font-body font-light">
-            Automatize o atendimento da sua academia ou pequeno negócio com chatbots personalizados. 
-            Mais vendas, menos trabalho manual.
+            Chatbots inteligentes e personalizados que aumentam suas vendas e reduzem o trabalho manual. 
+            Mais tempo pra você focar no que importa: fazer seu negócio crescer.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <Button variant="hero" size="lg" className="shadow-button hover:shadow-hero transition-all">
-              Começar agora grátis
+              Começar grátis
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button variant="outline-hero" size="lg">

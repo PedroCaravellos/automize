@@ -5,20 +5,20 @@ const HowItWorksSection = () => {
     {
       number: "01",
       icon: MessageSquare,
-      title: "Conte sobre seu negócio",
-      description: "Forneça informações básicas sobre seus serviços, preços e forma de atendimento."
+      title: "Compartilhe suas informações",
+      description: "Serviços, preços e forma de atendimento."
     },
     {
       number: "02", 
       icon: Settings,
-      title: "Personalizamos sua IA",
-      description: "Nossa equipe configura um chatbot único para seu negócio em até 24 horas."
+      title: "Receba seu chatbot personalizado",
+      description: "Configurado em até 24h para a sua marca."
     },
     {
       number: "03",
       icon: Zap,
-      title: "Comece a vender mais",
-      description: "Ative o bot em suas plataformas e veja os resultados desde o primeiro dia."
+      title: "Ative e colha resultados",
+      description: "Vendas e agendamentos automáticos desde o primeiro dia."
     }
   ];
 
@@ -30,7 +30,7 @@ const HowItWorksSection = () => {
             Como funciona
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-body">
-            Processo simples e rápido para ter seu chatbot funcionando
+            Um processo simples para você começar a vender mais em até 24 horas.
           </p>
         </div>
 
