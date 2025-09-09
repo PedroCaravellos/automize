@@ -105,9 +105,7 @@ const PricingSection = () => {
                 className="w-full font-heading font-semibold"
                 size="lg"
               >
-                {plan.name === "Básico" ? "Começar grátis" : 
-                 plan.name === "Pro" ? "Quero vender mais" : 
-                 "Escalar meu negócio"}
+                {plan.popular ? "Começar agora" : "Escolher plano"}
               </Button>
             </div>
           ))}

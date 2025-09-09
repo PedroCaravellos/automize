@@ -30,10 +30,10 @@ const TestimonialsSection = () => {
       <div className="container px-4 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-6">
-            Histórias reais de quem já automatizou com a Automiza
+            O que nossos clientes dizem
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-body">
-            Mais de 500 empreendedores já aumentaram suas vendas com a Automiza.
+            Histórias reais de empresários que transformaram seus negócios com o Automiza
           </p>
         </div>
 
