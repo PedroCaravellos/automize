@@ -18,7 +18,7 @@ const AboutSection = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-gradient-card p-8 rounded-2xl shadow-card">
               <div className="bg-primary p-4 rounded-xl w-fit mx-auto mb-6">
-                <Bot className="h-8 w-8 text-white" />
+                <Bot className="h-8 w-8 text-primary-foreground" />
               </div>
               <h3 className="text-xl font-heading font-semibold mb-4">IA Personalizada</h3>
               <p className="text-muted-foreground font-body">
@@ -29,7 +29,7 @@ const AboutSection = () => {
 
             <div className="bg-gradient-card p-8 rounded-2xl shadow-card">
               <div className="bg-secondary p-4 rounded-xl w-fit mx-auto mb-6">
-                <Target className="h-8 w-8 text-white" />
+                <Target className="h-8 w-8 text-primary-foreground" />
               </div>
               <h3 className="text-xl font-heading font-semibold mb-4">Foco no Resultado</h3>
               <p className="text-muted-foreground font-body">
@@ -40,7 +40,7 @@ const AboutSection = () => {
 
             <div className="bg-gradient-card p-8 rounded-2xl shadow-card">
               <div className="bg-primary p-4 rounded-xl w-fit mx-auto mb-6">
-                <Zap className="h-8 w-8 text-white" />
+                <Zap className="h-8 w-8 text-primary-foreground" />
               </div>
               <h3 className="text-xl font-heading font-semibold mb-4">Simples e Rápido</h3>
               <p className="text-muted-foreground font-body">

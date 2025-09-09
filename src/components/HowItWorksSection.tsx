@@ -40,7 +40,7 @@ const HowItWorksSection = () => {
               <div key={index} className="relative">
                 <div className="text-center">
                   {/* Step Number */}
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-hero text-white font-heading font-bold text-xl rounded-full mb-6 shadow-button">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-hero text-primary-foreground font-heading font-bold text-xl rounded-full mb-6 shadow-button">
                     {step.number}
                   </div>
 

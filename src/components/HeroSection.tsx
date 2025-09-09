@@ -16,12 +16,12 @@ const HeroSection = () => {
           {/* Logo/Brand */}
           <div className="flex items-center justify-center mb-8">
             <div className="bg-secondary p-4 rounded-2xl shadow-button">
-              <Bot className="h-12 w-12 text-white" />
+              <Bot className="h-12 w-12 text-primary-foreground" />
             </div>
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-5xl md:text-7xl font-heading font-bold text-white mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-heading font-bold text-primary-foreground mb-6 leading-tight">
             Seu negócio no
             <span className="block bg-gradient-to-r from-secondary to-secondary-glow bg-clip-text text-transparent">
               piloto automático
@@ -29,7 +29,7 @@ const HeroSection = () => {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto font-body font-light">
+          <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto font-body font-light">
             Automatize o atendimento da sua academia ou pequeno negócio com chatbots personalizados. 
             Mais vendas, menos trabalho manual.
           </p>
@@ -46,7 +46,7 @@ const HeroSection = () => {
           </div>
 
           {/* Features Preview */}
-          <div className="flex flex-wrap justify-center gap-8 text-white/80">
+          <div className="flex flex-wrap justify-center gap-8 text-primary-foreground/80">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-secondary" />
               <span className="font-body">Setup em 5 minutos</span>

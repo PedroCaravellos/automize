@@ -66,10 +66,10 @@ const PricingSection = () => {
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
-            <div key={index} className={`relative bg-white rounded-2xl shadow-card p-8 ${plan.popular ? 'ring-2 ring-primary shadow-hero' : ''}`}>
+            <div key={index} className={`relative bg-card rounded-2xl shadow-card p-8 ${plan.popular ? 'ring-2 ring-primary shadow-hero' : ''}`}>
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-gradient-hero text-white px-4 py-2 rounded-full flex items-center gap-2 font-heading font-semibold">
+                  <div className="bg-gradient-hero text-primary-foreground px-4 py-2 rounded-full flex items-center gap-2 font-heading font-semibold">
                     <Star className="h-4 w-4" />
                     Mais Popular
                   </div>

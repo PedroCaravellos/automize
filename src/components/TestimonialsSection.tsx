@@ -39,7 +39,7 @@ const TestimonialsSection = () => {
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-white rounded-2xl shadow-card p-8 relative hover:shadow-hero transition-all duration-300">
+            <div key={index} className="bg-card rounded-2xl shadow-card p-8 relative hover:shadow-hero transition-all duration-300">
               <Quote className="h-8 w-8 text-primary mb-6 opacity-60" />
               
               <div className="flex mb-4">
