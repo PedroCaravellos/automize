@@ -290,6 +290,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const hasAccess = () => {
+    // Check simulated subscription first (takes precedence over profile)
+    if (subscription.planoAtivo) return true;
+    if (subscription.trialAtivo && subscription.trialFimEm) {
+      return new Date() < new Date(subscription.trialFimEm);
+    }
+    
+    // Fallback to profile data (for real Supabase data)
     if (!profile) return false;
     if (profile.plano_ativo) return true;
     if (profile.trial_ativo && profile.trial_fim_em) {
@@ -299,6 +306,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const trialDaysRemaining = () => {
+    // Check simulated subscription first
+    if (subscription.trialAtivo && subscription.trialFimEm) {
+      const now = new Date();
+      const trialEnd = new Date(subscription.trialFimEm);
+      const diffTime = trialEnd.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return Math.max(0, diffDays);
+    }
+    
+    // Fallback to profile data
     if (!profile?.trial_ativo || !profile.trial_fim_em) return 0;
     const now = new Date();
     const trialEnd = new Date(profile.trial_fim_em);

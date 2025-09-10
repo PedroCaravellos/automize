@@ -99,6 +99,7 @@ export default function IntegrationsSection() {
   }
 
   if (!hasAccess()) {
+    console.log('DEBUG: hasAccess() returned false. subscription:', subscription);
     return (
       <div className="space-y-6">
         <div className="text-center">
