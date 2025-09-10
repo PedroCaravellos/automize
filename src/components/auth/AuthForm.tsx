@@ -56,8 +56,13 @@ export default function AuthForm({ mode, onModeChange, onSuccess, isModal = fals
         });
         if (onSuccess) {
           onSuccess();
+        } else if (isModal) {
+          // Se é modal, não redirecionar automaticamente
+          return;
+        } else {
+          // Se não é modal, redirecionar para dashboard
+          navigate("/dashboard");
         }
-        navigate("/dashboard");
       }
     } catch (error) {
       toast({
@@ -117,8 +122,13 @@ export default function AuthForm({ mode, onModeChange, onSuccess, isModal = fals
         });
         if (onSuccess) {
           onSuccess();
+        } else if (isModal) {
+          // Se é modal, não redirecionar automaticamente
+          return;
+        } else {
+          // Se não é modal, redirecionar para dashboard
+          navigate("/dashboard");
         }
-        navigate("/dashboard");
       }
     } catch (error) {
       toast({

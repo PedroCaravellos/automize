@@ -1,9 +1,33 @@
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Plus, MessageSquare, Smartphone, Activity, Users, BarChart3, Settings } from "lucide-react";
+import ActionBlockModal from "./ActionBlockModal";
 import DashboardTabs from "./DashboardTabs";
 
 export default function DashboardContent() {
-  const handleGoBack = () => {
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [blockedAction, setBlockedAction] = useState("");
+  const { hasAccess } = useAuth();
+
+  const handleActionClick = (action: string) => {
+    if (!hasAccess()) {
+      setBlockedAction(action);
+      setBlockModalOpen(true);
+      return;
+    }
+    // Aqui seria a lógica real da ação quando liberada
+    console.log(`Executando: ${action}`);
+  };
+
+  const handlePlansClick = () => {
+    // Rolar para a seção de planos na landing page
+    window.location.href = "/#planos";
+  };
+
+  const handleBack = () => {
     if (window.history.length > 1) {
       window.history.back();
     } else {
@@ -18,7 +42,7 @@ export default function DashboardContent() {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={handleGoBack}
+            onClick={handleBack}
             className="flex items-center gap-2"
             aria-label="Voltar"
           >
@@ -35,6 +59,13 @@ export default function DashboardContent() {
       </div>
 
       <DashboardTabs />
+      
+      <ActionBlockModal
+        open={blockModalOpen}
+        onOpenChange={setBlockModalOpen}
+        onPlansClick={handlePlansClick}
+        action={blockedAction}
+      />
     </div>
   );
 }

@@ -5,13 +5,18 @@ import AuthForm from "./AuthForm";
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
+const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   const handleSuccess = () => {
-    onOpenChange(false);
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      onOpenChange(false);
+    }
   };
 
   return (
