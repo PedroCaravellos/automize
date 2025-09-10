@@ -95,17 +95,34 @@ serve(async (req) => {
         console.log('Creating appointment with params:', params);
         
         if (!academia.id) {
-          return { error: 'Esta é uma demonstração. Para agendamentos reais, use o sistema completo da academia.' };
+          console.log('Demo mode: Creating demonstration appointment');
+          return { 
+            success: true, 
+            message: `Agendamento de demonstração confirmado! Em um sistema real, este agendamento seria salvo para ${params.cliente_nome} no dia ${new Date(params.data_hora).toLocaleDateString('pt-BR')} às ${new Date(params.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}. Entre em contato conosco para agendar de verdade!`,
+            demo: true
+          };
         }
 
         // Validate required fields
         if (!params.cliente_nome || !params.data_hora || !params.servico) {
+          console.log('Missing required fields for appointment:', { 
+            hasNome: !!params.cliente_nome, 
+            hasDataHora: !!params.data_hora, 
+            hasServico: !!params.servico 
+          });
           return { error: 'Nome do cliente, data/hora e serviço são obrigatórios' };
         }
 
         // Parse and validate date
         const dataHora = new Date(params.data_hora);
-        if (isNaN(dataHora.getTime()) || dataHora < new Date()) {
+        console.log('Parsing date:', { original: params.data_hora, parsed: dataHora, isValid: !isNaN(dataHora.getTime()) });
+        
+        if (isNaN(dataHora.getTime())) {
+          return { error: 'Data/hora inválida. Use o formato YYYY-MM-DDTHH:mm:ss' };
+        }
+        
+        if (dataHora < new Date()) {
+          console.log('Date is in the past:', { dataHora: dataHora.toISOString(), now: new Date().toISOString() });
           return { error: 'Data/hora inválida ou no passado' };
         }
 
@@ -162,7 +179,12 @@ serve(async (req) => {
         console.log('Creating/updating lead with params:', params);
         
         if (!academia.id) {
-          return { success: true, message: 'Interesse registrado na demonstração' };
+          console.log('Demo mode: Creating demonstration lead');
+          return { 
+            success: true, 
+            message: `Interesse registrado na demonstração para ${params.nome}! Em um sistema real, nosso time entraria em contato. Obrigado pelo interesse!`,
+            demo: true
+          };
         }
 
         if (!params.nome) {
@@ -267,10 +289,12 @@ INSTRUÇÕES IMPORTANTES:
 10. NUNCA invente informações que não foram fornecidas - seja sempre preciso
 
 FUNCIONALIDADES ESPECIAIS:
-- Você pode criar agendamentos reais usando a função create_agendamento quando o cliente solicitar
+- Você pode criar agendamentos usando a função create_agendamento quando o cliente solicitar
 - Você pode registrar leads usando a função upsert_lead quando o cliente demonstrar interesse mas não agendar
-- Para agendamentos, sempre confirme dados essenciais: nome, serviço desejado, data e horário preferido
+- Para agendamentos, SEMPRE confirme dados essenciais: nome completo, serviço/modalidade desejada, data específica e horário
+- Use datas no formato ISO (exemplo: 2024-10-21T09:00:00 para 21 de outubro de 2024 às 9h)
 - Para registrar interesse, capture ao menos o nome e uma forma de contato (telefone ou email)
+- IMPORTANTE: Quando o usuário fornecer todos os dados (nome, data, hora, serviço), execute imediatamente a função de agendamento
 
 Você tem acesso completo às informações desta academia específica. Use esse conhecimento para dar respostas personalizadas e úteis.`;
 
@@ -528,6 +552,7 @@ Você tem acesso completo às informações desta academia específica. Use esse
         }
         
         console.log(`Executing function: ${functionName}`, functionArgs);
+        console.log('Available function parameters:', Object.keys(functionArgs || {}));
         
         let functionResult;
         
