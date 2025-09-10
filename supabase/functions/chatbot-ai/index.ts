@@ -113,17 +113,38 @@ serve(async (req) => {
           return { error: 'Nome do cliente, data/hora e serviço são obrigatórios' };
         }
 
-        // Parse and validate date
-        const dataHora = new Date(params.data_hora);
+        // Parse and validate date with intelligent correction
+        let dataHora = new Date(params.data_hora);
         console.log('Parsing date:', { original: params.data_hora, parsed: dataHora, isValid: !isNaN(dataHora.getTime()) });
         
         if (isNaN(dataHora.getTime())) {
           return { error: 'Data/hora inválida. Use o formato YYYY-MM-DDTHH:mm:ss' };
         }
         
-        if (dataHora < new Date()) {
-          console.log('Date is in the past:', { dataHora: dataHora.toISOString(), now: new Date().toISOString() });
-          return { error: 'Data/hora inválida ou no passado' };
+        // If date is in the past, automatically suggest next available time
+        const now = new Date();
+        if (dataHora < now) {
+          console.log('Date is in the past, finding next available slot:', { 
+            original: dataHora.toISOString(), 
+            now: now.toISOString() 
+          });
+          
+          // Find next available time: if today and hour hasn't passed, use today; otherwise next day
+          const nextSlot = new Date(now);
+          if (dataHora.getHours() > now.getHours() && 
+              dataHora.getDate() === now.getDate() && 
+              dataHora.getMonth() === now.getMonth() && 
+              dataHora.getFullYear() === now.getFullYear()) {
+            // Same day, future hour - keep the time
+            nextSlot.setHours(dataHora.getHours(), dataHora.getMinutes(), 0, 0);
+          } else {
+            // Move to next day with same time
+            nextSlot.setDate(now.getDate() + 1);
+            nextSlot.setHours(dataHora.getHours(), dataHora.getMinutes(), 0, 0);
+          }
+          
+          dataHora = nextSlot;
+          console.log('Corrected to next available slot:', dataHora.toISOString());
         }
 
         // Check for conflicts (±1 hour)
@@ -158,14 +179,26 @@ serve(async (req) => {
           .single();
 
         if (error) {
-          console.error('Error creating appointment:', error);
-          return { error: 'Erro ao criar agendamento' };
+          console.error('Database error creating appointment:', error);
+          return { error: 'Erro ao salvar agendamento. Tente novamente ou entre em contato conosco.' };
         }
 
+        const formatoData = dataHora.toLocaleDateString('pt-BR', { 
+          weekday: 'long', 
+          day: '2-digit', 
+          month: 'long', 
+          year: 'numeric' 
+        });
+        const formatoHora = dataHora.toLocaleTimeString('pt-BR', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+
+        console.log('Appointment created successfully:', data);
         return { 
           success: true, 
           agendamento: data,
-          message: `Agendamento confirmado para ${dataHora.toLocaleDateString('pt-BR')} às ${dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+          message: `✅ Agendamento confirmado com sucesso!\n\n📅 Data: ${formatoData}\n⏰ Horário: ${formatoHora}\n👤 Cliente: ${params.cliente_nome}\n🏃‍♂️ Serviço: ${params.servico}\n\nSeu agendamento foi registrado em nosso sistema! Nossa equipe aguarda você no horário marcado. Em caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.`
         };
       } catch (error) {
         console.error('Error in createAgendamento:', error);
@@ -292,9 +325,11 @@ FUNCIONALIDADES ESPECIAIS:
 - Você pode criar agendamentos usando a função create_agendamento quando o cliente solicitar
 - Você pode registrar leads usando a função upsert_lead quando o cliente demonstrar interesse mas não agendar
 - Para agendamentos, SEMPRE confirme dados essenciais: nome completo, serviço/modalidade desejada, data específica e horário
-- Use datas no formato ISO (exemplo: 2024-10-21T09:00:00 para 21 de outubro de 2024 às 9h)
+- SEJA INTELIGENTE COM DATAS: Se o cliente mencionar "quinta-feira às 15h", calcule automaticamente a próxima quinta-feira disponível e use formato ISO (2024-12-05T15:00:00)
+- Se o cliente disser "amanhã às 9h", calcule amanhã e formate corretamente (2024-12-04T09:00:00)
 - Para registrar interesse, capture ao menos o nome e uma forma de contato (telefone ou email)
 - IMPORTANTE: Quando o usuário fornecer todos os dados (nome, data, hora, serviço), execute imediatamente a função de agendamento
+- SEMPRE trabalhe com o ano 2024 ou superior para agendamentos futuros
 
 Você tem acesso completo às informações desta academia específica. Use esse conhecimento para dar respostas personalizadas e úteis.`;
 
@@ -374,7 +409,19 @@ Você tem acesso completo às informações desta academia específica. Use esse
 
     // Prepare messages for OpenAI
     const messages = [
-      { role: 'system', content: systemPrompt },
+      { 
+        role: 'system', 
+        content: `${systemPrompt}
+
+IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
+- Hoje é ${new Date().toLocaleDateString('pt-BR')} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })})
+- O ano atual é ${new Date().getFullYear()}
+- Quando o cliente mencionar datas relativas (amanhã, quinta-feira, semana que vem), calcule a data exata
+- SEMPRE use anos futuros (2024 ou superior) nos agendamentos
+- Formato de data obrigatório: YYYY-MM-DDTHH:mm:ss (exemplo: 2024-12-05T15:00:00)
+- Se a data calculada estiver no passado, automaticamente mova para a próxima ocorrência disponível
+- CONFIRME sempre a data calculada com o cliente antes de executar o agendamento` 
+      },
       ...conversationHistory,
       { role: 'user', content: message }
     ];
