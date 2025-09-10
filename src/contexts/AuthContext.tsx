@@ -243,6 +243,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Ensure profile is fetched if it didn't exist at first load (e.g., trigger added later)
+  useEffect(() => {
+    if (user?.id && !profile) {
+      const t = setTimeout(() => fetchProfile(user.id), 500);
+      return () => clearTimeout(t);
+    }
+  }, [user?.id, profile]);
+
   const signUp = async (email: string, password: string, name: string) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
     
