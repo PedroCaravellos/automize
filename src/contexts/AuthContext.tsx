@@ -292,14 +292,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return;
-    
+
+    // Map legacy fields to actual DB columns
+    type DbUpdates = { nome?: string | null; telefone?: string | null; plano?: string | null; trial_end_date?: string | null };
+    const dbUpdates: DbUpdates = {};
+
+    // Direct mappable fields
+    if (typeof (updates as any).nome !== 'undefined') dbUpdates.nome = (updates as any).nome as string | null;
+    if (typeof (updates as any).telefone !== 'undefined') dbUpdates.telefone = (updates as any).telefone as string | null;
+    if (typeof (updates as any).plano !== 'undefined') dbUpdates.plano = (updates as any).plano as string | null;
+    if (typeof (updates as any).trial_end_date !== 'undefined') dbUpdates.trial_end_date = (updates as any).trial_end_date as string | null;
+
+    // Legacy compatibility mapping
+    const hasNomePlano = Object.prototype.hasOwnProperty.call(updates, 'nome_plano');
+    const hasPlanoAtivo = Object.prototype.hasOwnProperty.call(updates, 'plano_ativo');
+    const hasTrialAtivo = Object.prototype.hasOwnProperty.call(updates, 'trial_ativo');
+    const hasTrialFimEm = Object.prototype.hasOwnProperty.call(updates, 'trial_fim_em');
+
+    if (hasNomePlano) {
+      // Set plan to provided name or null
+      const nome_plano = (updates as any).nome_plano as string | null;
+      dbUpdates.plano = nome_plano || null;
+      // When moving to a paid plan, clear trial end
+      if (nome_plano) dbUpdates.trial_end_date = null;
+    }
+
+    if (hasPlanoAtivo) {
+      const plano_ativo = (updates as any).plano_ativo as boolean;
+      // If explicitly deactivating plan and no nome_plano provided, set plano to null
+      if (!plano_ativo && !hasNomePlano) dbUpdates.plano = null;
+    }
+
+    if (hasTrialAtivo) {
+      const trial_ativo = (updates as any).trial_ativo as boolean;
+      if (trial_ativo) {
+        dbUpdates.plano = 'trial';
+        // Use provided end or default to 7 days from now
+        if (hasTrialFimEm) dbUpdates.trial_end_date = (updates as any).trial_fim_em as string | null;
+        if (!dbUpdates.trial_end_date) {
+          const end = new Date();
+          end.setDate(end.getDate() + 7);
+          dbUpdates.trial_end_date = end.toISOString();
+        }
+      } else {
+        // Turning trial off
+        dbUpdates.trial_end_date = null;
+        // Do not force plan change here unless also deactivating plan
+      }
+    } else if (hasTrialFimEm) {
+      // If only trial end provided
+      dbUpdates.trial_end_date = (updates as any).trial_fim_em as string | null;
+    }
+
+    // If nothing to update, skip request
+    if (Object.keys(dbUpdates).length === 0) return;
+
     const { error } = await supabase
       .from('profiles')
-      .update(updates)
+      .update(dbUpdates)
       .eq('user_id', user.id);
-      
+
     if (!error) {
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      // Re-fetch to ensure computed fields are accurate
+      await fetchProfile(user.id);
     }
   };
 
