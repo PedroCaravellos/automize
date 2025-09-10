@@ -446,13 +446,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const simulateCancelSubscription = () => {
-    // Update subscription to cancel plan
+    // Update subscription to cancel plan and trial
     setSubscription(prev => ({
       ...prev,
       planoAtivo: false,
       nomePlano: '',
-      proximaRenovacaoEm: undefined
-      // Keep trialAtivo as-is (don't reactivate trial)
+      proximaRenovacaoEm: undefined,
+      trialAtivo: false,
+      trialFimEm: undefined
     }));
 
     // Add activity
@@ -462,7 +463,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (profile) {
       updateProfile({
         plano_ativo: false,
-        nome_plano: null
+        nome_plano: null,
+        trial_ativo: false,
+        trial_fim_em: null
       });
     }
   };
