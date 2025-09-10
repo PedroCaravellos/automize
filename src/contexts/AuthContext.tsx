@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          setTimeout(() => {
+            setTimeout(() => {
             fetchProfile(session.user.id);
             // Hydrate user data from localStorage
             const data = getUserData(session.user.id);
@@ -128,6 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setChatbots(data.chatbots || []);
             setActivity(data.activity || []);
             setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
+            setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
+            setInvoices(data.invoices || []);
+            setSubscription(data.subscription || { planoAtivo: false, nomePlano: '', trialAtivo: false });
             hydratedRef.current = true;
           }, 0);
         } else {
@@ -136,6 +139,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setChatbots([]);
           setActivity([]);
           setOnboardingProgress({ simulatorOpened: false, demoShared: false });
+          setBillingInfo({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
+          setInvoices([]);
+          setSubscription({ planoAtivo: false, nomePlano: '', trialAtivo: false });
           hydratedRef.current = false;
         }
         
@@ -155,6 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setChatbots(data.chatbots || []);
         setActivity(data.activity || []);
         setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
+        setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
+        setInvoices(data.invoices || []);
+        setSubscription(data.subscription || { planoAtivo: false, nomePlano: '', trialAtivo: false });
         hydratedRef.current = true;
       }
       setLoading(false);
@@ -191,6 +200,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setChatbots([]);
     setActivity([]);
     setOnboardingProgress({ simulatorOpened: false, demoShared: false });
+    setBillingInfo({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
+    setInvoices([]);
+    setSubscription({ planoAtivo: false, nomePlano: '', trialAtivo: false });
     hydratedRef.current = false;
   };
 
@@ -270,17 +282,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const PLAN_PRICES = {
-    'Basico': 9700,  // R$ 97,00 em centavos
-    'Pro': 19700,    // R$ 197,00 em centavos
-    'Premium': 39700 // R$ 397,00 em centavos
+    'Basico': 9700,   // R$ 97,00 em centavos
+    'Pro': 19700,     // R$ 197,00 em centavos
+    'Premium': 39700  // R$ 397,00 em centavos
   } as const;
 
   const simulateActivatePlan = (plano: 'Basico' | 'Pro' | 'Premium'): { invoiceId: string } => {
+    if (!PLAN_PRICES[plano]) {
+      throw new Error(`Plano inválido: ${plano}`);
+    }
+
     const now = new Date();
     const proximaRenovacao = new Date(now);
     proximaRenovacao.setMonth(proximaRenovacao.getMonth() + 1);
 
-    const invoiceId = `INV-${now.getFullYear()}-${String(invoices.length + 1).padStart(4, '0')}`;
+    // Generate sequential invoice ID per user
+    const currentYear = now.getFullYear();
+    const userData = user?.id ? getUserData(user.id) : null;
+    const currentYearInvoices = userData?.invoices.filter(inv => 
+      new Date(inv.criadoEm).getFullYear() === currentYear
+    ) || [];
+    const nextNumber = currentYearInvoices.length + 1;
+    const invoiceId = `INV-${currentYear}-${String(nextNumber).padStart(4, '0')}`;
     
     const invoice: Invoice = {
       id: invoiceId,

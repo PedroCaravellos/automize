@@ -42,22 +42,28 @@ export default function PlanManagement() {
     endereco: billingInfo.endereco
   });
 
+const PLAN_PRICES = {
+  Basico: 9700,   // R$ 97,00 em centavos
+  Pro: 19700,     // R$ 197,00 em centavos
+  Premium: 39700  // R$ 397,00 em centavos
+} as const;
+
   const plans = [
     {
-      name: "Básico" as PlanType,
-      price: 9700,
+      name: "Basico" as PlanType,
+      price: PLAN_PRICES.Basico,
       icon: Building2,
       features: ["1 Academia", "1 Chatbot", "500 mensagens/mês", "Suporte via email"]
     },
     {
       name: "Pro" as PlanType,
-      price: 19700,
+      price: PLAN_PRICES.Pro,
       icon: Zap,
       features: ["3 Academias", "3 Chatbots", "2.000 mensagens/mês", "Relatórios básicos", "Suporte prioritário"]
     },
     {
       name: "Premium" as PlanType,
-      price: 39700,
+      price: PLAN_PRICES.Premium,
       icon: Crown,
       features: ["Academias ilimitadas", "Chatbots ilimitados", "Mensagens ilimitadas", "Relatórios avançados", "Suporte 24/7"]
     }
