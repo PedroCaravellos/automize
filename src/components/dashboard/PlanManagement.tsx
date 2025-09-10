@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Check, ExternalLink, Crown, Zap, Building2, Download, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type PlanType = 'Basico' | 'Pro' | 'Premium';
 
@@ -22,14 +23,12 @@ interface BillingFormData {
 
 export default function PlanManagement() {
   const { 
-    profile, 
     subscription, 
     billingInfo, 
     invoices, 
     updateBillingInfo, 
     simulateActivatePlan, 
-    formatBRL,
-    trialDaysRemaining 
+    formatBRL
   } = useAuth();
   const { toast } = useToast();
   
@@ -127,13 +126,15 @@ export default function PlanManagement() {
 <head>
   <title>Comprovante de Pagamento - ${invoice.id}</title>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    .header { text-align: center; margin-bottom: 40px; }
+    body { font-family: Arial, sans-serif; margin: 40px; color: #111827; }
+    .header { text-align: center; margin-bottom: 32px; }
     .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
     .invoice-details { margin: 20px 0; }
-    .row { display: flex; justify-content: space-between; margin: 10px 0; }
+    .row { display: flex; justify-content: space-between; margin: 8px 0; }
     .total { font-weight: bold; font-size: 18px; }
+    .section-title { margin-top: 24px; margin-bottom: 8px; font-weight: bold; }
     @media print { body { margin: 0; } }
   </style>
 </head>
@@ -144,22 +145,23 @@ export default function PlanManagement() {
   </div>
   
   <div class="invoice-details">
-    <h3>Dados da Empresa</h3>
+    <h3 class="section-title">Dados da Empresa</h3>
     <p>Automiza Tecnologia Ltda<br>
     CNPJ: 00.000.000/0001-00<br>
     contato@automiza.com.br</p>
     
-    <h3>Dados do Cliente</h3>
+    <h3 class="section-title">Dados do Cliente</h3>
     <p>${billingInfo.nomeOuRazao}<br>
     ${billingInfo.documento}<br>
     ${billingInfo.emailCobranca}<br>
     ${billingInfo.endereco}</p>
     
-    <h3>Detalhes da Fatura</h3>
+    <h3 class="section-title">Detalhes da Fatura</h3>
     <div class="row"><span>Número:</span><span>${invoice.id}</span></div>
     <div class="row"><span>Plano:</span><span>${invoice.plano}</span></div>
     <div class="row"><span>Data de Emissão:</span><span>${new Date(invoice.criadoEm).toLocaleDateString('pt-BR')}</span></div>
-    <div class="row"><span>Status:</span><span>Pago</span></div>
+    <div class="row"><span>Pago em:</span><span>${invoice.pagoEm ? new Date(invoice.pagoEm).toLocaleDateString('pt-BR') : '-'}</span></div>
+    <div class="row"><span>Status:</span><span>${invoice.status}</span></div>
     <div class="row total"><span>Valor Total:</span><span>${formatBRL(invoice.valor)}</span></div>
   </div>
   
@@ -182,15 +184,15 @@ export default function PlanManagement() {
           </div>
           {subscription.proximaRenovacaoEm && (
             <p className="text-sm text-muted-foreground">
-              Próxima renovação em: {new Date(subscription.proximaRenovacaoEm).toLocaleDateString('pt-BR')}
+              Próxima renovação: {new Date(subscription.proximaRenovacaoEm).toLocaleDateString('pt-BR')}
             </p>
           )}
         </div>
       );
     }
     
-    if (profile?.trial_ativo || subscription.trialAtivo) {
-      const daysLeft = trialDaysRemaining();
+    if (subscription.trialAtivo && !subscription.planoAtivo) {
+      const daysLeft = subscription.trialFimEm ? Math.max(0, Math.ceil((new Date(subscription.trialFimEm).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
       return (
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="border-blue-500 text-blue-600">
@@ -207,24 +209,14 @@ export default function PlanManagement() {
     );
   };
 
-  const showCallout = !subscription.planoAtivo && !profile?.plano_ativo && !profile?.trial_ativo && !subscription.trialAtivo;
-  const hasActivePlan = subscription.planoAtivo || profile?.plano_ativo;
+  const hasActivePlan = subscription.planoAtivo;
 
   return (
     <div className="space-y-6">
-      {showCallout && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="pt-6">
-            <p className="text-blue-800 font-medium">
-              Ative seu trial de 7 dias ou selecione um plano para liberar todas as funcionalidades.
-            </p>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Status da assinatura</CardTitle>
+          <CardTitle>{subscription.planoAtivo ? `Plano ativo: ${subscription.nomePlano}` : 'Status da assinatura'}</CardTitle>
         </CardHeader>
         <CardContent>
           {getStatusCard()}
@@ -239,7 +231,7 @@ export default function PlanManagement() {
           {hasActivePlan && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
               <p className="text-green-800 font-medium">
-                Você já possui o plano {subscription.nomePlano || profile?.nome_plano} ativo.
+                Você já possui o plano {subscription.nomePlano} ativo.
               </p>
             </div>
           )}
@@ -247,15 +239,15 @@ export default function PlanManagement() {
           <div className="grid gap-4 md:grid-cols-3">
             {plans.map((plan) => {
               const Icon = plan.icon;
-              const isCurrentPlan = subscription.nomePlano === plan.name || profile?.nome_plano === plan.name;
+              const active = subscription.planoAtivo && subscription.nomePlano === plan.name;
               
               return (
-                <Card key={plan.name} className={`relative ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}>
+                <Card key={plan.name} className={`relative ${active ? 'ring-2 ring-primary' : ''}`}>
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-2">
                       <Icon className="h-5 w-5" />
                       <CardTitle className="text-lg">{plan.name}</CardTitle>
-                      {isCurrentPlan && <Badge variant="default">Atual</Badge>}
+                      {active && <Badge variant="default">Atual</Badge>}
                     </div>
                     <div className="text-2xl font-bold">{formatBRL(plan.price)}/mês</div>
                   </CardHeader>
@@ -270,11 +262,11 @@ export default function PlanManagement() {
                     </ul>
                     <Button
                       onClick={() => handlePlanSelection(plan.name)}
-                      disabled={isLoading || hasActivePlan}
+                      disabled={isLoading || active}
                       className="w-full"
-                      variant={isCurrentPlan ? "outline" : "default"}
+                      variant={active ? "outline" : "default"}
                     >
-                      {hasActivePlan ? "Plano ativo" : "Selecionar"}
+                      {active ? "Plano ativo" : "Prosseguir para pagamento (simulado)"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -302,7 +294,7 @@ export default function PlanManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => (
+                {[...invoices].sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime()).map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-mono text-sm">{invoice.id}</TableCell>
                     <TableCell>{invoice.plano}</TableCell>
