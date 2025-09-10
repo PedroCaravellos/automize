@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserData, saveUserData, generateId } from '@/utils/userStorage';
 
 interface Profile {
   id: string;
@@ -13,11 +14,37 @@ interface Profile {
   trial_fim_em: string | null;
 }
 
+interface ActivityEvent { id: string; ts: string; text: string }
+interface ChatbotMessageSet {
+  boasVindas: string;
+  faqs: { pergunta: string; resposta: string }[];
+  encerramento: string;
+}
+interface ChatbotItem {
+  id: string;
+  nome: string;
+  academiaId: string;
+  template: string;
+  status: 'Em configuração' | 'Ativo';
+  interacoes: number;
+  mensagens: ChatbotMessageSet;
+  createdAt: string;
+}
+interface AcademiaItem {
+  id: string;
+  nome: string;
+  unidade: string;
+  segmento: 'Academia' | 'Estúdio' | 'Box';
+  statusChatbot: 'Nenhum' | 'Em configuração' | 'Ativo';
+  createdAt: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  // Auth
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -26,6 +53,21 @@ interface AuthContextType {
   selectPlan: (planName: string) => Promise<void>;
   hasAccess: () => boolean;
   trialDaysRemaining: () => number;
+  // Global app state
+  academias: AcademiaItem[];
+  chatbots: ChatbotItem[];
+  activity: ActivityEvent[];
+  addActivity: (text: string) => void;
+  // Academias
+  addAcademia: (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>) => AcademiaItem;
+  updateAcademia: (id: string, updates: Partial<Omit<AcademiaItem, 'id' | 'createdAt'>>) => void;
+  removeAcademia: (id: string) => void;
+  setAcademiaStatus: (id: string, status: AcademiaItem['statusChatbot']) => void;
+  // Chatbots
+  createChatbot: (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }) => ChatbotItem | null;
+  updateChatbotMessages: (id: string, mensagens: ChatbotMessageSet) => ChatbotItem | null;
+  toggleChatbotStatus: (id: string) => ChatbotItem | null;
+  deleteChatbot: (id: string) => ChatbotItem | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [academias, setAcademias] = useState<AcademiaItem[]>([]);
+  const [chatbots, setChatbots] = useState<ChatbotItem[]>([]);
+  const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const hydratedRef = useRef(false);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -58,9 +104,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
+            // Hydrate user data from localStorage
+            const data = getUserData(session.user.id);
+            setAcademias(data.academias || []);
+            setChatbots(data.chatbots || []);
+            setActivity(data.activity || []);
+            hydratedRef.current = true;
           }, 0);
         } else {
           setProfile(null);
+          setAcademias([]);
+          setChatbots([]);
+          setActivity([]);
+          hydratedRef.current = false;
         }
         
         setLoading(false);
@@ -74,6 +130,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (session?.user) {
         fetchProfile(session.user.id);
+        const data = getUserData(session.user.id);
+        setAcademias(data.academias || []);
+        setChatbots(data.chatbots || []);
+        setActivity(data.activity || []);
+        hydratedRef.current = true;
       }
       setLoading(false);
     });
@@ -105,6 +166,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setAcademias([]);
+    setChatbots([]);
+    setActivity([]);
+    hydratedRef.current = false;
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
@@ -157,6 +222,119 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return Math.max(0, diffDays);
   };
 
+  // Persist snapshot whenever data changes
+  useEffect(() => {
+    if (!user?.id || !hydratedRef.current) return;
+    saveUserData(user.id, { academias, chatbots, activity });
+  }, [user?.id, academias, chatbots, activity]);
+
+  // Activity helper
+  const addActivity = (text: string) => {
+    setActivity(prev => [{ id: generateId('act'), ts: new Date().toISOString(), text }, ...prev].slice(0, 20));
+  };
+
+  // Academia actions
+  const addAcademia = (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>): AcademiaItem => {
+    const nova: AcademiaItem = {
+      id: generateId('aca'),
+      ...data,
+      statusChatbot: 'Nenhum',
+      createdAt: new Date().toISOString(),
+    };
+    setAcademias(prev => [...prev, nova]);
+    addActivity(`Academia cadastrada – ${data.nome}`);
+    return nova;
+  };
+
+  const updateAcademia = (id: string, updates: Partial<Omit<AcademiaItem, 'id' | 'createdAt'>>) => {
+    setAcademias(prev => prev.map(a => (a.id === id ? { ...a, ...updates } : a)));
+    if (updates.nome) addActivity(`Academia atualizada – ${updates.nome}`);
+  };
+
+  const removeAcademia = (id: string) => {
+    const academia = academias.find(a => a.id === id);
+    setAcademias(prev => prev.filter(a => a.id !== id));
+    if (academia) addActivity(`Academia removida – ${academia.nome}`);
+  };
+
+  const setAcademiaStatus = (id: string, status: AcademiaItem['statusChatbot']) => {
+    setAcademias(prev => prev.map(a => (a.id === id ? { ...a, statusChatbot: status } : a)));
+  };
+
+  // Chatbot actions
+  const createChatbot = (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }): ChatbotItem | null => {
+    const academia = academias.find(a => a.id === data.academiaId);
+    if (!academia) return null;
+    const bot: ChatbotItem = {
+      id: generateId('bot'),
+      nome: `Bot – ${academia.nome}`,
+      academiaId: data.academiaId,
+      template: data.template,
+      status: 'Em configuração',
+      interacoes: 0,
+      mensagens: data.mensagens,
+      createdAt: new Date().toISOString(),
+    };
+    setChatbots(prev => [...prev, bot]);
+    if (academia.statusChatbot === 'Nenhum') setAcademiaStatus(data.academiaId, 'Em configuração');
+    addActivity(`Chatbot criado – ${bot.nome} – ${academia.nome}`);
+    return bot;
+  };
+
+  const updateChatbotMessages = (id: string, mensagens: ChatbotMessageSet): ChatbotItem | null => {
+    let updated: ChatbotItem | null = null;
+    setChatbots(prev => prev.map(b => {
+      if (b.id === id) {
+        updated = { ...b, mensagens };
+        return updated;
+      }
+      return b;
+    }));
+    if (updated) {
+      const academia = academias.find(a => a.id === updated!.academiaId);
+      addActivity(`Chatbot editado – ${updated.nome} – ${academia?.nome}`);
+    }
+    return updated;
+  };
+
+  const toggleChatbotStatus = (id: string): ChatbotItem | null => {
+    let updated: ChatbotItem | null = null;
+    setChatbots(prev => prev.map(b => {
+      if (b.id === id) {
+        const newStatus = b.status === 'Ativo' ? 'Em configuração' : 'Ativo';
+        updated = { ...b, status: newStatus };
+        return updated;
+      }
+      return b;
+    }));
+    if (updated) {
+      const academiaId = updated.academiaId;
+      const academia = academias.find(a => a.id === academiaId);
+      if (updated.status === 'Ativo') {
+        setAcademiaStatus(academiaId, 'Ativo');
+        addActivity(`Chatbot ativado – ${updated.nome} – ${academia?.nome}`);
+      } else {
+        // If no other active bot for this academia, set status to 'Em configuração'
+        const otherActive = chatbots.some(b => b.academiaId === academiaId && b.id !== updated!.id && b.status === 'Ativo');
+        if (!otherActive) setAcademiaStatus(academiaId, 'Em configuração');
+        addActivity(`Chatbot desativado – ${updated.nome} – ${academia?.nome}`);
+      }
+    }
+    return updated;
+  };
+
+  const deleteChatbot = (id: string): ChatbotItem | null => {
+    const bot = chatbots.find(b => b.id === id) || null;
+    if (!bot) return null;
+    setChatbots(prev => prev.filter(b => b.id !== id));
+    // After removal, if no active bot remains for that academia, set status to 'Nenhum'
+    const stillActive = chatbots.some(b => b.id !== id && b.academiaId === bot.academiaId && b.status === 'Ativo');
+    if (!stillActive) setAcademiaStatus(bot.academiaId, 'Nenhum');
+    const academia = academias.find(a => a.id === bot.academiaId);
+    addActivity(`Chatbot removido – ${bot.nome} – ${academia?.nome}`);
+    return bot;
+  };
+
   const value = {
     user,
     session,
@@ -169,7 +347,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     activateTrial,
     selectPlan,
     hasAccess,
-    trialDaysRemaining
+    trialDaysRemaining,
+    academias,
+    chatbots,
+    activity,
+    addActivity,
+    addAcademia,
+    updateAcademia,
+    removeAcademia,
+    setAcademiaStatus,
+    createChatbot,
+    updateChatbotMessages,
+    toggleChatbotStatus,
+    deleteChatbot,
   };
 
   return (

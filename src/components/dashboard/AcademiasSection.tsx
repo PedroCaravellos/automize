@@ -17,21 +17,10 @@ export interface Academia {
   createdAt: string;
 }
 
-interface AcademiasSectionProps {
-  academias: Academia[];
-  setAcademias: React.Dispatch<React.SetStateAction<Academia[]>>;
-  onAddAtividade: (atividade: Omit<AtividadeRecente, "id">) => void;
-}
+// Using global state from AuthContext; no props needed
 
-interface AtividadeRecente {
-  id: string;
-  tipo: string;
-  descricao: string;
-  timestamp: string;
-}
-
-const AcademiasSection = ({ academias, setAcademias, onAddAtividade }: AcademiasSectionProps) => {
-  const { hasAccess } = useAuth();
+const AcademiasSection = () => {
+  const { hasAccess, academias, addAcademia, updateAcademia, removeAcademia } = useAuth();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAcademia, setEditingAcademia] = useState<Academia | null>(null);
@@ -55,60 +44,34 @@ const AcademiasSection = ({ academias, setAcademias, onAddAtividade }: Academias
     setIsModalOpen(true);
   };
 
-  const handleSaveAcademia = (academiaData: Omit<Academia, "id" | "createdAt">) => {
+const handleSaveAcademia = (academiaData: Omit<Academia, "id" | "createdAt">) => {
     if (editingAcademia) {
-      // Editar academia existente
-      setAcademias(prev => prev.map(academia => 
-        academia.id === editingAcademia.id 
-          ? { ...academia, ...academiaData }
-          : academia
-      ));
+      updateAcademia(editingAcademia.id, academiaData);
       toast({
         title: "Academia atualizada",
         description: "Os dados da academia foram atualizados com sucesso.",
       });
-      onAddAtividade({
-        tipo: "academia",
-        descricao: `Academia atualizada – ${academiaData.nome}`,
-        timestamp: new Date().toISOString(),
-      });
     } else {
-      // Adicionar nova academia
-      const novaAcademia: Academia = {
-        id: Date.now().toString(),
-        ...academiaData,
-        statusChatbot: "Nenhum",
-        createdAt: new Date().toISOString(),
-      };
-      setAcademias(prev => [...prev, novaAcademia]);
+      addAcademia({
+        nome: academiaData.nome,
+        unidade: academiaData.unidade,
+        segmento: academiaData.segmento,
+      });
       toast({
         title: "Academia cadastrada",
         description: "A academia foi cadastrada com sucesso.",
-      });
-      onAddAtividade({
-        tipo: "academia",
-        descricao: `Academia cadastrada – ${academiaData.nome}`,
-        timestamp: new Date().toISOString(),
       });
     }
     setIsModalOpen(false);
     setEditingAcademia(null);
   };
 
-  const handleDeleteAcademia = (id: string) => {
-    const academia = academias.find(a => a.id === id);
-    setAcademias(prev => prev.filter(academia => academia.id !== id));
+const handleDeleteAcademia = (id: string) => {
+    removeAcademia(id);
     toast({
       title: "Academia removida",
       description: "A academia foi removida com sucesso.",
     });
-    if (academia) {
-      onAddAtividade({
-        tipo: "academia",
-        descricao: `Academia removida – ${academia.nome}`,
-        timestamp: new Date().toISOString(),
-      });
-    }
   };
 
   const handlePlansClick = () => {
@@ -116,7 +79,7 @@ const AcademiasSection = ({ academias, setAcademias, onAddAtividade }: Academias
     window.location.href = "/#planos";
   };
 
-  return (
+return (
     <div className="space-y-6">
       <Card>
         <CardHeader>

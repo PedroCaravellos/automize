@@ -43,61 +43,11 @@ export interface AtividadeRecente {
   timestamp: string;
 }
 
-interface ChatbotsSectionProps {
-  academias: Academia[];
-  onUpdateAcademiaStatus: (academiaId: string, status: Academia["statusChatbot"]) => void;
-  onAddAtividade: (atividade: Omit<AtividadeRecente, "id">) => void;
-}
+// Using global state from AuthContext; no props needed
 
-const templates: ChatbotTemplate[] = [
-  {
-    id: "boas-vindas-faq",
-    nome: "Boas-vindas + FAQ",
-    descricao: "Atendimento básico com perguntas frequentes",
-    mensagens: {
-      boasVindas: "Olá! 👋 Bem-vindo(a) à nossa academia! Como posso ajudá-lo hoje?",
-      faqs: [
-        { pergunta: "Qual o horário de funcionamento?", resposta: "Funcionamos de segunda a sexta das 6h às 22h, e aos sábados das 8h às 18h." },
-        { pergunta: "Como faço para me matricular?", resposta: "Você pode se matricular presencialmente na recepção ou pelo nosso WhatsApp. Precisará de RG, CPF e comprovante de residência." },
-        { pergunta: "Quais modalidades vocês oferecem?", resposta: "Oferecemos musculação, aulas funcionais, spinning, pilates e natação. Consulte nossa grade de horários!" }
-      ],
-      encerramento: "Obrigado pelo contato! Se precisar de mais alguma coisa, estarei aqui para ajudar. 💪"
-    }
-  },
-  {
-    id: "agendamentos",
-    nome: "Agendamentos simples",
-    descricao: "Gestão básica de horários e reservas",
-    mensagens: {
-      boasVindas: "Olá! 📅 Gostaria de agendar um horário ou tirar dúvidas sobre nossa academia?",
-      faqs: [
-        { pergunta: "Como agendar uma aula?", resposta: "Você pode agendar através do nosso app ou presencialmente na recepção. As aulas têm limite de vagas." },
-        { pergunta: "Posso cancelar um agendamento?", resposta: "Sim! Você pode cancelar até 2 horas antes do início da aula sem penalidades." },
-        { pergunta: "E se a aula estiver lotada?", resposta: "Você pode entrar na lista de espera. Te avisaremos se abrir uma vaga!" }
-      ],
-      encerramento: "Seu agendamento é importante para nós! Qualquer dúvida, estarei aqui. 🏋️‍♀️"
-    }
-  },
-  {
-    id: "cobranca",
-    nome: "Cobrança básica",
-    descricao: "Esclarecimentos sobre pagamentos e planos",
-    mensagens: {
-      boasVindas: "Olá! 💳 Precisa de informações sobre pagamentos ou planos? Estou aqui para ajudar!",
-      faqs: [
-        { pergunta: "Quais formas de pagamento vocês aceitam?", resposta: "Aceitamos cartão de crédito, débito, PIX e boleto bancário. Parcelamento em até 12x no cartão." },
-        { pergunta: "Como funciona o vencimento?", resposta: "A mensalidade vence todo dia 10. Após o vencimento, há 5 dias de tolerância antes da suspensão." },
-        { pergunta: "Posso pausar minha matrícula?", resposta: "Sim! Você pode pausar por até 3 meses mediante apresentação de atestado médico." }
-      ],
-      encerramento: "Espero ter esclarecido suas dúvidas sobre pagamentos. Conte conosco! 💙"
-    }
-  }
-];
-
-const ChatbotsSection = ({ academias, onUpdateAcademiaStatus, onAddAtividade }: ChatbotsSectionProps) => {
-  const { hasAccess } = useAuth();
+const ChatbotsSection = () => {
+  const { hasAccess, academias, chatbots, createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot } = useAuth();
   const { toast } = useToast();
-  const [chatbots, setChatbots] = useState<Chatbot[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingChatbot, setEditingChatbot] = useState<Chatbot | null>(null);
@@ -120,151 +70,60 @@ const ChatbotsSection = ({ academias, onUpdateAcademiaStatus, onAddAtividade }: 
     setIsEditModalOpen(true);
   };
 
-  const handleToggleStatus = (chatbotId: string) => {
+const handleToggleStatus = (chatbotId: string) => {
     if (!hasAccess()) {
       setIsBlockModalOpen(true);
       return;
     }
 
-    setChatbots(prev => prev.map(bot => {
-      if (bot.id === chatbotId) {
-        const newStatus = bot.status === "Ativo" ? "Em configuração" : "Ativo";
-        const academia = academias.find(a => a.id === bot.academiaId);
-        
-        // Atualizar status da academia
-        if (newStatus === "Ativo") {
-          onUpdateAcademiaStatus(bot.academiaId, "Ativo");
-          toast({
-            title: "Chatbot ativado",
-            description: `O chatbot ${bot.nome} foi ativado com sucesso.`,
-          });
-          onAddAtividade({
-            tipo: "chatbot",
-            descricao: `Chatbot ativado – ${bot.nome} – ${academia?.nome}`,
-            timestamp: new Date().toISOString(),
-          });
-        } else {
-          // Verificar se há outros bots ativos para esta academia
-          const outrosBotAtivos = prev.some(b => 
-            b.academiaId === bot.academiaId && 
-            b.id !== chatbotId && 
-            b.status === "Ativo"
-          );
-          
-          if (!outrosBotAtivos) {
-            onUpdateAcademiaStatus(bot.academiaId, "Em configuração");
-          }
-          
-          toast({
-            title: "Chatbot desativado",
-            description: `O chatbot ${bot.nome} foi desativado.`,
-          });
-          onAddAtividade({
-            tipo: "chatbot",
-            descricao: `Chatbot desativado – ${bot.nome} – ${academia?.nome}`,
-            timestamp: new Date().toISOString(),
-          });
-        }
-        
-        return { ...bot, status: newStatus };
-      }
-      return bot;
-    }));
+    const updated = toggleChatbotStatus(chatbotId);
+    if (!updated) return;
+    const academia = academias.find(a => a.id === updated.academiaId);
+    if (updated.status === "Ativo") {
+      toast({
+        title: "Chatbot ativado",
+        description: `O chatbot ${updated.nome} foi ativado com sucesso.`,
+      });
+    } else {
+      toast({
+        title: "Chatbot desativado",
+        description: `O chatbot ${updated.nome} foi desativado.`,
+      });
+    }
   };
 
-  const handleDeleteChatbot = (chatbotId: string) => {
-    const chatbot = chatbots.find(b => b.id === chatbotId);
-    if (!chatbot) return;
-
-    setChatbots(prev => {
-      const filtered = prev.filter(bot => bot.id !== chatbotId);
-      
-      // Verificar se há outros bots ativos para esta academia
-      const outrosBotAtivos = filtered.some(b => 
-        b.academiaId === chatbot.academiaId && 
-        b.status === "Ativo"
-      );
-      
-      if (!outrosBotAtivos) {
-        onUpdateAcademiaStatus(chatbot.academiaId, "Nenhum");
-      }
-      
-      return filtered;
-    });
-
-    const academia = academias.find(a => a.id === chatbot.academiaId);
+const handleDeleteChatbot = (chatbotId: string) => {
+    const removed = deleteChatbot(chatbotId);
+    if (!removed) return;
     toast({
       title: "Chatbot removido",
       description: "O chatbot foi removido com sucesso.",
     });
-    onAddAtividade({
-      tipo: "chatbot",
-      descricao: `Chatbot removido – ${chatbot.nome} – ${academia?.nome}`,
-      timestamp: new Date().toISOString(),
-    });
   };
 
-  const handleSaveChatbot = (dadosChatbot: {
+const handleSaveChatbot = (dadosChatbot: {
     academiaId: string;
     template: string;
     mensagens: Chatbot["mensagens"];
   }) => {
-    const academia = academias.find(a => a.id === dadosChatbot.academiaId);
-    if (!academia) return;
-
-    const novoChatbot: Chatbot = {
-      id: Date.now().toString(),
-      nome: `Bot – ${academia.nome}`,
-      academiaId: dadosChatbot.academiaId,
-      template: dadosChatbot.template,
-      status: "Em configuração",
-      interacoes: 0,
-      mensagens: dadosChatbot.mensagens,
-      createdAt: new Date().toISOString(),
-    };
-
-    setChatbots(prev => [...prev, novoChatbot]);
-    
-    // Atualizar status da academia se ainda for "Nenhum"
-    if (academia.statusChatbot === "Nenhum") {
-      onUpdateAcademiaStatus(dadosChatbot.academiaId, "Em configuração");
-    }
-
+    const created = createChatbot(dadosChatbot);
+    if (!created) return;
     toast({
       title: "Chatbot criado",
       description: "Chatbot criado em modo básico com sucesso.",
     });
-    
-    onAddAtividade({
-      tipo: "chatbot",
-      descricao: `Chatbot criado – ${novoChatbot.nome} – ${academia.nome}`,
-      timestamp: new Date().toISOString(),
-    });
-
     setIsWizardOpen(false);
   };
 
-  const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
+const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
     if (!editingChatbot) return;
-
-    setChatbots(prev => prev.map(bot => 
-      bot.id === editingChatbot.id 
-        ? { ...bot, mensagens }
-        : bot
-    ));
-
-    const academia = academias.find(a => a.id === editingChatbot.academiaId);
-    toast({
-      title: "Chatbot atualizado",
-      description: "As mensagens foram atualizadas com sucesso.",
-    });
-    
-    onAddAtividade({
-      tipo: "chatbot",
-      descricao: `Chatbot editado – ${editingChatbot.nome} – ${academia?.nome}`,
-      timestamp: new Date().toISOString(),
-    });
-
+    const updated = updateChatbotMessages(editingChatbot.id, mensagens);
+    if (updated) {
+      toast({
+        title: "Chatbot atualizado",
+        description: "As mensagens foram atualizadas com sucesso.",
+      });
+    }
     setIsEditModalOpen(false);
     setEditingChatbot(null);
   };

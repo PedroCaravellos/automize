@@ -6,29 +6,14 @@ import { Building, Bot, Zap, HelpCircle, Plus, CreditCard } from "lucide-react";
 import PlanManagement from "./PlanManagement";
 import IntegrationsSection from "./IntegrationsSection";
 import AcademiasSection from "./AcademiasSection";
-import ChatbotsSection, { AtividadeRecente } from "./ChatbotsSection";
-import { Academia } from "./AcademiasSection";
+import ChatbotsSection from "./ChatbotsSection";
+import { useAuth } from "@/contexts/AuthContext";
 
-const DashboardTabs = () => {
+ const DashboardTabs = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  const [academias, setAcademias] = useState<Academia[]>([]);
-  const [atividadeRecente, setAtividadeRecente] = useState<AtividadeRecente[]>([]);
-
-  const handleUpdateAcademiaStatus = (academiaId: string, status: Academia["statusChatbot"]) => {
-    setAcademias(prev => prev.map(academia => 
-      academia.id === academiaId 
-        ? { ...academia, statusChatbot: status }
-        : academia
-    ));
-  };
-
-  const handleAddAtividade = (atividade: Omit<AtividadeRecente, "id">) => {
-    const novaAtividade: AtividadeRecente = {
-      id: Date.now().toString(),
-      ...atividade
-    };
-    setAtividadeRecente(prev => [novaAtividade, ...prev.slice(0, 9)]); // Manter apenas os últimos 10
-  };
+  const { activity } = useAuth();
+  // State lifted to global AuthContext. Activity feed read from context.
+  // No local lists to avoid unmount data loss and parent updates during child render.
 
   return (
     <div className="space-y-6">
@@ -42,7 +27,7 @@ const DashboardTabs = () => {
           <TabsTrigger value="ajuda">Ajuda</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6" forceMount>
           {/* Conteúdo atual do DashboardContent será movido aqui */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card>
@@ -122,15 +107,12 @@ const DashboardTabs = () => {
               <CardTitle>Atividade Recente</CardTitle>
             </CardHeader>
             <CardContent>
-              {atividadeRecente.length > 0 ? (
+              {activity.length > 0 ? (
                 <div className="space-y-2">
-                  {atividadeRecente.slice(0, 5).map((atividade) => (
-                    <div key={atividade.id} className="flex items-center justify-between text-sm">
+                  {activity.slice(0, 5).map((item) => (
+                    <div key={item.id} className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">
-                        {new Date(atividade.timestamp).toLocaleTimeString('pt-BR', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })} - {atividade.descricao}
+                        {new Date(item.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - {item.text}
                       </span>
                     </div>
                   ))}
@@ -144,7 +126,7 @@ const DashboardTabs = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="academias" className="space-y-6">
+        <TabsContent value="academias" className="space-y-6" forceMount>
           <AcademiasSection 
             academias={academias}
             setAcademias={setAcademias}
@@ -152,7 +134,7 @@ const DashboardTabs = () => {
           />
         </TabsContent>
 
-        <TabsContent value="chatbots" className="space-y-6">
+        <TabsContent value="chatbots" className="space-y-6" forceMount>
           <ChatbotsSection 
             academias={academias}
             onUpdateAcademiaStatus={handleUpdateAcademiaStatus}
@@ -160,15 +142,15 @@ const DashboardTabs = () => {
           />
         </TabsContent>
 
-        <TabsContent value="integracoes" className="space-y-6">
+        <TabsContent value="integracoes" className="space-y-6" forceMount>
           <IntegrationsSection />
         </TabsContent>
 
-        <TabsContent value="plano" className="space-y-6">
+        <TabsContent value="plano" className="space-y-6" forceMount>
           <PlanManagement />
         </TabsContent>
 
-        <TabsContent value="ajuda" className="space-y-6">
+        <TabsContent value="ajuda" className="space-y-6" forceMount>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
