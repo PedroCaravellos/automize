@@ -19,9 +19,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Edit2, Trash2, Bot, Play, Pause } from "lucide-react";
+import { Edit2, Trash2, Bot, Play, Pause, MessageSquare } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
 import { Academia } from "./AcademiasSection";
+import ChatbotSimulator from "./ChatbotSimulator";
 
 interface ChatbotTableProps {
   chatbots: Chatbot[];
@@ -29,10 +30,13 @@ interface ChatbotTableProps {
   onEdit: (chatbot: Chatbot) => void;
   onToggleStatus: (id: string) => void;
   onDelete: (id: string) => void;
+  onTest: (chatbot: Chatbot) => void;
 }
 
-const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete }: ChatbotTableProps) => {
+const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, onTest }: ChatbotTableProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null);
 
   const getAcademiaNome = (academiaId: string) => {
     const academia = academias.find(a => a.id === academiaId);
@@ -59,6 +63,17 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete }:
       onDelete(deleteId);
       setDeleteId(null);
     }
+  };
+
+  const handleTestClick = (chatbot: Chatbot) => {
+    setSelectedChatbot(chatbot);
+    onTest(chatbot);
+    setSimulatorOpen(true);
+  };
+
+  const getSelectedAcademia = () => {
+    if (!selectedChatbot) return null;
+    return academias.find(a => a.id === selectedChatbot.academiaId) || null;
   };
 
   if (chatbots.length === 0) {
@@ -97,6 +112,16 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete }:
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleTestClick(chatbot)}
+                      aria-label={`Testar ${chatbot.nome}`}
+                      className="text-blue-600 hover:text-blue-600"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </Button>
+                    
                     <Button
                       variant="ghost"
                       size="sm"
@@ -164,6 +189,13 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete }:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ChatbotSimulator
+        open={simulatorOpen}
+        onOpenChange={setSimulatorOpen}
+        chatbot={selectedChatbot}
+        academia={getSelectedAcademia()}
+      />
     </>
   );
 };

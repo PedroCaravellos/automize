@@ -137,13 +137,20 @@ const handleToggleStatus = (chatbotId: string) => {
     }
   };
 
-const handleDeleteChatbot = (chatbotId: string) => {
+  const handleDeleteChatbot = (chatbotId: string) => {
     const removed = deleteChatbot(chatbotId);
     if (!removed) return;
     toast({
       title: "Chatbot removido",
       description: "O chatbot foi removido com sucesso.",
     });
+  };
+
+  const handleTestChatbot = (chatbot: Chatbot) => {
+    if (!hasAccess()) {
+      setIsBlockModalOpen(true);
+      return;
+    }
   };
 
 const handleSaveChatbot = (dadosChatbot: {
@@ -199,6 +206,7 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
             onEdit={handleEditChatbot}
             onToggleStatus={handleToggleStatus}
             onDelete={handleDeleteChatbot}
+            onTest={handleTestChatbot}
           />
         </CardContent>
       </Card>
