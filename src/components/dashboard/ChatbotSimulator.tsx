@@ -147,7 +147,15 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
             academia: {
               nome: academia?.nome || '',
               unidade: academia?.unidade || '',
-              segmento: academia?.segmento || 'Academia'
+              segmento: academia?.segmento || 'Academia',
+              endereco: academia?.endereco || '',
+              telefone: academia?.telefone || '',
+              whatsapp: academia?.whatsapp || '',
+              horarios: academia?.horarios || '',
+              modalidades: academia?.modalidades || '',
+              valores: academia?.valores || '',
+              promocoes: academia?.promocoes || '',
+              diferenciais: academia?.diferenciais || ''
             },
             chatbot: {
               mensagemBoasVindas: chatbot.mensagens.boasVindas,
