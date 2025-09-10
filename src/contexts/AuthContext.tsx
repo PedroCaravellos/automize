@@ -7,11 +7,18 @@ interface Profile {
   id: string;
   user_id: string;
   email: string;
-  name: string | null;
+  nome: string | null;
+  telefone: string | null;
+  plano: string;
+  trial_end_date: string | null;
+  created_at: string;
+  updated_at: string;
+  // Computed properties for backward compatibility
   plano_ativo: boolean;
   nome_plano: string | null;
   trial_ativo: boolean;
   trial_fim_em: string | null;
+  name?: string | null; // Alias for nome
 }
 
 interface ActivityEvent { id: string; ts: string; text: string }
@@ -146,7 +153,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .maybeSingle();
     
     if (data && !error) {
-      setProfile(data);
+      // Map database fields to expected interface
+      const mappedProfile: Profile = {
+        ...data,
+        // Computed properties for backward compatibility
+        plano_ativo: data.plano !== 'trial' && data.plano !== null,
+        nome_plano: data.plano !== 'trial' ? data.plano : null,
+        trial_ativo: data.plano === 'trial' && data.trial_end_date ? new Date(data.trial_end_date) > new Date() : false,
+        trial_fim_em: data.trial_end_date,
+        name: data.nome // Alias for nome
+      };
+      setProfile(mappedProfile);
     }
   };
 
