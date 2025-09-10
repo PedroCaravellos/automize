@@ -9,17 +9,13 @@ import AcademiasSection from "./AcademiasSection";
 import ChatbotsSection from "./ChatbotsSection";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface DashboardTabsProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-}
-
-const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
+const DashboardTabs = () => {
+  const [activeTab, setActiveTab] = useState("overview");
   const { activity } = useAuth();
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="academias">Minhas Academias</TabsTrigger>
@@ -76,7 +72,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">Configure seu primeiro chatbot personalizado em minutos.</p>
-                  <Button onClick={() => onTabChange("chatbots")}> 
+                  <Button onClick={() => setActiveTab("chatbots")}> 
                     <Plus className="mr-2 h-4 w-4" />
                     Criar Chatbot
                   </Button>
@@ -89,7 +85,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">Integre seu chatbot com WhatsApp Business.</p>
-                  <Button variant="outline" onClick={() => onTabChange("integracoes")}>
+                  <Button variant="outline" onClick={() => setActiveTab("integracoes")}>
                     <Zap className="mr-2 h-4 w-4" />
                     Conectar WhatsApp
                   </Button>
