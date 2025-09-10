@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, EyeOff, Copy, MessageSquare, Instagram, Globe, Users, Zap, Clock, Info, CheckCircle, Circle } from "lucide-react";
+import { Eye, EyeOff, Copy, MessageSquare, Instagram, Globe, Users, Zap, Clock, Info, CheckCircle, Circle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +17,9 @@ export default function IntegrationsSection() {
   const { toast } = useToast();
   const [showApiKey, setShowApiKey] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
-  const [formData, setFormData] = useState({
+  
+  // Estado local dos campos do formulário - sempre editável
+  const [localFormData, setLocalFormData] = useState({
     provider: '',
     apiKey: '',
     wabaId: '',
@@ -27,6 +29,19 @@ export default function IntegrationsSection() {
 
   const whatsappIntegration = subscription.integrations?.whatsapp ?? { connected: false };
   const webhookUrl = `https://automiza.net/webhooks/whatsapp/user-id`;
+
+  // Inicializar campos locais com dados salvos (se existirem)
+  useEffect(() => {
+    if (whatsappIntegration.connected && whatsappIntegration.provider) {
+      setLocalFormData({
+        provider: whatsappIntegration.provider || '',
+        apiKey: whatsappIntegration.apiKey || '',
+        wabaId: whatsappIntegration.wabaId || '',
+        phoneId: whatsappIntegration.phoneId || '',
+        verifyToken: whatsappIntegration.verifyToken || ''
+      });
+    }
+  }, [whatsappIntegration.connected]); // Só recarrega se o status de conexão mudar
 
   const handleActivateTrial = async () => {
     setIsActivating(true);
@@ -47,25 +62,33 @@ export default function IntegrationsSection() {
     window.history.replaceState({}, '', url.toString());
   };
 
-  const handleConnectWhatsApp = () => {
-    try {
-      simulateConnectWhatsApp(formData);
+  const handleSaveData = () => {
+    if (!localFormData.provider || !localFormData.apiKey || !localFormData.wabaId) {
       toast({
-        title: "WhatsApp conectado!",
-        description: "Integração com WhatsApp Business ativada (simulado).",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao conectar",
-        description: "Preencha todos os campos obrigatórios.",
+        title: "Dados incompletos",
+        description: "Preencha pelo menos o provedor, API key e WABA ID.",
         variant: "destructive",
       });
+      return;
     }
+    
+    simulateConnectWhatsApp(localFormData);
+    toast({
+      title: "WhatsApp conectado!",
+      description: "Integração com WhatsApp Business ativada (simulado).",
+    });
   };
 
   const handleDisconnectWhatsApp = () => {
     simulateDisconnectWhatsApp();
-    setFormData({
+    toast({
+      title: "WhatsApp desconectado",
+      description: "Integração com WhatsApp Business desativada (simulado).",
+    });
+  };
+
+  const handleClearFields = () => {
+    setLocalFormData({
       provider: '',
       apiKey: '',
       wabaId: '',
@@ -73,8 +96,8 @@ export default function IntegrationsSection() {
       verifyToken: ''
     });
     toast({
-      title: "WhatsApp desconectado",
-      description: "Integração com WhatsApp Business desativada (simulado).",
+      title: "Campos limpos",
+      description: "Formulário foi resetado.",
     });
   };
 
@@ -85,6 +108,41 @@ export default function IntegrationsSection() {
       description: "URL do webhook copiada para a área de transferência.",
     });
   };
+
+  // Determinar status baseado no estado e dados preenchidos
+  const getStatusInfo = () => {
+    if (whatsappIntegration.connected) {
+      return { 
+        icon: CheckCircle, 
+        color: 'text-green-600', 
+        bg: 'bg-green-50', 
+        border: 'border-green-200', 
+        text: 'Conectado' 
+      };
+    }
+    
+    const hasAnyData = localFormData.provider || localFormData.apiKey || localFormData.wabaId;
+    if (hasAnyData) {
+      return { 
+        icon: AlertCircle, 
+        color: 'text-yellow-600', 
+        bg: 'bg-yellow-50', 
+        border: 'border-yellow-200', 
+        text: 'Em configuração' 
+      };
+    }
+    
+    return { 
+      icon: Circle, 
+      color: 'text-red-600', 
+      bg: 'bg-red-50', 
+      border: 'border-red-200', 
+      text: 'Não conectado' 
+    };
+  };
+
+  const statusInfo = getStatusInfo();
+  const StatusIcon = statusInfo.icon;
 
   if (isHydrating) {
     return (
@@ -145,9 +203,18 @@ export default function IntegrationsSection() {
   );
 
   function IntegrationsContent() {
-    const StatusIcon = whatsappIntegration.connected ? CheckCircle : Circle;
-    const statusColor = whatsappIntegration.connected ? 'text-green-600' : 'text-red-600';
-    const statusText = whatsappIntegration.connected ? 'Conectado' : 'Não conectado';
+    const InfoTooltip = ({ content }: { content: string }) => (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-sm">
+            <p>{content}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
 
     return (
       <>
@@ -158,175 +225,154 @@ export default function IntegrationsSection() {
                 <MessageSquare className="h-5 w-5" />
                 <CardTitle>WhatsApp Business</CardTitle>
               </div>
-              <Badge variant="outline" className={statusColor}>
+              <Badge variant="outline" className={`${statusInfo.color} ${statusInfo.border} ${statusInfo.bg}`}>
                 <StatusIcon className="h-3 w-3 mr-1" />
-                {statusText}
+                {statusInfo.text}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {whatsappIntegration.connected ? (
-              <>
-                <Card className="border-green-200 bg-green-50">
-                  <CardContent className="pt-4">
-                    <p className="text-green-800 text-sm">
-                      WhatsApp Business conectado com sucesso! 
-                      {whatsappIntegration.connectedAt && ` Conectado em ${new Date(whatsappIntegration.connectedAt).toLocaleString('pt-BR')}.`}
-                    </p>
-                    <div className="mt-3 space-y-1 text-sm">
-                      <p><strong>Provedor:</strong> {whatsappIntegration.provider}</p>
-                      <p><strong>WABA ID:</strong> {whatsappIntegration.wabaId}</p>
-                      <p><strong>Phone ID:</strong> {whatsappIntegration.phoneId}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+            {/* Status Card */}
+            <Card className={`${statusInfo.border} ${statusInfo.bg}`}>
+              <CardContent className="pt-4">
+                <p className={`${statusInfo.color.replace('text-', 'text-')} text-sm`}>
+                  {whatsappIntegration.connected 
+                    ? `WhatsApp Business conectado com sucesso! ${whatsappIntegration.connectedAt ? `Conectado em ${new Date(whatsappIntegration.connectedAt).toLocaleString('pt-BR')}.` : ''}`
+                    : (localFormData.provider || localFormData.apiKey || localFormData.wabaId)
+                    ? "Preencha os dados e clique em 'Salvar dados' para conectar (simulação)."
+                    : "Configure os dados do seu provedor WhatsApp Business oficial para conectar (simulação)."
+                  }
+                </p>
+                {whatsappIntegration.connected && (
+                  <div className="mt-3 space-y-1 text-sm">
+                    <p><strong>Provedor:</strong> {whatsappIntegration.provider}</p>
+                    <p><strong>WABA ID:</strong> {whatsappIntegration.wabaId}</p>
+                    <p><strong>Phone ID:</strong> {whatsappIntegration.phoneId}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Formulário sempre visível */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Provedor</Label>
+                  <InfoTooltip content="Selecione o provedor oficial que você utiliza (360Dialog, Zenvia, Gupshup, Twilio)." />
+                </div>
+                <Select 
+                  value={localFormData.provider} 
+                  onValueChange={(value) => setLocalFormData(prev => ({...prev, provider: value}))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um provedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="360dialog">360Dialog</SelectItem>
+                    <SelectItem value="zenvia">Zenvia</SelectItem>
+                    <SelectItem value="gupshup">Gupshup</SelectItem>
+                    <SelectItem value="twilio">Twilio</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>API Key</Label>
+                  <InfoTooltip content="Chave de autenticação gerada pelo seu provedor." />
+                </div>
+                <div className="relative">
+                  <Input
+                    type={showApiKey ? "text" : "password"}
+                    value={localFormData.apiKey}
+                    onChange={(e) => setLocalFormData(prev => ({...prev, apiKey: e.target.value}))}
+                    placeholder="Insira sua API key"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1 h-7 w-7 p-0"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                  >
+                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>WABA ID</Label>
+                  <InfoTooltip content="WhatsApp Business Account ID, fornecido pelo provedor oficial." />
+                </div>
+                <Input
+                  value={localFormData.wabaId}
+                  onChange={(e) => setLocalFormData(prev => ({...prev, wabaId: e.target.value}))}
+                  placeholder="123456789012345"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Phone Number ID</Label>
+                  <InfoTooltip content="Identificador único do número de telefone conectado ao WhatsApp Business." />
+                </div>
+                <Input
+                  value={localFormData.phoneId}
+                  onChange={(e) => setLocalFormData(prev => ({...prev, phoneId: e.target.value}))}
+                  placeholder="987654321098765"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Webhook URL</Label>
+                  <InfoTooltip content="Endereço onde os eventos e mensagens serão enviados pelo provedor." />
+                </div>
+                <div className="flex gap-2">
+                  <Input value={webhookUrl} readOnly className="bg-muted" />
+                  <Button variant="outline" size="sm" onClick={copyWebhookUrl}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Verify Token</Label>
+                  <InfoTooltip content="Token secreto que você define para validar a conexão junto ao provedor." />
+                </div>
+                <Input
+                  value={localFormData.verifyToken}
+                  onChange={(e) => setLocalFormData(prev => ({...prev, verifyToken: e.target.value}))}
+                  placeholder="meu_token_secreto"
+                />
+              </div>
+            </div>
+
+            {/* Botões de ação */}
+            <div className="flex gap-3 flex-wrap">
+              {!whatsappIntegration.connected ? (
+                <>
+                  <Button onClick={handleSaveData}>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Salvar dados
+                  </Button>
+                  <Button variant="outline" onClick={handleClearFields}>
+                    Limpar campos
+                  </Button>
+                </>
+              ) : (
                 <Button variant="outline" onClick={handleDisconnectWhatsApp}>
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Desconectar WhatsApp
                 </Button>
-              </>
-            ) : (
-              <>
-                <Card className="border-blue-200 bg-blue-50">
-                  <CardContent className="pt-4">
-                    <p className="text-blue-800 text-sm">
-                      Configure os dados do seu provedor WhatsApp Business oficial para conectar (simulação).
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label>Provedor</Label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger><Info className="h-4 w-4 text-muted-foreground" /></TooltipTrigger>
-                          <TooltipContent>Selecione o provedor oficial que você utiliza</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <Select value={formData.provider} onValueChange={(value) => setFormData(prev => ({...prev, provider: value}))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um provedor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="360dialog">360Dialog</SelectItem>
-                        <SelectItem value="zenvia">Zenvia</SelectItem>
-                        <SelectItem value="gupshup">Gupshup</SelectItem>
-                        <SelectItem value="twilio">Twilio</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label>API Key</Label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger><Info className="h-4 w-4 text-muted-foreground" /></TooltipTrigger>
-                          <TooltipContent>Chave de autenticação gerada pelo seu provedor</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        type={showApiKey ? "text" : "password"}
-                        value={formData.apiKey}
-                        onChange={(e) => setFormData(prev => ({...prev, apiKey: e.target.value}))}
-                        placeholder="Insira sua API key"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-1 top-1 h-7 w-7 p-0"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                      >
-                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label>WABA ID</Label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger><Info className="h-4 w-4 text-muted-foreground" /></TooltipTrigger>
-                          <TooltipContent>WhatsApp Business Account ID, fornecido pelo provedor oficial</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <Input
-                      value={formData.wabaId}
-                      onChange={(e) => setFormData(prev => ({...prev, wabaId: e.target.value}))}
-                      placeholder="123456789012345"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label>Phone Number ID</Label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger><Info className="h-4 w-4 text-muted-foreground" /></TooltipTrigger>
-                          <TooltipContent>Identificador único do número de telefone conectado ao WhatsApp Business</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <Input
-                      value={formData.phoneId}
-                      onChange={(e) => setFormData(prev => ({...prev, phoneId: e.target.value}))}
-                      placeholder="987654321098765"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label>Webhook URL</Label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger><Info className="h-4 w-4 text-muted-foreground" /></TooltipTrigger>
-                          <TooltipContent>Endereço onde os eventos e mensagens serão enviados pelo provedor</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <div className="flex gap-2">
-                      <Input value={webhookUrl} readOnly className="bg-muted" />
-                      <Button variant="outline" size="sm" onClick={copyWebhookUrl}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label>Verify Token</Label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger><Info className="h-4 w-4 text-muted-foreground" /></TooltipTrigger>
-                          <TooltipContent>Token secreto que você define para validar a conexão junto ao provedor</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <Input
-                      value={formData.verifyToken}
-                      onChange={(e) => setFormData(prev => ({...prev, verifyToken: e.target.value}))}
-                      placeholder="meu_token_secreto"
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={handleConnectWhatsApp}>
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Conectar WhatsApp
-                </Button>
-              </>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
 
+        {/* Other Integrations Section */}
         <Card>
           <CardHeader>
             <CardTitle>Outras integrações (futuro)</CardTitle>
