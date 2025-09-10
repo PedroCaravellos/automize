@@ -359,6 +359,40 @@ Você tem acesso completo às informações desta academia específica. Use esse
         statusText: response.statusText,
         error: errorText
       });
+      
+      // Handle rate limit specifically
+      if (response.status === 429) {
+        console.log('Rate limit hit, using FAQ fallback');
+        // Try to find a relevant FAQ response as fallback
+        const userWords = message.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+        
+        let bestMatch = null;
+        let maxMatches = 0;
+        
+        for (const faq of chatbot.perguntasFrequentes) {
+          const faqWords = faq.pergunta.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+          const matches = userWords.filter(word => 
+            faqWords.some(faqWord => faqWord.includes(word) || word.includes(faqWord))
+          ).length;
+
+          if (matches > maxMatches && matches > 0) {
+            maxMatches = matches;
+            bestMatch = faq;
+          }
+        }
+        
+        const fallbackResponse = bestMatch 
+          ? bestMatch.resposta 
+          : "Desculpe, estou com muitas solicitações no momento. Por favor, tente novamente em alguns segundos ou entre em contato conosco diretamente.";
+          
+        return new Response(JSON.stringify({ 
+          response: fallbackResponse,
+          fallback: true
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
