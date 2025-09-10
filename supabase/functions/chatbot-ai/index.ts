@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,7 @@ const corsHeaders = {
 interface ChatRequest {
   message: string;
   academia: {
+    id?: string;
     nome: string;
     unidade?: string;
     segmento?: string;
@@ -45,14 +47,138 @@ serve(async (req) => {
 
   try {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
     console.log('Checking OpenAI API Key:', openAIApiKey ? 'Key found' : 'Key NOT found');
+    console.log('Checking Supabase URL:', supabaseUrl ? 'URL found' : 'URL NOT found');
+    console.log('Checking Supabase Service Key:', supabaseServiceKey ? 'Service key found' : 'Service key NOT found');
     
     if (!openAIApiKey) {
       console.error('OPENAI_API_KEY environment variable is not set');
       throw new Error('OPENAI_API_KEY is not set');
     }
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase credentials not configured');
+      throw new Error('Supabase credentials not configured');
+    }
+
+    // Initialize Supabase client with service role
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const { message, academia, chatbot, conversationHistory = [] }: ChatRequest = await req.json();
+    
+    // Helper function to create appointment
+    const createAgendamento = async (params: any) => {
+      try {
+        console.log('Creating appointment with params:', params);
+        
+        if (!academia.id) {
+          return { error: 'Esta é uma demonstração. Para agendamentos reais, use o sistema completo da academia.' };
+        }
+
+        // Validate required fields
+        if (!params.cliente_nome || !params.data_hora || !params.servico) {
+          return { error: 'Nome do cliente, data/hora e serviço são obrigatórios' };
+        }
+
+        // Parse and validate date
+        const dataHora = new Date(params.data_hora);
+        if (isNaN(dataHora.getTime()) || dataHora < new Date()) {
+          return { error: 'Data/hora inválida ou no passado' };
+        }
+
+        // Check for conflicts (±1 hour)
+        const startTime = new Date(dataHora.getTime() - 60 * 60 * 1000);
+        const endTime = new Date(dataHora.getTime() + 60 * 60 * 1000);
+        
+        const { data: conflicts } = await supabase
+          .from('agendamentos')
+          .select('id')
+          .eq('academia_id', academia.id)
+          .gte('data_hora', startTime.toISOString())
+          .lte('data_hora', endTime.toISOString());
+
+        if (conflicts && conflicts.length > 0) {
+          return { error: 'Horário não disponível. Tente outro horário.' };
+        }
+
+        // Create appointment
+        const { data, error } = await supabase
+          .from('agendamentos')
+          .insert({
+            academia_id: academia.id,
+            cliente_nome: params.cliente_nome,
+            data_hora: dataHora.toISOString(),
+            servico: params.servico,
+            cliente_telefone: params.cliente_telefone || null,
+            cliente_email: params.cliente_email || null,
+            observacoes: params.observacoes || null,
+            status: 'agendado'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating appointment:', error);
+          return { error: 'Erro ao criar agendamento' };
+        }
+
+        return { 
+          success: true, 
+          agendamento: data,
+          message: `Agendamento confirmado para ${dataHora.toLocaleDateString('pt-BR')} às ${dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+        };
+      } catch (error) {
+        console.error('Error in createAgendamento:', error);
+        return { error: 'Erro interno ao criar agendamento' };
+      }
+    };
+
+    // Helper function to create/update lead
+    const upsertLead = async (params: any) => {
+      try {
+        console.log('Creating/updating lead with params:', params);
+        
+        if (!academia.id) {
+          return { success: true, message: 'Interesse registrado na demonstração' };
+        }
+
+        if (!params.nome) {
+          return { error: 'Nome é obrigatório' };
+        }
+
+        const { data, error } = await supabase
+          .from('leads')
+          .insert({
+            academia_id: academia.id,
+            nome: params.nome,
+            telefone: params.telefone || null,
+            email: params.email || null,
+            origem: params.origem || 'chatbot',
+            observacoes: params.observacoes || null,
+            status: 'novo',
+            pipeline_stage: 'novo'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating lead:', error);
+          return { error: 'Erro ao registrar interesse' };
+        }
+
+        return { 
+          success: true, 
+          lead: data,
+          message: 'Interesse registrado com sucesso! Nossa equipe entrará em contato.'
+        };
+      } catch (error) {
+        console.error('Error in upsertLead:', error);
+        return { error: 'Erro interno ao registrar interesse' };
+      }
+    };
     console.log('Processing message for academia:', academia?.nome, 'Message:', message);
 
     // Build comprehensive context about the academy
@@ -119,7 +245,87 @@ INSTRUÇÕES IMPORTANTES:
 9. Se o cliente quiser encerrar, use a mensagem: "${chatbot.mensagemEncerramento}"
 10. NUNCA invente informações que não foram fornecidas - seja sempre preciso
 
+FUNCIONALIDADES ESPECIAIS:
+- Você pode criar agendamentos reais usando a função create_agendamento quando o cliente solicitar
+- Você pode registrar leads usando a função upsert_lead quando o cliente demonstrar interesse mas não agendar
+- Para agendamentos, sempre confirme dados essenciais: nome, serviço desejado, data e horário preferido
+- Para registrar interesse, capture ao menos o nome e uma forma de contato (telefone ou email)
+
 Você tem acesso completo às informações desta academia específica. Use esse conhecimento para dar respostas personalizadas e úteis.`;
+
+    // Define function tools for OpenAI
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "create_agendamento",
+          description: "Cria um agendamento real para o cliente na academia",
+          parameters: {
+            type: "object",
+            properties: {
+              cliente_nome: {
+                type: "string",
+                description: "Nome completo do cliente"
+              },
+              data_hora: {
+                type: "string",
+                description: "Data e hora do agendamento no formato ISO (YYYY-MM-DDTHH:mm:ss)"
+              },
+              servico: {
+                type: "string",
+                description: "Serviço ou modalidade desejada"
+              },
+              cliente_telefone: {
+                type: "string",
+                description: "Telefone do cliente (opcional)"
+              },
+              cliente_email: {
+                type: "string",
+                description: "Email do cliente (opcional)"
+              },
+              observacoes: {
+                type: "string",
+                description: "Observações adicionais (opcional)"
+              }
+            },
+            required: ["cliente_nome", "data_hora", "servico"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "upsert_lead",
+          description: "Registra interesse do cliente como lead quando não há agendamento imediato",
+          parameters: {
+            type: "object",
+            properties: {
+              nome: {
+                type: "string",
+                description: "Nome do cliente interessado"
+              },
+              telefone: {
+                type: "string",
+                description: "Telefone para contato (opcional)"
+              },
+              email: {
+                type: "string",
+                description: "Email para contato (opcional)"
+              },
+              origem: {
+                type: "string",
+                description: "Origem do lead (sempre 'chatbot')"
+              },
+              observacoes: {
+                type: "string",
+                description: "Observações sobre o interesse do cliente"
+              }
+            },
+            required: ["nome"]
+          }
+        }
+      }
+    ];
 
     // Prepare messages for OpenAI
     const messages = [
@@ -130,7 +336,7 @@ Você tem acesso completo às informações desta academia específica. Use esse
 
     console.log('Calling OpenAI with context for academia:', academia.nome);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    let response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -141,6 +347,8 @@ Você tem acesso completo às informações desta academia específica. Use esse
         messages: messages,
         max_tokens: 500,
         temperature: 0.7,
+        tools: tools,
+        tool_choice: "auto"
       }),
     });
 
@@ -154,9 +362,67 @@ Você tem acesso completo às informações desta academia específica. Use esse
       throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    let data = await response.json();
+    let aiMessage = data.choices[0].message;
 
+    // Handle function calling
+    if (aiMessage.tool_calls) {
+      console.log('Processing tool calls:', aiMessage.tool_calls.length);
+      
+      // Add assistant message with tool calls to conversation
+      messages.push(aiMessage);
+      
+      // Process each tool call
+      for (const toolCall of aiMessage.tool_calls) {
+        const functionName = toolCall.function.name;
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+        
+        console.log(`Executing function: ${functionName}`, functionArgs);
+        
+        let functionResult;
+        
+        if (functionName === 'create_agendamento') {
+          functionResult = await createAgendamento(functionArgs);
+        } else if (functionName === 'upsert_lead') {
+          functionResult = await upsertLead(functionArgs);
+        } else {
+          functionResult = { error: 'Função não reconhecida' };
+        }
+        
+        // Add function result to messages
+        messages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: JSON.stringify(functionResult)
+        });
+      }
+      
+      // Make another OpenAI call to get the final response
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: messages,
+          max_tokens: 500,
+          temperature: 0.7,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenAI API error (second call):', errorText);
+        throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      }
+      
+      data = await response.json();
+      aiMessage = data.choices[0].message;
+    }
+
+    const aiResponse = aiMessage.content;
     console.log('AI Response generated successfully');
 
     return new Response(JSON.stringify({ 

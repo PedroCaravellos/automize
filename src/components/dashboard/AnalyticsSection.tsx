@@ -13,6 +13,9 @@ export default function AnalyticsSection() {
     ticketMedio: 0,
     leadsPorOrigem: {},
     vendasPorMes: {},
+    agendamentosPorBot: 0,
+    leadsPorBot: 0,
+    conversaoBot: 0,
   });
   const [loading, setLoading] = useState(true);
   const { chatbots, academias } = useAuth();
@@ -66,6 +69,20 @@ export default function AnalyticsSection() {
         return acc;
       }, {});
 
+      // Métricas específicas do bot (últimos 7 dias)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const agendamentosPorBot = agendamentos?.filter(a => 
+        new Date(a.created_at) >= sevenDaysAgo
+      ).length || 0;
+
+      const leadsPorBot = leads?.filter(l => 
+        l.origem === 'chatbot' && new Date(l.created_at) >= sevenDaysAgo
+      ).length || 0;
+
+      const conversaoBot = leadsPorBot > 0 ? (agendamentosPorBot / leadsPorBot) * 100 : 0;
+
       setAnalytics({
         totalLeads,
         totalAgendamentos,
@@ -74,6 +91,9 @@ export default function AnalyticsSection() {
         ticketMedio,
         leadsPorOrigem,
         vendasPorMes,
+        agendamentosPorBot,
+        leadsPorBot,
+        conversaoBot,
       });
     } catch (error) {
       console.error('Erro ao buscar analytics:', error);
@@ -105,7 +125,7 @@ export default function AnalyticsSection() {
       </div>
 
       {/* Métricas Principais */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Leads</CardTitle>
@@ -185,6 +205,51 @@ export default function AnalyticsSection() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Métricas do Bot (últimos 7 dias) */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Performance do Bot (últimos 7 dias)</h3>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Agendamentos via Bot</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.agendamentosPorBot}</div>
+              <p className="text-xs text-muted-foreground">
+                Agendamentos criados pelo chatbot
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Leads via Bot</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.leadsPorBot}</div>
+              <p className="text-xs text-muted-foreground">
+                Leads capturados pelo chatbot
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Conversão do Bot</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{Math.round(analytics.conversaoBot)}%</div>
+              <p className="text-xs text-muted-foreground">
+                Leads convertidos em agendamentos
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Leads por Origem */}

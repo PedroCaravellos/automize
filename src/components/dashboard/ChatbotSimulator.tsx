@@ -145,6 +145,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
           body: {
             message: currentInput,
             academia: {
+              id: academia?.id,
               nome: academia?.nome || '',
               unidade: academia?.unidade || '',
               segmento: academia?.segmento || 'Academia',
