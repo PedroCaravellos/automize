@@ -30,7 +30,7 @@ export default function IntegrationsSection() {
   const whatsappIntegration = subscription.integrations?.whatsapp ?? { connected: false };
   const webhookUrl = `https://automiza.net/webhooks/whatsapp/user-id`;
 
-  // Inicializar campos locais com dados salvos (se existirem)
+  // Inicializar campos locais com dados salvos apenas uma vez
   useEffect(() => {
     if (whatsappIntegration.connected && whatsappIntegration.provider) {
       setLocalFormData({
@@ -41,7 +41,7 @@ export default function IntegrationsSection() {
         verifyToken: whatsappIntegration.verifyToken || ''
       });
     }
-  }, [whatsappIntegration.connected]); // Só recarrega se o status de conexão mudar
+  }, []); // Empty dependency array - load only once on mount
 
   const handleActivateTrial = async () => {
     setIsActivating(true);
