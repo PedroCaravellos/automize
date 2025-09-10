@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Bot, Zap } from "lucide-react";
+import AuthModal from "./auth/AuthModal";
 
 const HeroSection = () => {
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  
   return (
     <section id="topo" className="min-h-screen flex items-center justify-center bg-gradient-hero relative overflow-hidden pt-16">
       {/* Background Animation Elements */}
@@ -36,11 +40,14 @@ const HeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button variant="hero" size="lg" className="shadow-button hover:shadow-hero transition-all" asChild>
-              <a href="/auth">
-                Começar agora grátis
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </a>
+            <Button 
+              variant="hero" 
+              size="lg" 
+              className="shadow-button hover:shadow-hero transition-all"
+              onClick={() => setAuthModalOpen(true)}
+            >
+              Começar agora grátis
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button variant="outline-hero" size="lg">
               Ver demonstração
@@ -64,6 +71,8 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
+      
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </section>
   );
 };

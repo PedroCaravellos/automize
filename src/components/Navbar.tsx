@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import AuthModal from "./auth/AuthModal";
 
 const Navbar = () => {
   const [activeSection, setActiveSection] = useState("inicio");
   const [isOpen, setIsOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const navLinks = [
     { id: "inicio", label: "Início", href: "#topo" },
@@ -82,8 +84,8 @@ const Navbar = () => {
                 {link.label}
               </button>
             ))}
-            <Button asChild>
-              <a href="/auth">Começar agora</a>
+            <Button onClick={() => setAuthModalOpen(true)}>
+              Começar agora
             </Button>
           </div>
 
@@ -111,8 +113,14 @@ const Navbar = () => {
                     </button>
                   ))}
                   <div className="pt-4">
-                    <Button className="w-full" asChild>
-                      <a href="/auth">Começar agora</a>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => {
+                        setIsOpen(false);
+                        setAuthModalOpen(true);
+                      }}
+                    >
+                      Começar agora
                     </Button>
                   </div>
                 </nav>
@@ -121,6 +129,8 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </nav>
   );
 };

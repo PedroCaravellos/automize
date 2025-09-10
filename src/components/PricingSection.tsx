@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, Star } from "lucide-react";
+import AuthModal from "./auth/AuthModal";
 
 const PricingSection = () => {
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  
   const plans = [
     {
       name: "Básico",
@@ -104,11 +108,9 @@ const PricingSection = () => {
                 variant={plan.popular ? "default" : "outline"} 
                 className="w-full font-heading font-semibold"
                 size="lg"
-                asChild
+                onClick={() => setAuthModalOpen(true)}
               >
-                <a href="/auth">
-                  {plan.popular ? "Começar agora" : "Escolher plano"}
-                </a>
+                {plan.popular ? "Começar agora" : "Escolher plano"}
               </Button>
             </div>
           ))}
@@ -120,6 +122,8 @@ const PricingSection = () => {
           </p>
         </div>
       </div>
+      
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </section>
   );
 };
