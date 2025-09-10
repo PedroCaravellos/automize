@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, Bot, Zap, HelpCircle, Plus } from "lucide-react";
+import { Building, Bot, Zap, HelpCircle, Plus, CreditCard } from "lucide-react";
+import PlanManagement from "./PlanManagement";
+import IntegrationsSection from "./IntegrationsSection";
 
 const DashboardTabs = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -10,11 +12,12 @@ const DashboardTabs = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="academias">Minhas Academias</TabsTrigger>
           <TabsTrigger value="chatbots">Chatbots</TabsTrigger>
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
+          <TabsTrigger value="plano">Meu Plano</TabsTrigger>
           <TabsTrigger value="ajuda">Ajuda</TabsTrigger>
         </TabsList>
 
@@ -146,23 +149,11 @@ const DashboardTabs = () => {
         </TabsContent>
 
         <TabsContent value="integracoes" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Integrações
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Integração com WhatsApp Business e outras plataformas em breve.
-              </p>
-              <Button disabled className="w-full sm:w-auto">
-                <Zap className="mr-2 h-4 w-4" />
-                Conectar WhatsApp
-              </Button>
-            </CardContent>
-          </Card>
+          <IntegrationsSection />
+        </TabsContent>
+
+        <TabsContent value="plano" className="space-y-6">
+          <PlanManagement />
         </TabsContent>
 
         <TabsContent value="ajuda" className="space-y-6">
