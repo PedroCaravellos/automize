@@ -199,6 +199,7 @@ serve(async (req) => {
         return { error: 'Erro interno ao registrar interesse' };
       }
     };
+
     console.log('Processing message for academia:', academia?.nome, 'Message:', message);
 
     // Build comprehensive context about the academy
@@ -251,7 +252,7 @@ serve(async (req) => {
       });
     }
 
-const systemPrompt = `${academiaContext}
+    const systemPrompt = `${academiaContext}
 
 INSTRUÇÕES IMPORTANTES:
 1. Você deve ser prestativo, amigável e conhecer bem a academia
@@ -452,6 +453,33 @@ Você tem acesso completo às informações desta academia específica. Use esse
             }],
             error_reason: `HTTP ${response.status}: ${errorText}`
           };
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error(`OpenAI call failed (attempt ${attempt}):`, error);
+        
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return callOpenAI(requestBody, attempt + 1);
+        }
+        
+        // Final fallback
+        console.log('All OpenAI attempts failed, using FAQ fallback');
+        const fallbackResponse = getFaqFallback(message);
+        
+        return {
+          fallback: true,
+          choices: [{
+            message: {
+              content: fallbackResponse,
+              role: 'assistant'
+            }
+          }],
+          error_reason: `Network error: ${error.message}`
+        };
       }
     };
 
@@ -546,8 +574,13 @@ Você tem acesso completo às informações desta academia específica. Use esse
 
     const aiResponse = aiMessage.content;
     const isFallback = data.fallback || false;
+    const errorReason = data.error_reason || null;
     
-    console.log(`AI Response generated successfully${isFallback ? ' (using fallback)' : ''}`);
+    console.log(`AI Response generated successfully${isFallback ? ' (using fallback)' : ''}`, {
+      fallback: isFallback,
+      error_reason: errorReason,
+      response_length: aiResponse?.length || 0
+    });
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
