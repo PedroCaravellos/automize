@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Workflow, Plus, Zap, Clock, MessageSquare, Target } from "lucide-react";
+import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -355,6 +355,3 @@ export default function AutomacoesSection() {
     </div>
   );
 }
-
-// Importações faltantes para o componente funcionar
-import { Calendar, Users } from "lucide-react";

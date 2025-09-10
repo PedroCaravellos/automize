@@ -10,7 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import DemoPage from "./pages/DemoPage";
 import NotFound from "./pages/NotFound";
-
+import React from "react";
 const queryClient = new QueryClient();
 
 const App = () => (
