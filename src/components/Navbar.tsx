@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, User, LogOut, LayoutDashboard } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Menu, User, LogOut, LayoutDashboard, Settings, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "./auth/AuthModal";
 
@@ -11,8 +13,15 @@ const Navbar = () => {
   const [activeSection, setActiveSection] = useState("inicio");
   const [isOpen, setIsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut, trialDaysRemaining } = useAuth();
   const navigate = useNavigate();
+
+  const getUserInitials = (email: string, name?: string | null) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return email.slice(0, 2).toUpperCase();
+  };
 
   const navLinks = [
     { id: "inicio", label: "Início", href: "#topo" },
@@ -101,27 +110,70 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Profile Icon */}
-          <div className="hidden md:flex items-center">
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Menu do usuário">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={handleDashboard}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
+          {/* Profile Section */}
+          <div className="hidden md:flex items-center space-x-3">
+            {user && (
+              <>
+                {/* Trial Badge */}
+                {profile?.trial_ativo && (
+                  <Badge variant="outline" className="flex items-center space-x-1">
+                    <Clock className="h-3 w-3" />
+                    <span>Trial - {trialDaysRemaining()} dias restantes</span>
+                  </Badge>
+                )}
+
+                {/* Plan Badge */}
+                {profile?.plano_ativo && profile.nome_plano && (
+                  <Badge className="bg-primary text-xs">
+                    {profile.nome_plano}
+                  </Badge>
+                )}
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-primary/10">
+                          {getUserInitials(user.email || '', profile?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        {profile?.name && (
+                          <p className="font-medium">{profile.name}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleDashboard}>
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Perfil</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Configurações</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sair</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+            
+            {!user && (
               <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setAuthModalOpen(true)} aria-label="Entrar">
                 <User className="h-5 w-5" />
               </Button>
@@ -130,25 +182,56 @@ const Navbar = () => {
 
           {/* Mobile Menu */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Profile Icon for Mobile */}
+            {/* Profile/Plan for Mobile */}
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Menu do usuário">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={handleDashboard}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                {profile?.plano_ativo && profile.nome_plano && (
+                  <Badge className="bg-primary text-xs">
+                    {profile.nome_plano}
+                  </Badge>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback className="bg-primary/10 text-xs">
+                          {getUserInitials(user.email || '', profile?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        {profile?.name && (
+                          <p className="font-medium">{profile.name}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleDashboard}>
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Perfil</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Configurações</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sair</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setAuthModalOpen(true)} aria-label="Entrar">
                 <User className="h-5 w-5" />
