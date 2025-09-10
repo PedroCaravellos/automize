@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bot, LogOut, Settings, User, Clock } from "lucide-react";
+import { Bot, LogOut, Settings, User, Clock, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function DashboardHeader() {
   const { user, profile, signOut, trialDaysRemaining } = useAuth();
+  const navigate = useNavigate();
 
   const getUserInitials = (email: string, name?: string | null) => {
     if (name) {
@@ -19,15 +21,15 @@ export default function DashboardHeader() {
     await signOut();
   };
 
+  const handleGoHome = () => {
+    navigate("/");
+  };
+
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full">
       <div className="flex h-16 items-center justify-between px-6">
-        <div className="flex items-center space-x-3">
-          <button 
-            onClick={() => window.location.reload()}
-            className="flex items-center space-x-3"
-            aria-label="Recarregar dashboard"
-          >
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <img 
               src="/lovable-uploads/419fc9aa-9a41-4cc0-b8ce-190b4a7e6869.png" 
               alt="Automiza" 
@@ -37,7 +39,18 @@ export default function DashboardHeader() {
               <h1 className="text-xl font-bold">Automiza</h1>
               <p className="text-xs text-muted-foreground">Dashboard</p>
             </div>
-          </button>
+          </div>
+          
+          {/* Botão Voltar ao Início */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleGoHome}
+            className="flex items-center space-x-2"
+          >
+            <Home className="h-4 w-4" />
+            <span>Voltar ao início</span>
+          </Button>
         </div>
 
         <div className="flex items-center space-x-4">
