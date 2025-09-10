@@ -84,7 +84,7 @@ const Navbar = () => {
               aria-label="Voltar ao início"
             >
               <img 
-                src="/lovable-uploads/320b5528-809b-43ff-9dd7-f1cfce7b321d.png" 
+                src="/lovable-uploads/e5a8ad53-861c-44df-877e-161c8f96702f.png" 
                 alt="Automiza - Seu negócio no piloto automático" 
                 className="h-8"
               />
