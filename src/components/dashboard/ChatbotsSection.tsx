@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { generateDemoSlug, updateUserData } from "@/utils/userStorage";
 import ChatbotWizard from "./ChatbotWizard";
 import ChatbotTable from "./ChatbotTable";
 import ChatbotEditModal from "./ChatbotEditModal";
@@ -32,6 +33,10 @@ export interface Chatbot {
     boasVindas: string;
     faqs: { pergunta: string; resposta: string }[];
     encerramento: string;
+  };
+  demo?: {
+    enabled: boolean;
+    slug: string;
   };
   createdAt: string;
 }
@@ -91,7 +96,10 @@ const templates: ChatbotTemplate[] = [
 ];
 
 const ChatbotsSection = () => {
-  const { hasAccess, academias, chatbots, createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot } = useAuth();
+  const { 
+    user, hasAccess, academias, chatbots, addActivity,
+    createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot 
+  } = useAuth();
   const { toast } = useToast();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -151,6 +159,53 @@ const handleToggleStatus = (chatbotId: string) => {
       setIsBlockModalOpen(true);
       return;
     }
+    // Test functionality is handled in the table component
+  };
+
+  const handleGenerateDemo = (chatbotId: string): string => {
+    if (!user?.id) return "";
+    
+    const slug = generateDemoSlug(chatbotId);
+    
+    updateUserData(user.id, (data) => {
+      const chatbotIndex = data.chatbots.findIndex(bot => bot.id === chatbotId);
+      if (chatbotIndex >= 0) {
+        data.chatbots[chatbotIndex].demo = {
+          enabled: true,
+          slug: slug
+        };
+      }
+      return data;
+    });
+
+    const chatbot = chatbots.find(bot => bot.id === chatbotId);
+    if (chatbot) {
+      addActivity(`Link de demo gerado — ${chatbot.nome}`);
+    }
+
+    return slug;
+  };
+
+  const handleRevokeDemo = (chatbotId: string) => {
+    if (!user?.id) return;
+    
+    const newSlug = generateDemoSlug(chatbotId);
+    
+    updateUserData(user.id, (data) => {
+      const chatbotIndex = data.chatbots.findIndex(bot => bot.id === chatbotId);
+      if (chatbotIndex >= 0) {
+        data.chatbots[chatbotIndex].demo = {
+          enabled: true,
+          slug: newSlug
+        };
+      }
+      return data;
+    });
+
+    const chatbot = chatbots.find(bot => bot.id === chatbotId);
+    if (chatbot) {
+      addActivity(`Link de demo revogado — ${chatbot.nome}`);
+    }
   };
 
 const handleSaveChatbot = (dadosChatbot: {
@@ -200,14 +255,16 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ChatbotTable
-            chatbots={chatbots}
-            academias={academias}
-            onEdit={handleEditChatbot}
-            onToggleStatus={handleToggleStatus}
-            onDelete={handleDeleteChatbot}
-            onTest={handleTestChatbot}
-          />
+            <ChatbotTable
+              chatbots={chatbots}
+              academias={academias}
+              onEdit={handleEditChatbot}
+              onToggleStatus={handleToggleStatus}
+              onDelete={handleDeleteChatbot}
+              onTest={handleTestChatbot}
+              onGenerateDemo={handleGenerateDemo}
+              onRevokeDemo={handleRevokeDemo}
+            />
         </CardContent>
       </Card>
 

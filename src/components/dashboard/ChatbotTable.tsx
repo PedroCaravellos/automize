@@ -19,10 +19,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Edit2, Trash2, Bot, Play, Pause, MessageSquare } from "lucide-react";
+import { Edit2, Trash2, Bot, Play, Pause, MessageSquare, ExternalLink } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
 import { Academia } from "./AcademiasSection";
 import ChatbotSimulator from "./ChatbotSimulator";
+import ChatbotShareModal from "./ChatbotShareModal";
 
 interface ChatbotTableProps {
   chatbots: Chatbot[];
@@ -31,12 +32,16 @@ interface ChatbotTableProps {
   onToggleStatus: (id: string) => void;
   onDelete: (id: string) => void;
   onTest: (chatbot: Chatbot) => void;
+  onGenerateDemo: (chatbotId: string) => string;
+  onRevokeDemo: (chatbotId: string) => void;
 }
 
-const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, onTest }: ChatbotTableProps) => {
+const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, onTest, onGenerateDemo, onRevokeDemo }: ChatbotTableProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareSelectedChatbot, setShareSelectedChatbot] = useState<Chatbot | null>(null);
 
   const getAcademiaNome = (academiaId: string) => {
     const academia = academias.find(a => a.id === academiaId);
@@ -74,6 +79,11 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
   const getSelectedAcademia = () => {
     if (!selectedChatbot) return null;
     return academias.find(a => a.id === selectedChatbot.academiaId) || null;
+  };
+
+  const handleShareClick = (chatbot: Chatbot) => {
+    setShareSelectedChatbot(chatbot);
+    setShareModalOpen(true);
   };
 
   if (chatbots.length === 0) {
@@ -120,6 +130,16 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
                       className="text-blue-600 hover:text-blue-600"
                     >
                       <MessageSquare className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleShareClick(chatbot)}
+                      aria-label={`Compartilhar ${chatbot.nome}`}
+                      className="text-purple-600 hover:text-purple-600"
+                    >
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
                     
                     <Button
@@ -195,6 +215,14 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
         onOpenChange={setSimulatorOpen}
         chatbot={selectedChatbot}
         academia={getSelectedAcademia()}
+      />
+
+      <ChatbotShareModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        chatbot={shareSelectedChatbot}
+        onGenerateLink={onGenerateDemo}
+        onRevokeLink={onRevokeDemo}
       />
     </>
   );
