@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { updateUserData } from "@/utils/userStorage";
 import ChatbotWizard from "./ChatbotWizard";
 import ChatbotTable from "./ChatbotTable";
 import ChatbotEditModal from "./ChatbotEditModal";
@@ -91,7 +92,10 @@ const templates: ChatbotTemplate[] = [
 ];
 
 const ChatbotsSection = () => {
-  const { hasAccess, academias, chatbots, createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot } = useAuth();
+  const { 
+    user, hasAccess, academias, chatbots, addActivity,
+    createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot 
+  } = useAuth();
   const { toast } = useToast();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -151,7 +155,9 @@ const handleToggleStatus = (chatbotId: string) => {
       setIsBlockModalOpen(true);
       return;
     }
+    // Test functionality is handled in the table component
   };
+
 
 const handleSaveChatbot = (dadosChatbot: {
     academiaId: string;
@@ -200,14 +206,14 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ChatbotTable
-            chatbots={chatbots}
-            academias={academias}
-            onEdit={handleEditChatbot}
-            onToggleStatus={handleToggleStatus}
-            onDelete={handleDeleteChatbot}
-            onTest={handleTestChatbot}
-          />
+            <ChatbotTable
+              chatbots={chatbots}
+              academias={academias}
+              onEdit={handleEditChatbot}
+              onToggleStatus={handleToggleStatus}
+              onDelete={handleDeleteChatbot}
+              onTest={handleTestChatbot}
+            />
         </CardContent>
       </Card>
 

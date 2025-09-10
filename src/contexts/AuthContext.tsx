@@ -66,6 +66,7 @@ interface AuthContextType {
   // Chatbots
   createChatbot: (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }) => ChatbotItem | null;
   updateChatbotMessages: (id: string, mensagens: ChatbotMessageSet) => ChatbotItem | null;
+  
   toggleChatbotStatus: (id: string) => ChatbotItem | null;
   deleteChatbot: (id: string) => ChatbotItem | null;
 }
@@ -335,6 +336,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return bot;
   };
 
+
   const value = {
     user,
     session,
@@ -358,6 +360,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAcademiaStatus,
     createChatbot,
     updateChatbotMessages,
+    
     toggleChatbotStatus,
     deleteChatbot,
   };
