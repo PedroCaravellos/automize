@@ -25,7 +25,7 @@ export default function IntegrationsSection() {
     verifyToken: ''
   });
 
-  const whatsappIntegration = subscription.integrations.whatsapp;
+  const whatsappIntegration = subscription.integrations?.whatsapp ?? { connected: false };
   const webhookUrl = `https://automiza.net/webhooks/whatsapp/user-id`;
 
   const handleActivateTrial = async () => {

@@ -107,13 +107,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [onboardingProgress, setOnboardingProgress] = useState<OnboardingProgress>({ simulatorOpened: false, demoShared: false });
   const [billingInfo, setBillingInfo] = useState<BillingInfo>({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [subscription, setSubscription] = useState<Subscription>({ 
+  const defaultSub: Subscription = { 
     planoAtivo: false, 
     nomePlano: '', 
     trialAtivo: false, 
     integrations: { whatsapp: { connected: false } } 
-  });
+  };
+  const [subscription, setSubscription] = useState<Subscription>(defaultSub);
   const hydratedRef = useRef(false);
+
+  const normalizeSubscription = (sub?: any): Subscription => {
+    const base = sub || {};
+    const integrations = base.integrations || {};
+    const whatsapp = integrations.whatsapp || { connected: false };
+    return {
+      planoAtivo: !!base.planoAtivo,
+      nomePlano: base.nomePlano || '',
+      trialAtivo: !!base.trialAtivo,
+      trialFimEm: base.trialFimEm,
+      proximaRenovacaoEm: base.proximaRenovacaoEm,
+      integrations: { whatsapp }
+    };
+  };
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -145,12 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
             setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
             setInvoices(data.invoices || []);
-            setSubscription(data.subscription || { 
-              planoAtivo: false, 
-              nomePlano: '', 
-              trialAtivo: false, 
-              integrations: { whatsapp: { connected: false } } 
-            });
+            setSubscription(normalizeSubscription(data.subscription));
             hydratedRef.current = true;
             setIsHydrating(false);
             
@@ -198,12 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
         setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
         setInvoices(data.invoices || []);
-        setSubscription(data.subscription || { 
-          planoAtivo: false, 
-          nomePlano: '', 
-          trialAtivo: false, 
-          integrations: { whatsapp: { connected: false } } 
-        });
+        setSubscription(normalizeSubscription(data.subscription));
         hydratedRef.current = true;
         setIsHydrating(false);
       }
