@@ -50,22 +50,28 @@ export interface Invoice {
   vencimentoEm: string; // ISO
 }
 
+export interface WhatsAppIntegration {
+  connected: boolean;
+  provider?: string;
+  wabaId?: string;
+  phoneId?: string;
+  apiKey?: string;
+  verifyToken?: string;
+  webhookUrl?: string;
+  connectedAt?: string;
+}
+
+export interface Integrations {
+  whatsapp: WhatsAppIntegration;
+}
+
 export interface Subscription {
   planoAtivo: boolean;
   nomePlano: '' | 'Basico' | 'Pro' | 'Premium';
   trialAtivo: boolean;
   trialFimEm?: string;           // ISO
   proximaRenovacaoEm?: string;   // ISO (30 dias após ativação)
-}
-
-export interface WhatsAppIntegration {
-  status: 'disconnected' | 'configured' | 'connected';
-  provider: string;
-  apiKey: string;
-  wabaId: string;
-  phoneNumberId: string;
-  verifyToken: string;
-  connectedAt?: string;
+  integrations: Integrations;
 }
 
 export interface UserStoredData {
@@ -76,7 +82,6 @@ export interface UserStoredData {
   billingInfo: BillingInfo;
   invoices: Invoice[];
   subscription: Subscription;
-  whatsappIntegration?: WhatsAppIntegration;
 }
 
 const keyFor = (userId: string) => `automiza:user:${userId}`;
@@ -91,7 +96,7 @@ export function getUserData(userId: string): UserStoredData {
       onboardingProgress: { simulatorOpened: false, demoShared: false },
       billingInfo: { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' },
       invoices: [],
-      subscription: { planoAtivo: false, nomePlano: '', trialAtivo: false }
+      subscription: { planoAtivo: false, nomePlano: '', trialAtivo: false, integrations: { whatsapp: { connected: false } } }
     };
     const parsed = JSON.parse(raw);
     return {
@@ -101,7 +106,7 @@ export function getUserData(userId: string): UserStoredData {
       onboardingProgress: parsed.onboardingProgress || { simulatorOpened: false, demoShared: false },
       billingInfo: parsed.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' },
       invoices: Array.isArray(parsed.invoices) ? parsed.invoices : [],
-      subscription: parsed.subscription || { planoAtivo: false, nomePlano: '', trialAtivo: false }
+      subscription: parsed.subscription || { planoAtivo: false, nomePlano: '', trialAtivo: false, integrations: { whatsapp: { connected: false } } }
     };
   } catch (e) {
     console.warn("Failed to parse user data from storage", e);
@@ -112,7 +117,7 @@ export function getUserData(userId: string): UserStoredData {
       onboardingProgress: { simulatorOpened: false, demoShared: false },
       billingInfo: { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' },
       invoices: [],
-      subscription: { planoAtivo: false, nomePlano: '', trialAtivo: false }
+      subscription: { planoAtivo: false, nomePlano: '', trialAtivo: false, integrations: { whatsapp: { connected: false } } }
     };
   }
 }
