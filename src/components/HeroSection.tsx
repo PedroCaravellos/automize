@@ -19,13 +19,11 @@ const HeroSection = () => {
         <div className="max-w-4xl mx-auto">
           {/* Logo/Brand */}
           <div className="flex items-center justify-center mb-8">
-            <div className="bg-secondary p-4 rounded-2xl shadow-button">
-              <img 
-                src="/lovable-uploads/419fc9aa-9a41-4cc0-b8ce-190b4a7e6869.png" 
-                alt="Automiza" 
-                className="h-12 w-12"
-              />
-            </div>
+            <img 
+              src="/lovable-uploads/41313d2d-3aa6-4431-aa6d-a794e1901398.png" 
+              alt="Automiza" 
+              className="h-16 w-16"
+            />
           </div>
 
           {/* Main Headline */}
