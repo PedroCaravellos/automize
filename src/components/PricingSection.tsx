@@ -8,56 +8,30 @@ import AuthModal from "./auth/AuthModal";
 const PricingSection = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>("");
-  const { user, selectPlan } = useAuth();
+  const { user, setIntendedRoute } = useAuth();
   const { toast } = useToast();
 
   const handlePlanClick = async (planName: string) => {
     if (user) {
-      // Usuário logado - ativar plano
-      try {
-        await selectPlan(planName);
-        toast({
-          title: "Plano ativado!",
-          description: `Plano ${planName} ativado com sucesso (simulação).`,
-        });
-        // Redirecionar para dashboard
-        window.location.href = "/dashboard";
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Não foi possível ativar o plano. Tente novamente.",
-          variant: "destructive",
-        });
-      }
+      // Usuário logado - redirecionar para dashboard com plan preselected
+      window.location.href = `/dashboard?tab=plan&plan=${planName}`;
     } else {
-      // Usuário não logado - abrir modal de auth
+      // Usuário não logado - guardar intenção e abrir modal de auth
+      const intendedUrl = `/dashboard?tab=plan&plan=${planName}`;
+      setIntendedRoute(intendedUrl);
       setSelectedPlan(planName);
       setAuthModalOpen(true);
     }
   };
 
   const handleAuthSuccess = async () => {
-    if (selectedPlan) {
-      // Aguardar um pouco para garantir que o usuário foi autenticado
-      setTimeout(async () => {
-        try {
-          await selectPlan(selectedPlan);
-          toast({
-            title: "Plano ativado!",
-            description: `Plano ${selectedPlan} ativado com sucesso (simulação).`,
-          });
-          window.location.href = "/dashboard";
-        } catch (error) {
-          console.error("Erro ao ativar plano:", error);
-        }
-      }, 1000);
-    }
     setAuthModalOpen(false);
+    // A navegação será feita pelo AuthContext após login via intendedRoute
   };
   
   const plans = [
     {
-      name: "Básico",
+      name: "Basico",
       price: "97",
       period: "mês",
       description: "Ideal para pequenos negócios que estão começando",

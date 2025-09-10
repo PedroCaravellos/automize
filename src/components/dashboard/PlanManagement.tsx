@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, ExternalLink, Crown, Zap, Building2, Download, CreditCard } from "lucide-react";
+import { Check, ExternalLink, Crown, Zap, Building2, Download, CreditCard, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,19 +21,27 @@ interface BillingFormData {
   endereco: string;
 }
 
-export default function PlanManagement() {
+interface PlanManagementProps {
+  preselectedPlan?: string | null;
+}
+
+export default function PlanManagement({ preselectedPlan }: PlanManagementProps) {
   const { 
     subscription, 
     billingInfo, 
     invoices, 
     updateBillingInfo, 
-    simulateActivatePlan, 
-    formatBRL
+    simulateActivatePlan,
+    simulateCancelSubscription, 
+    formatBRL,
+    isHydrating,
+    addActivity
   } = useAuth();
   const { toast } = useToast();
   
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<BillingFormData>({
     nomeOuRazao: billingInfo.nomeOuRazao,
@@ -41,6 +49,24 @@ export default function PlanManagement() {
     emailCobranca: billingInfo.emailCobranca,
     endereco: billingInfo.endereco
   });
+
+  // Update form data when billingInfo changes
+  useEffect(() => {
+    setFormData({
+      nomeOuRazao: billingInfo.nomeOuRazao,
+      documento: billingInfo.documento,
+      emailCobranca: billingInfo.emailCobranca,
+      endereco: billingInfo.endereco
+    });
+  }, [billingInfo]);
+
+  // Handle preselected plan from URL
+  useEffect(() => {
+    if (preselectedPlan && !subscription.planoAtivo && ['Basico', 'Pro', 'Premium'].includes(preselectedPlan)) {
+      // Visual indication of preselected plan - you could add highlighting logic here if needed
+      console.log(`Plan ${preselectedPlan} preselected from URL`);
+    }
+  }, [preselectedPlan, subscription.planoAtivo]);
 
 const PLAN_PRICES = {
   Basico: 9700,   // R$ 97,00 em centavos
@@ -125,6 +151,15 @@ const PLAN_PRICES = {
     }
   };
 
+  const handleCancelSubscription = () => {
+    simulateCancelSubscription();
+    setCancelModalOpen(false);
+    toast({
+      title: "Assinatura cancelada",
+      description: "Sua assinatura foi cancelada com sucesso (simulado).",
+    });
+  };
+
   const handleDownloadInvoice = (invoice: any) => {
     const html = `
 <!DOCTYPE html>
@@ -187,6 +222,14 @@ const PLAN_PRICES = {
           <div className="flex items-center gap-3">
             <Badge variant="default" className="bg-green-500">Ativo</Badge>
             <span className="font-medium">Plano {subscription.nomePlano}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCancelModalOpen(true)}
+              className="text-red-600 hover:text-red-700 text-sm"
+            >
+              Cancelar assinatura (simulado)
+            </Button>
           </div>
           {subscription.proximaRenovacaoEm && (
             <p className="text-sm text-muted-foreground">
@@ -214,6 +257,47 @@ const PLAN_PRICES = {
       </div>
     );
   };
+
+  // Show loading skeleton while hydrating
+  if (isHydrating) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-64" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-8 w-32" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {[1, 2, 3, 4].map((j) => (
+                        <Skeleton key={j} className="h-4 w-full" />
+                      ))}
+                    </div>
+                    <Skeleton className="h-10 w-full mt-4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const hasActivePlan = subscription.planoAtivo;
 
@@ -246,14 +330,16 @@ const PLAN_PRICES = {
             {plans.map((plan) => {
               const Icon = plan.icon;
               const active = subscription.planoAtivo && subscription.nomePlano === plan.name;
+              const isPreselected = preselectedPlan === plan.name && !subscription.planoAtivo;
               
               return (
-                <Card key={plan.name} className={`relative ${active ? 'ring-2 ring-primary' : ''}`}>
+                <Card key={plan.name} className={`relative ${active ? 'ring-2 ring-primary' : ''} ${isPreselected ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-2">
                       <Icon className="h-5 w-5" />
                       <CardTitle className="text-lg">{plan.name}</CardTitle>
                       {active && <Badge variant="default">Atual</Badge>}
+                      {isPreselected && <Badge variant="outline" className="border-blue-500 text-blue-600">Sugerido</Badge>}
                     </div>
                     <div className="text-2xl font-bold">{formatBRL(plan.price)}/mês</div>
                   </CardHeader>
@@ -437,6 +523,42 @@ const PLAN_PRICES = {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Subscription Modal */}
+      <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Cancelar assinatura
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              Você perderá acesso às funcionalidades premium ao final do ciclo atual. 
+              Confirmar cancelamento?
+            </p>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setCancelModalOpen(false)}
+                className="flex-1"
+              >
+                Voltar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleCancelSubscription}
+                className="flex-1"
+              >
+                Confirmar cancelamento (simulado)
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

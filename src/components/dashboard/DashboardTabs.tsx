@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,9 +14,43 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardTabs = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [preselectedPlan, setPreselectedPlan] = useState<string | null>(null);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const { activity, chatbots, academias, updateOnboardingProgress } = useAuth();
+  const { activity, chatbots, academias, updateOnboardingProgress, intendedRoute, setIntendedRoute } = useAuth();
+
+  // Handle query params on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    const plan = urlParams.get('plan');
+    
+    if (tab === 'plan') {
+      setActiveTab('plan');
+      if (plan && ['Basico', 'Pro', 'Premium'].includes(plan)) {
+        setPreselectedPlan(plan);
+      }
+      // Clear URL params after reading them
+      window.history.replaceState({}, '', '/dashboard');
+    }
+    
+    // Handle intended route from AuthContext (after login)
+    if (intendedRoute) {
+      const url = new URL(intendedRoute, window.location.origin);
+      const intentTab = url.searchParams.get('tab');
+      const intentPlan = url.searchParams.get('plan');
+      
+      if (intentTab === 'plan') {
+        setActiveTab('plan');
+        if (intentPlan && ['Basico', 'Pro', 'Premium'].includes(intentPlan)) {
+          setPreselectedPlan(intentPlan);
+        }
+      }
+      
+      // Clear intended route after consuming it
+      setIntendedRoute(null);
+    }
+  }, [intendedRoute, setIntendedRoute]);
 
   // Handlers for onboarding actions
   const handleOpenSimulator = () => {
@@ -190,7 +224,7 @@ const DashboardTabs = () => {
         {/* MEU PLANO */}
         <TabsContent value="plan" className="space-y-6" forceMount>
           <div className={activeTab !== "plan" ? "hidden" : ""}>
-            <PlanManagement />
+            <PlanManagement preselectedPlan={preselectedPlan} />
           </div>
         </TabsContent>
 

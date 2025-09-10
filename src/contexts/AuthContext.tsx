@@ -44,6 +44,8 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  isHydrating: boolean;
+  intendedRoute: string | null;
   // Auth
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -53,6 +55,7 @@ interface AuthContextType {
   selectPlan: (planName: string) => Promise<void>;
   hasAccess: () => boolean;
   trialDaysRemaining: () => number;
+  setIntendedRoute: (route: string | null) => void;
   // Global app state
   academias: AcademiaItem[];
   chatbots: ChatbotItem[];
@@ -69,6 +72,7 @@ interface AuthContextType {
   subscription: Subscription;
   updateBillingInfo: (info: Partial<BillingInfo>) => void;
   simulateActivatePlan: (plano: 'Basico' | 'Pro' | 'Premium') => { invoiceId: string };
+  simulateCancelSubscription: () => void;
   addInvoice: (invoice: Invoice) => void;
   formatBRL: (value: number) => string;
   // Academias
@@ -91,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isHydrating, setIsHydrating] = useState(true);
+  const [intendedRoute, setIntendedRoute] = useState<string | null>(null);
   const [academias, setAcademias] = useState<AcademiaItem[]>([]);
   const [chatbots, setChatbots] = useState<ChatbotItem[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
@@ -120,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-            setTimeout(() => {
+          setTimeout(() => {
             fetchProfile(session.user.id);
             // Hydrate user data from localStorage
             const data = getUserData(session.user.id);
@@ -132,6 +138,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setInvoices(data.invoices || []);
             setSubscription(data.subscription || { planoAtivo: false, nomePlano: '', trialAtivo: false });
             hydratedRef.current = true;
+            setIsHydrating(false);
+            
+            // Handle intended route navigation after successful login
+            if (intendedRoute && event === 'SIGNED_IN') {
+              setTimeout(() => {
+                window.location.href = intendedRoute;
+                setIntendedRoute(null);
+              }, 100);
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -143,6 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setInvoices([]);
           setSubscription({ planoAtivo: false, nomePlano: '', trialAtivo: false });
           hydratedRef.current = false;
+          setIsHydrating(false);
         }
         
         setLoading(false);
@@ -165,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setInvoices(data.invoices || []);
         setSubscription(data.subscription || { planoAtivo: false, nomePlano: '', trialAtivo: false });
         hydratedRef.current = true;
+        setIsHydrating(false);
       }
       setLoading(false);
     });
@@ -343,6 +360,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { invoiceId };
   };
 
+  const simulateCancelSubscription = () => {
+    // Update subscription to cancel plan
+    setSubscription(prev => ({
+      ...prev,
+      planoAtivo: false,
+      nomePlano: '',
+      proximaRenovacaoEm: undefined
+      // Keep trialAtivo as-is (don't reactivate trial)
+    }));
+
+    // Add activity
+    addActivity('Assinatura cancelada (simulado)');
+
+    // Update profile to sync with legacy system
+    if (profile) {
+      updateProfile({
+        plano_ativo: false,
+        nome_plano: null
+      });
+    }
+  };
+
   // Academia actions
   const addAcademia = (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>): AcademiaItem => {
     const nova: AcademiaItem = {
@@ -451,6 +490,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     profile,
     loading,
+    isHydrating,
+    intendedRoute,
     signUp,
     signIn,
     signOut,
@@ -459,6 +500,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     selectPlan,
     hasAccess,
     trialDaysRemaining,
+    setIntendedRoute,
     academias,
     chatbots,
     activity,
@@ -472,6 +514,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     subscription,
     updateBillingInfo,
     simulateActivatePlan,
+    simulateCancelSubscription,
     addInvoice,
     formatBRL,
     addAcademia,
