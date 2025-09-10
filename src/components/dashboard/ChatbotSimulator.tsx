@@ -171,7 +171,8 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
           throw new Error(error.message);
         }
 
-        const botResponse = data.response || data.fallback || "Desculpe, não consegui processar sua solicitação.";
+        const botResponse = data.response || "Desculpe, não consegui processar sua solicitação.";
+        const isFallback = data.fallback || false;
         
         setTimeout(() => {
           const botMessage: Message = {
@@ -183,6 +184,14 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
           
           setMessages(prev => [...prev, botMessage]);
           setIsTyping(false);
+          
+          // Show fallback notice if using fallback but keep AI active
+          if (isFallback) {
+            toast({
+              description: "Usando resposta de backup. A IA permanece ativa para próximas mensagens.",
+              variant: "default"
+            });
+          }
         }, 500);
 
       } else {
@@ -213,17 +222,29 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
     } catch (error) {
       console.error('Error sending message:', error);
       
+      // Try FAQ fallback instead of disabling AI
+      const faqMatch = findBestFaqMatch(currentInput);
+      
       setTimeout(() => {
+        const fallbackResponse = faqMatch 
+          ? replaceVariables(faqMatch.resposta)
+          : "Desculpe, estou enfrentando dificuldades técnicas temporárias. A IA continua ativa para as próximas mensagens.";
+          
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: "Desculpe, estou enfrentando dificuldades técnicas. Vou usar o modo básico.",
+          text: fallbackResponse,
           sender: "bot",
           timestamp: new Date(),
         };
         
         setMessages(prev => [...prev, errorMessage]);
         setIsTyping(false);
-        setUseAI(false); // Fallback to FAQ mode
+        
+        // Keep AI active, just show a toast
+        toast({
+          description: "Erro temporário. Usando resposta de backup. A IA permanece ativa.",
+          variant: "default"
+        });
       }, 500);
     }
   };

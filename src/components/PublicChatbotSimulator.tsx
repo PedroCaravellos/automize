@@ -147,7 +147,7 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
           throw new Error(error.message);
         }
 
-        const botResponse = data.response || data.fallback || "Desculpe, não consegui processar sua solicitação.";
+        const botResponse = data.response || "Desculpe, não consegui processar sua solicitação.";
         
         setTimeout(() => {
           const botMessage: Message = {
@@ -189,17 +189,25 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
     } catch (error) {
       console.error('Error sending message:', error);
       
+      // Try FAQ fallback instead of disabling AI
+      const faqMatch = findBestFaqMatch(currentInput);
+      
       setTimeout(() => {
+        const fallbackResponse = faqMatch 
+          ? replaceVariables(faqMatch.resposta)
+          : "Desculpe, estou enfrentando dificuldades técnicas temporárias. A IA continua ativa para as próximas mensagens.";
+          
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: "Desculpe, estou enfrentando dificuldades técnicas. Vou usar o modo básico.",
+          text: fallbackResponse,
           sender: "bot",
           timestamp: new Date(),
         };
         
         setMessages(prev => [...prev, errorMessage]);
         setIsTyping(false);
-        setUseAI(false); // Fallback to FAQ mode
+        
+        // Keep AI active
       }, 500);
     }
   };

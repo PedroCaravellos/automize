@@ -334,73 +334,135 @@ Você tem acesso completo às informações desta academia específica. Use esse
       { role: 'user', content: message }
     ];
 
-    console.log('Calling OpenAI with context for academia:', academia.nome);
-
-    let response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: messages,
-        max_tokens: 500,
-        temperature: 0.7,
-        tools: tools,
-        tool_choice: "auto"
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
+    // Helper function for FAQ fallback
+    const getFaqFallback = (userMessage: string) => {
+      const userWords = userMessage.toLowerCase().split(/\s+/).filter(word => word.length > 2);
       
-      // Handle rate limit specifically
-      if (response.status === 429) {
-        console.log('Rate limit hit, using FAQ fallback');
-        // Try to find a relevant FAQ response as fallback
-        const userWords = message.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-        
-        let bestMatch = null;
-        let maxMatches = 0;
-        
-        for (const faq of chatbot.perguntasFrequentes) {
-          const faqWords = faq.pergunta.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-          const matches = userWords.filter(word => 
-            faqWords.some(faqWord => faqWord.includes(word) || word.includes(faqWord))
-          ).length;
+      let bestMatch = null;
+      let maxMatches = 0;
+      
+      for (const faq of chatbot.perguntasFrequentes) {
+        const faqWords = faq.pergunta.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+        const matches = userWords.filter(word => 
+          faqWords.some(faqWord => faqWord.includes(word) || word.includes(faqWord))
+        ).length;
 
-          if (matches > maxMatches && matches > 0) {
-            maxMatches = matches;
-            bestMatch = faq;
-          }
+        if (matches > maxMatches && matches > 0) {
+          maxMatches = matches;
+          bestMatch = faq;
         }
-        
-        const fallbackResponse = bestMatch 
-          ? bestMatch.resposta 
-          : "Desculpe, estou com muitas solicitações no momento. Por favor, tente novamente em alguns segundos ou entre em contato conosco diretamente.";
-          
-        return new Response(JSON.stringify({ 
-          response: fallbackResponse,
-          fallback: true
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
       }
       
-      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
-    }
+      return bestMatch 
+        ? bestMatch.resposta 
+        : "Desculpe, estou com muitas solicitações no momento. Por favor, tente novamente em alguns segundos ou entre em contato conosco diretamente.";
+    };
 
-    let data = await response.json();
+    // Helper function for regex contact extraction
+    const extractContacts = (text: string) => {
+      const phoneRegex = /(?:\+55\s?)?(?:\(?[1-9]{2}\)?\s?)?(?:9\s?)?[6-9]\d{3}[-\s]?\d{4}/g;
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+      
+      const phones = text.match(phoneRegex) || [];
+      const emails = text.match(emailRegex) || [];
+      
+      return { phones, emails };
+    };
+
+    // Helper function for OpenAI API call with retries
+    const callOpenAI = async (requestBody: any, attempt = 1): Promise<any> => {
+      const maxRetries = 3;
+      const baseDelay = 1000; // 1 second
+      
+      // Add random delay (500-1500ms) before calling OpenAI
+      const randomDelay = 500 + Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, randomDelay));
+      
+      console.log(`OpenAI call attempt ${attempt} for academia: ${academia.nome}`);
+      
+      try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`OpenAI API error (attempt ${attempt}):`, {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText
+          });
+          
+          // Handle rate limit or server errors with retries
+          if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000; // Exponential backoff with jitter
+            console.log(`Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return callOpenAI(requestBody, attempt + 1);
+          }
+          
+          // If all retries failed or other error, return FAQ fallback
+          console.log(`OpenAI failed after ${attempt} attempts, using FAQ fallback`);
+          const fallbackResponse = getFaqFallback(message);
+          
+          return {
+            fallback: true,
+            choices: [{
+              message: {
+                content: fallbackResponse,
+                role: 'assistant'
+              }
+            }]
+          };
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error(`OpenAI call failed (attempt ${attempt}):`, error);
+        
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return callOpenAI(requestBody, attempt + 1);
+        }
+        
+        // Final fallback
+        console.log('All OpenAI attempts failed, using FAQ fallback');
+        const fallbackResponse = getFaqFallback(message);
+        
+        return {
+          fallback: true,
+          choices: [{
+            message: {
+              content: fallbackResponse,
+              role: 'assistant'
+            }
+          }]
+        };
+      }
+    };
+
+    console.log('Calling OpenAI with context for academia:', academia.nome);
+
+    let data = await callOpenAI({
+      model: 'gpt-4o-mini',
+      messages: messages,
+      max_tokens: 500,
+      temperature: 0.7,
+      tools: tools,
+      tool_choice: "auto"
+    });
+
     let aiMessage = data.choices[0].message;
 
     // Handle function calling
-    if (aiMessage.tool_calls) {
+    if (aiMessage.tool_calls && !data.fallback) {
       console.log('Processing tool calls:', aiMessage.tool_calls.length);
       
       // Add assistant message with tool calls to conversation
@@ -409,7 +471,26 @@ Você tem acesso completo às informações desta academia específica. Use esse
       // Process each tool call
       for (const toolCall of aiMessage.tool_calls) {
         const functionName = toolCall.function.name;
-        const functionArgs = JSON.parse(toolCall.function.arguments);
+        let functionArgs;
+        
+        try {
+          functionArgs = JSON.parse(toolCall.function.arguments);
+        } catch (parseError) {
+          console.error('Failed to parse function arguments:', parseError);
+          // Try regex fallback for lead creation
+          if (functionName === 'upsert_lead') {
+            const contacts = extractContacts(message);
+            const nameMatch = message.match(/(?:me chamo|eu sou|meu nome é|sou)\s+([A-Za-zÀ-ÿ\s]+)/i);
+            functionArgs = {
+              nome: nameMatch ? nameMatch[1].trim() : 'Cliente Interessado',
+              telefone: contacts.phones[0] || null,
+              email: contacts.emails[0] || null,
+              observacoes: 'Contato extraído via regex fallback'
+            };
+          } else {
+            functionArgs = {};
+          }
+        }
         
         console.log(`Executing function: ${functionName}`, functionArgs);
         
@@ -431,47 +512,57 @@ Você tem acesso completo às informações desta academia específica. Use esse
         });
       }
       
-      // Make another OpenAI call to get the final response
-      response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: messages,
-          max_tokens: 500,
-          temperature: 0.7,
-        }),
+      // Make another OpenAI call to get the final response with retries
+      const secondCallData = await callOpenAI({
+        model: 'gpt-4o-mini',
+        messages: messages,
+        max_tokens: 500,
+        temperature: 0.7,
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('OpenAI API error (second call):', errorText);
-        throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      if (secondCallData.fallback) {
+        console.log('Second OpenAI call failed, but functions were executed successfully');
+        // Use a generic success message since functions were already executed
+        const lastFunctionResult = JSON.parse(messages[messages.length - 1].content);
+        if (lastFunctionResult.success) {
+          aiMessage = {
+            content: lastFunctionResult.message || "Operação realizada com sucesso! Nossa equipe entrará em contato.",
+            role: 'assistant'
+          };
+        } else {
+          aiMessage = secondCallData.choices[0].message;
+        }
+      } else {
+        aiMessage = secondCallData.choices[0].message;
       }
-      
-      data = await response.json();
-      aiMessage = data.choices[0].message;
     }
 
     const aiResponse = aiMessage.content;
-    console.log('AI Response generated successfully');
+    const isFallback = data.fallback || false;
+    
+    console.log(`AI Response generated successfully${isFallback ? ' (using fallback)' : ''}`);
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
+      fallback: isFallback,
       usage: data.usage 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in chatbot-ai function:', error);
+    
+    // Return 200 with fallback to prevent frontend from disabling AI
+    const fallbackResponse = chatbot?.perguntasFrequentes?.length > 0 
+      ? chatbot.perguntasFrequentes[0].resposta
+      : "Desculpe, estou enfrentando dificuldades técnicas. Por favor, tente novamente em alguns minutos.";
+    
     return new Response(JSON.stringify({ 
-      error: error.message,
-      fallback: "Desculpe, estou enfrentando dificuldades técnicas. Por favor, tente novamente em alguns minutos."
+      response: fallbackResponse,
+      fallback: true,
+      error_reason: error.message
     }), {
-      status: 500,
+      status: 200, // Changed from 500 to 200
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
