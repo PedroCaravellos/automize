@@ -48,13 +48,26 @@ export default function VendasCRMSection() {
 
   const fetchData = async () => {
     try {
+      // Ensure we have a valid session before making requests
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn('No valid session found');
+        return;
+      }
+
       const [leadsResponse, vendasResponse] = await Promise.all([
         supabase.from('leads').select('*').order('created_at', { ascending: false }),
         supabase.from('vendas').select('*').order('created_at', { ascending: false })
       ]);
 
-      if (leadsResponse.error) throw leadsResponse.error;
-      if (vendasResponse.error) throw vendasResponse.error;
+      if (leadsResponse.error) {
+        console.error('Erro ao buscar leads:', leadsResponse.error);
+        throw leadsResponse.error;
+      }
+      if (vendasResponse.error) {
+        console.error('Erro ao buscar vendas:', vendasResponse.error);
+        throw vendasResponse.error;
+      }
 
       // Map the database data to our interface types, handling missing columns
       const mappedLeads = (leadsResponse.data || []).map(lead => ({

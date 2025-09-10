@@ -167,10 +167,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Function to ensure fresh session before making requests
+  const ensureFreshSession = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.warn('Failed to refresh session:', error);
+        return false;
+      }
+      setSession(session);
+      setUser(session?.user ?? null);
+      return true;
+    } catch (error) {
+      console.warn('Error refreshing session:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, !!session);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -219,23 +237,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing session and refresh if needed
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Initial session check:', !!session);
       
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        const data = getUserData(session.user.id);
-        setAcademias(data.academias || []);
-        setChatbots(data.chatbots || []);
-        setActivity(data.activity || []);
-        setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
-        setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
-        setInvoices(data.invoices || []);
-        setSubscription(normalizeSubscription(data.subscription));
-        hydratedRef.current = true;
-        setIsHydrating(false);
+      // If session exists but token might be expired, try to refresh
+      if (session) {
+        const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+        const finalSession = refreshedSession || session;
+        
+        setSession(finalSession);
+        setUser(finalSession?.user ?? null);
+        
+        if (finalSession?.user) {
+          fetchProfile(finalSession.user.id);
+          const data = getUserData(finalSession.user.id);
+          setAcademias(data.academias || []);
+          setChatbots(data.chatbots || []);
+          setActivity(data.activity || []);
+          setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
+          setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
+          setInvoices(data.invoices || []);
+          setSubscription(normalizeSubscription(data.subscription));
+          hydratedRef.current = true;
+          setIsHydrating(false);
+        }
+      } else {
+        setSession(null);
+        setUser(null);
       }
       setLoading(false);
     });

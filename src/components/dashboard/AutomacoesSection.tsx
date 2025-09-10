@@ -31,12 +31,22 @@ export default function AutomacoesSection() {
 
   const fetchAutomacoes = async () => {
     try {
+      // Ensure we have a valid session before making requests
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn('No valid session found for automacoes');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('automacoes')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar automações:', error);
+        throw error;
+      }
       setAutomacoes((data as Automacao[]) || []);
     } catch (error) {
       console.error('Erro ao buscar automações:', error);

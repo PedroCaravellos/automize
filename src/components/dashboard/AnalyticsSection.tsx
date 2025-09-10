@@ -26,6 +26,13 @@ export default function AnalyticsSection() {
 
   const fetchAnalytics = async () => {
     try {
+      // Ensure we have a valid session before making requests
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn('No valid session found for analytics');
+        return;
+      }
+
       // Buscar dados de leads
       const { data: leads, error: leadsError } = await supabase
         .from('leads')
