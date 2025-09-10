@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { getUserData, saveUserData, generateId, OnboardingProgress } from '@/utils/userStorage';
+import { getUserData, saveUserData, generateId, OnboardingProgress, BillingInfo, Invoice, Subscription, formatBRL } from '@/utils/userStorage';
 
 interface Profile {
   id: string;
@@ -63,6 +63,14 @@ interface AuthContextType {
   updateOnboardingProgress: (updates: Partial<OnboardingProgress>) => void;
   trialActive: boolean;
   planoAtivo: boolean;
+  // Billing and subscription
+  billingInfo: BillingInfo;
+  invoices: Invoice[];
+  subscription: Subscription;
+  updateBillingInfo: (info: Partial<BillingInfo>) => void;
+  simulateActivatePlan: (plano: 'Basico' | 'Pro' | 'Premium') => { invoiceId: string };
+  addInvoice: (invoice: Invoice) => void;
+  formatBRL: (value: number) => string;
   // Academias
   addAcademia: (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>) => AcademiaItem;
   updateAcademia: (id: string, updates: Partial<Omit<AcademiaItem, 'id' | 'createdAt'>>) => void;
@@ -87,6 +95,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [chatbots, setChatbots] = useState<ChatbotItem[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [onboardingProgress, setOnboardingProgress] = useState<OnboardingProgress>({ simulatorOpened: false, demoShared: false });
+  const [billingInfo, setBillingInfo] = useState<BillingInfo>({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [subscription, setSubscription] = useState<Subscription>({ planoAtivo: false, nomePlano: '', trialAtivo: false });
   const hydratedRef = useRef(false);
 
   const fetchProfile = async (userId: string) => {
@@ -236,8 +247,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Persist snapshot whenever data changes
   useEffect(() => {
     if (!user?.id || !hydratedRef.current) return;
-    saveUserData(user.id, { academias, chatbots, activity, onboardingProgress });
-  }, [user?.id, academias, chatbots, activity, onboardingProgress]);
+    saveUserData(user.id, { academias, chatbots, activity, onboardingProgress, billingInfo, invoices, subscription });
+  }, [user?.id, academias, chatbots, activity, onboardingProgress, billingInfo, invoices, subscription]);
 
   // Activity helper
   const addActivity = (text: string) => {
@@ -247,6 +258,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Onboarding progress
   const updateOnboardingProgress = (updates: Partial<OnboardingProgress>) => {
     setOnboardingProgress(prev => ({ ...prev, ...updates }));
+  };
+
+  // Billing and subscription
+  const updateBillingInfo = (info: Partial<BillingInfo>) => {
+    setBillingInfo(prev => ({ ...prev, ...info }));
+  };
+
+  const addInvoice = (invoice: Invoice) => {
+    setInvoices(prev => [invoice, ...prev]);
+  };
+
+  const PLAN_PRICES = {
+    'Basico': 9700,  // R$ 97,00 em centavos
+    'Pro': 19700,    // R$ 197,00 em centavos
+    'Premium': 39700 // R$ 397,00 em centavos
+  } as const;
+
+  const simulateActivatePlan = (plano: 'Basico' | 'Pro' | 'Premium'): { invoiceId: string } => {
+    const now = new Date();
+    const proximaRenovacao = new Date(now);
+    proximaRenovacao.setMonth(proximaRenovacao.getMonth() + 1);
+
+    const invoiceId = `INV-${now.getFullYear()}-${String(invoices.length + 1).padStart(4, '0')}`;
+    
+    const invoice: Invoice = {
+      id: invoiceId,
+      plano,
+      valor: PLAN_PRICES[plano],
+      status: 'paga',
+      criadoEm: now.toISOString(),
+      pagoEm: now.toISOString(),
+      vencimentoEm: now.toISOString()
+    };
+
+    // Update subscription
+    setSubscription({
+      planoAtivo: true,
+      nomePlano: plano,
+      trialAtivo: false,
+      trialFimEm: undefined,
+      proximaRenovacaoEm: proximaRenovacao.toISOString()
+    });
+
+    // Add invoice
+    addInvoice(invoice);
+
+    // Update profile to sync with legacy system
+    if (profile) {
+      updateProfile({
+        plano_ativo: true,
+        nome_plano: plano,
+        trial_ativo: false,
+        trial_fim_em: null
+      });
+    }
+
+    // Add activity
+    addActivity(`Plano ${plano} ativado (simulado) — Invoice ${invoiceId}`);
+
+    return { invoiceId };
   };
 
   // Academia actions
@@ -371,8 +442,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     addActivity,
     onboardingProgress,
     updateOnboardingProgress,
-    trialActive: profile?.trial_ativo || false,
-    planoAtivo: profile?.plano_ativo || false,
+    trialActive: profile?.trial_ativo || subscription.trialAtivo || false,
+    planoAtivo: profile?.plano_ativo || subscription.planoAtivo || false,
+    billingInfo,
+    invoices,
+    subscription,
+    updateBillingInfo,
+    simulateActivatePlan,
+    addInvoice,
+    formatBRL,
     addAcademia,
     updateAcademia,
     removeAcademia,

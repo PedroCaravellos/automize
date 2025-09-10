@@ -4,23 +4,111 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, ExternalLink, Crown, Zap, Building2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Check, ExternalLink, Crown, Zap, Building2, Download, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-export default function PlanManagement() {
-  const { profile, selectPlan, updateProfile, trialDaysRemaining } = useAuth();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+type PlanType = 'Basico' | 'Pro' | 'Premium';
 
-  const handlePlanActivation = async (planName: string) => {
+interface BillingFormData {
+  nomeOuRazao: string;
+  documento: string;
+  emailCobranca: string;
+  endereco: string;
+}
+
+export default function PlanManagement() {
+  const { 
+    profile, 
+    subscription, 
+    billingInfo, 
+    invoices, 
+    updateBillingInfo, 
+    simulateActivatePlan, 
+    formatBRL,
+    trialDaysRemaining 
+  } = useAuth();
+  const { toast } = useToast();
+  
+  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<BillingFormData>({
+    nomeOuRazao: billingInfo.nomeOuRazao,
+    documento: billingInfo.documento,
+    emailCobranca: billingInfo.emailCobranca,
+    endereco: billingInfo.endereco
+  });
+
+  const plans = [
+    {
+      name: "Básico" as PlanType,
+      price: 9700,
+      icon: Building2,
+      features: ["1 Academia", "1 Chatbot", "500 mensagens/mês", "Suporte via email"]
+    },
+    {
+      name: "Pro" as PlanType,
+      price: 19700,
+      icon: Zap,
+      features: ["3 Academias", "3 Chatbots", "2.000 mensagens/mês", "Relatórios básicos", "Suporte prioritário"]
+    },
+    {
+      name: "Premium" as PlanType,
+      price: 39700,
+      icon: Crown,
+      features: ["Academias ilimitadas", "Chatbots ilimitados", "Mensagens ilimitadas", "Relatórios avançados", "Suporte 24/7"]
+    }
+  ];
+
+  const handlePlanSelection = (planName: PlanType) => {
+    setSelectedPlan(planName);
+    setPaymentModalOpen(true);
+  };
+
+  const validateForm = () => {
+    const { nomeOuRazao, documento, emailCobranca, endereco } = formData;
+    
+    if (!nomeOuRazao.trim() || !emailCobranca.trim() || !endereco.trim()) {
+      return false;
+    }
+    
+    // Documento deve ter 11 ou 14 dígitos
+    const docNumbers = documento.replace(/\D/g, '');
+    if (docNumbers.length !== 11 && docNumbers.length !== 14) {
+      return false;
+    }
+    
+    // Email simples validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailCobranca)) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!selectedPlan || !validateForm()) return;
+    
     setIsLoading(true);
     try {
-      await selectPlan(planName);
+      // Update billing info
+      updateBillingInfo(formData);
+      
+      // Simulate plan activation
+      const { invoiceId } = simulateActivatePlan(selectedPlan);
+      
       toast({
         title: "Plano ativado!",
-        description: `Plano ${planName} ativado (simulação).`,
+        description: `Plano ${selectedPlan} ativado com sucesso (simulado).`,
       });
+      
+      setPaymentModalOpen(false);
+      setSelectedPlan(null);
     } catch (error) {
       toast({
         title: "Erro",
@@ -32,68 +120,82 @@ export default function PlanManagement() {
     }
   };
 
-  const handleCancelPlan = async () => {
-    setIsLoading(true);
-    try {
-      await updateProfile({ plano_ativo: false, nome_plano: null });
-      toast({
-        title: "Plano cancelado",
-        description: "Plano cancelado (simulado). Seu acesso pode ser limitado quando o trial expirar.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível cancelar o plano.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDownloadInvoice = (invoice: any) => {
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Comprovante de Pagamento - ${invoice.id}</title>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .header { text-align: center; margin-bottom: 40px; }
+    .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
+    .invoice-details { margin: 20px 0; }
+    .row { display: flex; justify-content: space-between; margin: 10px 0; }
+    .total { font-weight: bold; font-size: 18px; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">Automiza</div>
+    <h2>Comprovante de Pagamento</h2>
+  </div>
+  
+  <div class="invoice-details">
+    <h3>Dados da Empresa</h3>
+    <p>Automiza Tecnologia Ltda<br>
+    CNPJ: 00.000.000/0001-00<br>
+    contato@automiza.com.br</p>
+    
+    <h3>Dados do Cliente</h3>
+    <p>${billingInfo.nomeOuRazao}<br>
+    ${billingInfo.documento}<br>
+    ${billingInfo.emailCobranca}<br>
+    ${billingInfo.endereco}</p>
+    
+    <h3>Detalhes da Fatura</h3>
+    <div class="row"><span>Número:</span><span>${invoice.id}</span></div>
+    <div class="row"><span>Plano:</span><span>${invoice.plano}</span></div>
+    <div class="row"><span>Data de Emissão:</span><span>${new Date(invoice.criadoEm).toLocaleDateString('pt-BR')}</span></div>
+    <div class="row"><span>Status:</span><span>Pago</span></div>
+    <div class="row total"><span>Valor Total:</span><span>${formatBRL(invoice.valor)}</span></div>
+  </div>
+  
+  <script>window.print();</script>
+</body>
+</html>`;
+    
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   };
-
-  const handleGoToPlans = () => {
-    window.location.href = "/#planos";
-  };
-
-  const plans = [
-    {
-      name: "Básico",
-      icon: Building2,
-      features: ["1 Academia", "1 Chatbot", "500 mensagens/mês", "Suporte via email"]
-    },
-    {
-      name: "Pro",
-      icon: Zap,
-      features: ["3 Academias", "3 Chatbots", "2.000 mensagens/mês", "Relatórios básicos", "Suporte prioritário"]
-    },
-    {
-      name: "Premium",
-      icon: Crown,
-      features: ["Academias ilimitadas", "Chatbots ilimitados", "Mensagens ilimitadas", "Relatórios avançados", "Suporte 24/7"]
-    }
-  ];
 
   const getStatusCard = () => {
-    if (profile?.plano_ativo) {
+    if (subscription.planoAtivo) {
       return (
-        <div className="flex items-center justify-between">
+        <div className="space-y-2">
           <div className="flex items-center gap-3">
             <Badge variant="default" className="bg-green-500">Ativo</Badge>
-            <span className="font-medium">Plano {profile.nome_plano}</span>
+            <span className="font-medium">Plano {subscription.nomePlano}</span>
           </div>
+          {subscription.proximaRenovacaoEm && (
+            <p className="text-sm text-muted-foreground">
+              Próxima renovação em: {new Date(subscription.proximaRenovacaoEm).toLocaleDateString('pt-BR')}
+            </p>
+          )}
         </div>
       );
     }
     
-    if (profile?.trial_ativo) {
+    if (profile?.trial_ativo || subscription.trialAtivo) {
       const daysLeft = trialDaysRemaining();
       return (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="border-blue-500 text-blue-600">
-              Trial ativo — {daysLeft} {daysLeft === 1 ? 'dia restante' : 'dias restantes'}
-            </Badge>
-          </div>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="border-blue-500 text-blue-600">
+            Trial ativo — {daysLeft} {daysLeft === 1 ? 'dia restante' : 'dias restantes'}
+          </Badge>
         </div>
       );
     }
@@ -105,7 +207,8 @@ export default function PlanManagement() {
     );
   };
 
-  const showCallout = !profile?.plano_ativo && !profile?.trial_ativo;
+  const showCallout = !subscription.planoAtivo && !profile?.plano_ativo && !profile?.trial_ativo && !subscription.trialAtivo;
+  const hasActivePlan = subscription.planoAtivo || profile?.plano_ativo;
 
   return (
     <div className="space-y-6">
@@ -130,13 +233,21 @@ export default function PlanManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Trocar/Ativar plano (simulação)</CardTitle>
+          <CardTitle>Selecionar plano</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {hasActivePlan && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <p className="text-green-800 font-medium">
+                Você já possui o plano {subscription.nomePlano || profile?.nome_plano} ativo.
+              </p>
+            </div>
+          )}
+          
           <div className="grid gap-4 md:grid-cols-3">
             {plans.map((plan) => {
               const Icon = plan.icon;
-              const isCurrentPlan = profile?.nome_plano === plan.name;
+              const isCurrentPlan = subscription.nomePlano === plan.name || profile?.nome_plano === plan.name;
               
               return (
                 <Card key={plan.name} className={`relative ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}>
@@ -146,6 +257,7 @@ export default function PlanManagement() {
                       <CardTitle className="text-lg">{plan.name}</CardTitle>
                       {isCurrentPlan && <Badge variant="default">Atual</Badge>}
                     </div>
+                    <div className="text-2xl font-bold">{formatBRL(plan.price)}/mês</div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <ul className="space-y-2">
@@ -157,80 +269,178 @@ export default function PlanManagement() {
                       ))}
                     </ul>
                     <Button
-                      onClick={() => handlePlanActivation(plan.name)}
-                      disabled={isLoading || isCurrentPlan}
+                      onClick={() => handlePlanSelection(plan.name)}
+                      disabled={isLoading || hasActivePlan}
                       className="w-full"
                       variant={isCurrentPlan ? "outline" : "default"}
                     >
-                      {isCurrentPlan ? "Plano atual" : `Ativar ${plan.name}`}
+                      {hasActivePlan ? "Plano ativo" : "Selecionar"}
                     </Button>
                   </CardContent>
                 </Card>
               );
             })}
           </div>
-          
-          <div className="flex justify-center">
-            <Button variant="outline" onClick={handleGoToPlans}>
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Ver detalhes dos planos
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Gerenciamento (simulado)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {profile?.plano_ativo && (
-            <Button
-              variant="destructive"
-              onClick={handleCancelPlan}
-              disabled={isLoading}
-            >
-              Cancelar plano (simulado)
-            </Button>
+      {invoices.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de faturas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Data de emissão</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-mono text-sm">{invoice.id}</TableCell>
+                    <TableCell>{invoice.plano}</TableCell>
+                    <TableCell>{formatBRL(invoice.valor)}</TableCell>
+                    <TableCell>{new Date(invoice.criadoEm).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>
+                      <Badge variant={invoice.status === 'paga' ? 'default' : 'secondary'}>
+                        {invoice.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadInvoice(invoice)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Comprovante
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment Modal */}
+      <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pagamento (simulado)</DialogTitle>
+          </DialogHeader>
+          
+          {selectedPlan && (
+            <div className="space-y-6">
+              {/* Plan Summary */}
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Resumo do plano</h4>
+                <div className="flex justify-between items-center">
+                  <span>Plano {selectedPlan}</span>
+                  <span className="font-bold">{formatBRL(plans.find(p => p.name === selectedPlan)?.price || 0)}/mês</span>
+                </div>
+                <ul className="text-sm text-muted-foreground mt-2 space-y-1">
+                  {plans.find(p => p.name === selectedPlan)?.features.map((feature, index) => (
+                    <li key={index}>• {feature}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <Separator />
+
+              {/* Billing Form */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Dados de cobrança</h4>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="nomeOuRazao">Nome / Razão social *</Label>
+                  <Input
+                    id="nomeOuRazao"
+                    value={formData.nomeOuRazao}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nomeOuRazao: e.target.value }))}
+                    placeholder="Digite o nome ou razão social"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="documento">CPF/CNPJ *</Label>
+                  <Input
+                    id="documento"
+                    value={formData.documento}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      setFormData(prev => ({ ...prev, documento: value }));
+                    }}
+                    placeholder="Somente números"
+                    maxLength={14}
+                  />
+                  <p className="text-xs text-muted-foreground">11 dígitos (CPF) ou 14 dígitos (CNPJ)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emailCobranca">E-mail de cobrança *</Label>
+                  <Input
+                    id="emailCobranca"
+                    type="email"
+                    value={formData.emailCobranca}
+                    onChange={(e) => setFormData(prev => ({ ...prev, emailCobranca: e.target.value }))}
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endereco">Endereço *</Label>
+                  <Input
+                    id="endereco"
+                    value={formData.endereco}
+                    onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
+                    placeholder="Rua, nº, bairro, cidade/UF"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <h4 className="font-medium">Forma de pagamento</h4>
+                <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/30">
+                  <CreditCard className="h-4 w-4" />
+                  <span className="text-sm">Cartão de Crédito (Simulado)</span>
+                  <Badge variant="secondary" className="ml-auto text-xs">SIMULADO</Badge>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setPaymentModalOpen(false)}
+                  className="flex-1"
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleConfirmPayment}
+                  disabled={!validateForm() || isLoading}
+                  className="flex-1"
+                >
+                  {isLoading ? "Processando..." : "Confirmar (simulado)"}
+                </Button>
+              </div>
+            </div>
           )}
-          <p className="text-sm text-muted-foreground">
-            Cobrança automática e faturas serão habilitadas em etapa futura.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Faturas e dados de cobrança</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="cnpj">CNPJ/CPF</Label>
-              <Input id="cnpj" disabled placeholder="000.000.000-00" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="razao-social">Razão Social</Label>
-              <Input id="razao-social" disabled placeholder="Nome da empresa" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endereco">Endereço</Label>
-              <Input id="endereco" disabled placeholder="Endereço completo" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email-cobranca">E-mail de cobrança</Label>
-              <Input id="email-cobranca" disabled placeholder="contato@empresa.com" />
-            </div>
-          </div>
-          
-          <div className="mt-6">
-            <h4 className="font-medium mb-3">Histórico de faturas</h4>
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhuma fatura gerada ainda.
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

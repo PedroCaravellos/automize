@@ -33,11 +33,39 @@ export interface OnboardingProgress {
   demoShared: boolean;
 }
 
+export interface BillingInfo {
+  nomeOuRazao: string;
+  documento: string; // CPF ou CNPJ (somente números)
+  emailCobranca: string;
+  endereco: string;
+}
+
+export interface Invoice {
+  id: string;           // ex.: "INV-2025-0001"
+  plano: 'Basico' | 'Pro' | 'Premium';
+  valor: number;        // em centavos
+  status: 'paga' | 'pendente' | 'cancelada';
+  criadoEm: string;     // ISO
+  pagoEm?: string;      // ISO
+  vencimentoEm: string; // ISO
+}
+
+export interface Subscription {
+  planoAtivo: boolean;
+  nomePlano: '' | 'Basico' | 'Pro' | 'Premium';
+  trialAtivo: boolean;
+  trialFimEm?: string;           // ISO
+  proximaRenovacaoEm?: string;   // ISO (30 dias após ativação)
+}
+
 export interface UserStoredData {
   academias: StoredAcademia[];
   chatbots: StoredChatbot[];
   activity: ActivityEvent[];
   onboardingProgress: OnboardingProgress;
+  billingInfo: BillingInfo;
+  invoices: Invoice[];
+  subscription: Subscription;
 }
 
 const keyFor = (userId: string) => `automiza:user:${userId}`;
@@ -49,7 +77,10 @@ export function getUserData(userId: string): UserStoredData {
       academias: [], 
       chatbots: [], 
       activity: [],
-      onboardingProgress: { simulatorOpened: false, demoShared: false }
+      onboardingProgress: { simulatorOpened: false, demoShared: false },
+      billingInfo: { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' },
+      invoices: [],
+      subscription: { planoAtivo: false, nomePlano: '', trialAtivo: false }
     };
     const parsed = JSON.parse(raw);
     return {
@@ -57,11 +88,29 @@ export function getUserData(userId: string): UserStoredData {
       chatbots: Array.isArray(parsed.chatbots) ? parsed.chatbots : [],
       activity: Array.isArray(parsed.activity) ? parsed.activity : [],
       onboardingProgress: parsed.onboardingProgress || { simulatorOpened: false, demoShared: false },
+      billingInfo: parsed.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' },
+      invoices: Array.isArray(parsed.invoices) ? parsed.invoices : [],
+      subscription: parsed.subscription || { planoAtivo: false, nomePlano: '', trialAtivo: false }
     };
   } catch (e) {
     console.warn("Failed to parse user data from storage", e);
-    return { academias: [], chatbots: [], activity: [], onboardingProgress: { simulatorOpened: false, demoShared: false } };
+    return { 
+      academias: [], 
+      chatbots: [], 
+      activity: [], 
+      onboardingProgress: { simulatorOpened: false, demoShared: false },
+      billingInfo: { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' },
+      invoices: [],
+      subscription: { planoAtivo: false, nomePlano: '', trialAtivo: false }
+    };
   }
+}
+
+export function formatBRL(valueInCents: number): string {
+  return new Intl.NumberFormat('pt-BR', { 
+    style: 'currency', 
+    currency: 'BRL' 
+  }).format(valueInCents / 100);
 }
 
 export function saveUserData(userId: string, data: UserStoredData) {
