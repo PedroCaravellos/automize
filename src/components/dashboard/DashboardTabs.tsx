@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building, Bot, Zap, HelpCircle, Plus, CreditCard } from "lucide-react";
 import PlanManagement from "./PlanManagement";
 import IntegrationsSection from "./IntegrationsSection";
+import AcademiasSection from "./AcademiasSection";
 
 const DashboardTabs = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -109,23 +110,7 @@ const DashboardTabs = () => {
         </TabsContent>
 
         <TabsContent value="academias" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Minhas Academias
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Em breve você poderá cadastrar e gerenciar academias aqui.
-              </p>
-              <Button disabled className="w-full sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar academia
-              </Button>
-            </CardContent>
-          </Card>
+          <AcademiasSection />
         </TabsContent>
 
         <TabsContent value="chatbots" className="space-y-6">
