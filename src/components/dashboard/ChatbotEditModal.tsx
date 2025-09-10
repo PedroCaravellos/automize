@@ -150,6 +150,9 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
 
           <div>
             <Label>Perguntas Frequentes</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Configure respostas para as perguntas mais comuns. O chatbot inteligente também usará essas informações como base de conhecimento.
+            </p>
             <div className="space-y-3 mt-2">
               {mensagens.faqs.map((faq, index) => (
                 <Card key={index} className="p-4">
@@ -160,7 +163,7 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
                       </Label>
                       <Input
                         id={`pergunta-${index}`}
-                        placeholder="Digite a pergunta..."
+                        placeholder="Ex: Qual o horário de funcionamento?"
                         value={faq.pergunta}
                         onChange={(e) => handleInputChange("faq", `pergunta:${e.target.value}`, index)}
                         className={errors.faqs[index] ? "border-destructive" : ""}
@@ -172,7 +175,7 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
                       </Label>
                       <Textarea
                         id={`resposta-${index}`}
-                        placeholder="Digite a resposta..."
+                        placeholder="Ex: Funcionamos de segunda a sexta das 6h às 22h, sábados das 8h às 18h..."
                         value={faq.resposta}
                         onChange={(e) => handleInputChange("faq", `resposta:${e.target.value}`, index)}
                         rows={2}

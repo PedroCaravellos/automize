@@ -12,6 +12,14 @@ interface ChatRequest {
     nome: string;
     unidade?: string;
     segmento?: string;
+    endereco?: string;
+    telefone?: string;
+    whatsapp?: string;
+    horarios?: string;
+    modalidades?: string;
+    valores?: string;
+    promocoes?: string;
+    diferenciais?: string;
   };
   chatbot: {
     mensagemBoasVindas: string;
@@ -44,7 +52,7 @@ serve(async (req) => {
     const { message, academia, chatbot, conversationHistory = [] }: ChatRequest = await req.json();
     console.log('Processing message:', message);
 
-    // Build context about the academy
+    // Build comprehensive context about the academy
     let academiaContext = `Você é um assistente inteligente da academia ${academia.nome}`;
     
     if (academia.unidade) {
@@ -52,8 +60,39 @@ serve(async (req) => {
     }
     
     academiaContext += `. Este é um estabelecimento de ${academia.segmento || 'Academia'}.`;
+
+    // Add detailed academy information
+    if (academia.endereco) {
+      academiaContext += `\n\nENDEREÇO: ${academia.endereco}`;
+    }
+
+    if (academia.telefone || academia.whatsapp) {
+      academiaContext += `\n\nCONTATOS:`;
+      if (academia.telefone) academiaContext += `\n- Telefone: ${academia.telefone}`;
+      if (academia.whatsapp) academiaContext += `\n- WhatsApp: ${academia.whatsapp}`;
+    }
+
+    if (academia.horarios) {
+      academiaContext += `\n\nHORÁRIOS DE FUNCIONAMENTO:\n${academia.horarios}`;
+    }
+
+    if (academia.modalidades) {
+      academiaContext += `\n\nMODALIDADES DISPONÍVEIS:\n${academia.modalidades}`;
+    }
+
+    if (academia.valores) {
+      academiaContext += `\n\nPLANOS E VALORES:\n${academia.valores}`;
+    }
+
+    if (academia.promocoes) {
+      academiaContext += `\n\nPROMOÇÕES ATUAIS:\n${academia.promocoes}`;
+    }
+
+    if (academia.diferenciais) {
+      academiaContext += `\n\nDIFERENCIAIS DA ACADEMIA:\n${academia.diferenciais}`;
+    }
     
-    academiaContext += ` Você deve ser um assistente prestativo e conhecedor da academia, ajudando com informações sobre horários, modalidades, planos, matrículas e agendamentos.`;
+    academiaContext += `\n\nVocê deve ser um assistente prestativo e conhecedor da academia, ajudando com informações sobre horários, modalidades, planos, matrículas e agendamentos. Use sempre as informações específicas fornecidas acima.`;
 
     // Add FAQ context
     if (chatbot.perguntasFrequentes?.length > 0) {
@@ -63,18 +102,21 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `${academiaContext}
+const systemPrompt = `${academiaContext}
 
 INSTRUÇÕES IMPORTANTES:
 1. Você deve ser prestativo, amigável e conhecer bem a academia
 2. Responda sempre em português brasileiro
-3. Se o cliente perguntar sobre agendamentos, horários ou preços, use as informações fornecidas
-4. Se o cliente demonstrar interesse em matricular-se ou conhecer a academia, seja proativo em ajudar
-5. Se não souber uma informação específica, seja honesto e ofereça ajuda para encontrar a resposta
-6. Mantenha respostas concisas mas completas
-7. Se o cliente quiser encerrar, use a mensagem: "${chatbot.mensagemEncerramento}"
+3. Use SEMPRE as informações específicas fornecidas acima sobre a academia (horários, modalidades, valores, etc.)
+4. Se o cliente perguntar sobre agendamentos, horários, preços ou qualquer informação, priorize os dados fornecidos
+5. Se o cliente demonstrar interesse em matricular-se ou conhecer a academia, seja proativo e mencione as promoções atuais
+6. Se não souber uma informação específica que não foi fornecida, seja honesto e sugira entrar em contato pelos canais disponíveis
+7. Mantenha respostas concisas mas completas, sempre personalizadas para esta academia específica
+8. Destaque os diferenciais da academia quando relevante para a conversa
+9. Se o cliente quiser encerrar, use a mensagem: "${chatbot.mensagemEncerramento}"
+10. NUNCA invente informações que não foram fornecidas - seja sempre preciso
 
-Sempre tente ajudar o cliente da melhor forma possível com base nas informações da academia.`;
+Você tem acesso completo às informações desta academia específica. Use esse conhecimento para dar respostas personalizadas e úteis.`;
 
     // Prepare messages for OpenAI
     const messages = [

@@ -15,6 +15,14 @@ export interface Academia {
   segmento: "Academia" | "Estúdio" | "Box";
   statusChatbot: "Nenhum" | "Em configuração" | "Ativo";
   createdAt: string;
+  endereco?: string;
+  telefone?: string;
+  whatsapp?: string;
+  horarios?: string;
+  modalidades?: string;
+  valores?: string;
+  promocoes?: string;
+  diferenciais?: string;
 }
 
 // Using global state from AuthContext; no props needed
@@ -49,17 +57,13 @@ const handleSaveAcademia = (academiaData: Omit<Academia, "id" | "createdAt">) =>
       updateAcademia(editingAcademia.id, academiaData);
       toast({
         title: "Academia atualizada",
-        description: "Os dados da academia foram atualizados com sucesso.",
+        description: "Os dados da academia foram atualizados com sucesso. O chatbot agora tem mais contexto!",
       });
     } else {
-      addAcademia({
-        nome: academiaData.nome,
-        unidade: academiaData.unidade,
-        segmento: academiaData.segmento,
-      });
+      addAcademia(academiaData);
       toast({
         title: "Academia cadastrada",
-        description: "A academia foi cadastrada com sucesso.",
+        description: "A academia foi cadastrada com sucesso. Configure o chatbot para começar!",
       });
     }
     setIsModalOpen(false);

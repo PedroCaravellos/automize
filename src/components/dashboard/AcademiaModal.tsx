@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -31,12 +32,28 @@ const AcademiaModal = ({ open, onOpenChange, academia, onSave }: AcademiaModalPr
     nome: "",
     unidade: "",
     segmento: "" as "Academia" | "Estúdio" | "Box" | "",
+    endereco: "",
+    telefone: "",
+    whatsapp: "",
+    horarios: "",
+    modalidades: "",
+    valores: "",
+    promocoes: "",
+    diferenciais: "",
   });
 
   const [errors, setErrors] = useState({
     nome: "",
     unidade: "",
     segmento: "",
+    endereco: "",
+    telefone: "",
+    whatsapp: "",
+    horarios: "",
+    modalidades: "",
+    valores: "",
+    promocoes: "",
+    diferenciais: "",
   });
 
   useEffect(() => {
@@ -45,15 +62,43 @@ const AcademiaModal = ({ open, onOpenChange, academia, onSave }: AcademiaModalPr
         nome: academia.nome,
         unidade: academia.unidade,
         segmento: academia.segmento,
+        endereco: academia.endereco || "",
+        telefone: academia.telefone || "",
+        whatsapp: academia.whatsapp || "",
+        horarios: academia.horarios || "",
+        modalidades: academia.modalidades || "",
+        valores: academia.valores || "",
+        promocoes: academia.promocoes || "",
+        diferenciais: academia.diferenciais || "",
       });
     } else {
       setFormData({
         nome: "",
         unidade: "",
         segmento: "",
+        endereco: "",
+        telefone: "",
+        whatsapp: "",
+        horarios: "",
+        modalidades: "",
+        valores: "",
+        promocoes: "",
+        diferenciais: "",
       });
     }
-    setErrors({ nome: "", unidade: "", segmento: "" });
+    setErrors({ 
+      nome: "", 
+      unidade: "", 
+      segmento: "",
+      endereco: "",
+      telefone: "",
+      whatsapp: "",
+      horarios: "",
+      modalidades: "",
+      valores: "",
+      promocoes: "",
+      diferenciais: "",
+    });
   }, [academia, open]);
 
   const validateForm = () => {
@@ -61,6 +106,14 @@ const AcademiaModal = ({ open, onOpenChange, academia, onSave }: AcademiaModalPr
       nome: "",
       unidade: "",
       segmento: "",
+      endereco: "",
+      telefone: "",
+      whatsapp: "",
+      horarios: "",
+      modalidades: "",
+      valores: "",
+      promocoes: "",
+      diferenciais: "",
     };
 
     if (!formData.nome.trim()) {
@@ -83,6 +136,14 @@ const AcademiaModal = ({ open, onOpenChange, academia, onSave }: AcademiaModalPr
         nome: formData.nome.trim(),
         unidade: formData.unidade.trim(),
         segmento: formData.segmento as "Academia" | "Estúdio" | "Box",
+        endereco: formData.endereco.trim(),
+        telefone: formData.telefone.trim(),
+        whatsapp: formData.whatsapp.trim(),
+        horarios: formData.horarios.trim(),
+        modalidades: formData.modalidades.trim(),
+        valores: formData.valores.trim(),
+        promocoes: formData.promocoes.trim(),
+        diferenciais: formData.diferenciais.trim(),
         statusChatbot: academia?.statusChatbot || "Nenhum",
       });
     }
@@ -97,20 +158,20 @@ const AcademiaModal = ({ open, onOpenChange, academia, onSave }: AcademiaModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {academia ? "Editar Academia" : "Adicionar Academia"}
           </DialogTitle>
           <DialogDescription>
             {academia 
-              ? "Atualize as informações da academia."
-              : "Preencha os dados para cadastrar uma nova academia."
+              ? "Atualize as informações da academia para melhorar as respostas do chatbot."
+              : "Preencha os dados para cadastrar uma nova academia. Quanto mais detalhes, melhor será o chatbot."
             }
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-6 py-4">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome da Academia *</Label>
             <Input
@@ -157,6 +218,93 @@ const AcademiaModal = ({ open, onOpenChange, academia, onSave }: AcademiaModalPr
             {errors.segmento && (
               <p className="text-sm text-destructive">{errors.segmento}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="endereco">Endereço Completo</Label>
+            <Input
+              id="endereco"
+              placeholder="Ex: Rua das Flores, 123 - Centro, São Paulo - SP"
+              value={formData.endereco}
+              onChange={(e) => handleInputChange("endereco", e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="telefone">Telefone</Label>
+              <Input
+                id="telefone"
+                placeholder="Ex: (11) 1234-5678"
+                value={formData.telefone}
+                onChange={(e) => handleInputChange("telefone", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Input
+                id="whatsapp"
+                placeholder="Ex: (11) 98765-4321"
+                value={formData.whatsapp}
+                onChange={(e) => handleInputChange("whatsapp", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="horarios">Horários de Funcionamento</Label>
+            <Textarea
+              id="horarios"
+              placeholder="Ex: Segunda a Sexta: 6h às 23h | Sábado: 8h às 18h | Domingo: 9h às 16h"
+              value={formData.horarios}
+              onChange={(e) => handleInputChange("horarios", e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="modalidades">Modalidades Disponíveis</Label>
+            <Textarea
+              id="modalidades"
+              placeholder="Ex: Musculação, Natação, Pilates, Yoga, Crossfit, Zumba, Spinning, Judô..."
+              value={formData.modalidades}
+              onChange={(e) => handleInputChange("modalidades", e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="valores">Planos e Valores</Label>
+            <Textarea
+              id="valores"
+              placeholder="Ex: Mensal: R$ 89,90 | Trimestral: R$ 239,90 | Anual: R$ 899,90 | Taxa de matrícula: R$ 50,00"
+              value={formData.valores}
+              onChange={(e) => handleInputChange("valores", e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="promocoes">Promoções Atuais</Label>
+            <Textarea
+              id="promocoes"
+              placeholder="Ex: Matrícula grátis em janeiro | 50% desconto no primeiro mês | Traga um amigo e ganhe..."
+              value={formData.promocoes}
+              onChange={(e) => handleInputChange("promocoes", e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="diferenciais">Diferenciais da Academia</Label>
+            <Textarea
+              id="diferenciais"
+              placeholder="Ex: Equipamentos importados, Personal trainer incluso, Estacionamento gratuito, App exclusivo..."
+              value={formData.diferenciais}
+              onChange={(e) => handleInputChange("diferenciais", e.target.value)}
+              rows={3}
+            />
           </div>
         </div>
 

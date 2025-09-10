@@ -37,6 +37,14 @@ interface AcademiaItem {
   segmento: 'Academia' | 'Estúdio' | 'Box';
   statusChatbot: 'Nenhum' | 'Em configuração' | 'Ativo';
   createdAt: string;
+  endereco?: string;
+  telefone?: string;
+  whatsapp?: string;
+  horarios?: string;
+  modalidades?: string;
+  valores?: string;
+  promocoes?: string;
+  diferenciais?: string;
 }
 
 interface AuthContextType {
