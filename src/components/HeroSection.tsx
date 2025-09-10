@@ -20,7 +20,11 @@ const HeroSection = () => {
           {/* Logo/Brand */}
           <div className="flex items-center justify-center mb-8">
             <div className="bg-secondary p-4 rounded-2xl shadow-button">
-              <Bot className="h-12 w-12 text-primary-foreground" />
+              <img 
+                src="/lovable-uploads/419fc9aa-9a41-4cc0-b8ce-190b4a7e6869.png" 
+                alt="Automiza" 
+                className="h-12 w-12"
+              />
             </div>
           </div>
 
