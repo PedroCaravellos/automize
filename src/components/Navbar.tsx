@@ -92,7 +92,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex items-center justify-center flex-1">
+          <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
             <div className="flex items-center space-x-8">
               {navLinks.map((link) => (
                 <button
