@@ -31,7 +31,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route path="/demo/:slug" element={<DemoPage />} />
+            <Route path="/demo" element={<DemoPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

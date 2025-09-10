@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Bot, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PublicChatbotSimulator from "@/components/PublicChatbotSimulator";
-import * as LZString from "lz-string";
+import { decompressFromEncodedURIComponent } from "lz-string";
 
 interface DemoData {
   botName: string;
@@ -34,7 +34,7 @@ const DemoPage = () => {
       }
 
       try {
-        const decompressed = LZString.decompressFromEncodedURIComponent(compressedData);
+        const decompressed = decompressFromEncodedURIComponent(compressedData);
         if (!decompressed) {
           setNotFound(true);
           setLoading(false);
