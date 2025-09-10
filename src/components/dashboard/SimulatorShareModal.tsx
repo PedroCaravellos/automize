@@ -13,6 +13,7 @@ import { Copy, RotateCcw, ExternalLink } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
 import { Academia } from "./AcademiasSection";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SimulatorShareModalProps {
   open: boolean;
@@ -30,11 +31,13 @@ const SimulatorShareModal = ({
   academia
 }: SimulatorShareModalProps) => {
   const { toast } = useToast();
+  const { updateOnboardingProgress } = useAuth();
   const [currentLink, setCurrentLink] = useState("");
 
   const handleGenerateLink = () => {
     const newLink = onGenerateLink();
     setCurrentLink(newLink);
+    updateOnboardingProgress({ demoShared: true });
     toast({ description: "Link de demo gerado com sucesso!" });
   };
 

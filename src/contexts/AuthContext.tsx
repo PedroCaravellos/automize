@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { getUserData, saveUserData, generateId } from '@/utils/userStorage';
+import { getUserData, saveUserData, generateId, OnboardingProgress } from '@/utils/userStorage';
 
 interface Profile {
   id: string;
@@ -58,6 +58,11 @@ interface AuthContextType {
   chatbots: ChatbotItem[];
   activity: ActivityEvent[];
   addActivity: (text: string) => void;
+  // Onboarding progress
+  onboardingProgress: OnboardingProgress;
+  updateOnboardingProgress: (updates: Partial<OnboardingProgress>) => void;
+  trialActive: boolean;
+  planoAtivo: boolean;
   // Academias
   addAcademia: (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>) => AcademiaItem;
   updateAcademia: (id: string, updates: Partial<Omit<AcademiaItem, 'id' | 'createdAt'>>) => void;
@@ -81,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [academias, setAcademias] = useState<AcademiaItem[]>([]);
   const [chatbots, setChatbots] = useState<ChatbotItem[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const [onboardingProgress, setOnboardingProgress] = useState<OnboardingProgress>({ simulatorOpened: false, demoShared: false });
   const hydratedRef = useRef(false);
 
   const fetchProfile = async (userId: string) => {
@@ -110,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setAcademias(data.academias || []);
             setChatbots(data.chatbots || []);
             setActivity(data.activity || []);
+            setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
             hydratedRef.current = true;
           }, 0);
         } else {
@@ -117,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAcademias([]);
           setChatbots([]);
           setActivity([]);
+          setOnboardingProgress({ simulatorOpened: false, demoShared: false });
           hydratedRef.current = false;
         }
         
@@ -135,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAcademias(data.academias || []);
         setChatbots(data.chatbots || []);
         setActivity(data.activity || []);
+        setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
         hydratedRef.current = true;
       }
       setLoading(false);
@@ -170,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAcademias([]);
     setChatbots([]);
     setActivity([]);
+    setOnboardingProgress({ simulatorOpened: false, demoShared: false });
     hydratedRef.current = false;
   };
 
@@ -226,12 +236,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Persist snapshot whenever data changes
   useEffect(() => {
     if (!user?.id || !hydratedRef.current) return;
-    saveUserData(user.id, { academias, chatbots, activity });
-  }, [user?.id, academias, chatbots, activity]);
+    saveUserData(user.id, { academias, chatbots, activity, onboardingProgress });
+  }, [user?.id, academias, chatbots, activity, onboardingProgress]);
 
   // Activity helper
   const addActivity = (text: string) => {
     setActivity(prev => [{ id: generateId('act'), ts: new Date().toISOString(), text }, ...prev].slice(0, 20));
+  };
+
+  // Onboarding progress
+  const updateOnboardingProgress = (updates: Partial<OnboardingProgress>) => {
+    setOnboardingProgress(prev => ({ ...prev, ...updates }));
   };
 
   // Academia actions
@@ -354,6 +369,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     chatbots,
     activity,
     addActivity,
+    onboardingProgress,
+    updateOnboardingProgress,
+    trialActive: profile?.trial_ativo || false,
+    planoAtivo: profile?.plano_ativo || false,
     addAcademia,
     updateAcademia,
     removeAcademia,

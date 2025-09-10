@@ -7,11 +7,51 @@ import PlanManagement from "./PlanManagement";
 import IntegrationsSection from "./IntegrationsSection";
 import AcademiasSection from "./AcademiasSection";
 import ChatbotsSection from "./ChatbotsSection";
+import OnboardingChecklist from "./OnboardingChecklist";
+import ChatbotSimulator from "./ChatbotSimulator";
+import SimulatorShareModal from "./SimulatorShareModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardTabs = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  const { activity } = useAuth();
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const { activity, chatbots, academias, updateOnboardingProgress } = useAuth();
+
+  // Handlers for onboarding actions
+  const handleOpenSimulator = () => {
+    const firstBot = chatbots[0];
+    if (firstBot) {
+      setSimulatorOpen(true);
+      updateOnboardingProgress({ simulatorOpened: true });
+    }
+  };
+
+  const handleOpenShareDemo = () => {
+    const firstBot = chatbots[0];
+    if (firstBot) {
+      setSimulatorOpen(true);
+      setShareModalOpen(true);
+      updateOnboardingProgress({ demoShared: true });
+    }
+  };
+
+  const generateDemoLink = (): string => {
+    const firstBot = chatbots[0];
+    const firstAcademia = academias.find(a => a.id === firstBot?.academiaId);
+    if (!firstBot || !firstAcademia) return "";
+
+    // This is simplified - in real implementation this would use LZ-String compression
+    const demoData = {
+      botName: firstBot.nome,
+      academyName: `${firstAcademia.nome} - ${firstAcademia.unidade}`,
+      template: firstBot.template,
+      mensagens: firstBot.mensagens,
+      ts: Date.now()
+    };
+
+    return `${window.location.origin}/demo?d=${encodeURIComponent(JSON.stringify(demoData))}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -28,6 +68,13 @@ const DashboardTabs = () => {
         {/* VISÃO GERAL */}
         <TabsContent value="overview" className="space-y-6" forceMount>
           <div className={activeTab !== "overview" ? "hidden" : ""}>
+            {/* Onboarding Checklist */}
+            <OnboardingChecklist
+              onNavigateTo={setActiveTab}
+              onOpenSimulator={handleOpenSimulator}
+              onOpenShareDemo={handleOpenShareDemo}
+            />
+
             {/* Cards de métricas */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <Card>
@@ -36,8 +83,10 @@ const DashboardTabs = () => {
                   <Bot className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">Nenhum chatbot criado ainda</p>
+                  <div className="text-2xl font-bold">{chatbots.filter(c => c.status === 'Ativo').length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {chatbots.length === 0 ? "Nenhum chatbot criado ainda" : `${chatbots.length} total`}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -169,6 +218,25 @@ const DashboardTabs = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Simulator Modal for onboarding actions */}
+      {chatbots.length > 0 && (
+        <>
+          <ChatbotSimulator
+            open={simulatorOpen}
+            onOpenChange={setSimulatorOpen}
+            chatbot={chatbots[0]}
+            academia={academias.find(a => a.id === chatbots[0].academiaId) || null}
+          />
+          <SimulatorShareModal
+            open={shareModalOpen}
+            onOpenChange={setShareModalOpen}
+            onGenerateLink={generateDemoLink}
+            chatbot={chatbots[0]}
+            academia={academias.find(a => a.id === chatbots[0].academiaId) || null}
+          />
+        </>
+      )}
     </div>
   );
 };

@@ -28,10 +28,16 @@ export interface ActivityEvent {
   text: string; // e.g., "Chatbot criado – Bot – Academia X"
 }
 
+export interface OnboardingProgress {
+  simulatorOpened: boolean;
+  demoShared: boolean;
+}
+
 export interface UserStoredData {
   academias: StoredAcademia[];
   chatbots: StoredChatbot[];
   activity: ActivityEvent[];
+  onboardingProgress: OnboardingProgress;
 }
 
 const keyFor = (userId: string) => `automiza:user:${userId}`;
@@ -39,16 +45,22 @@ const keyFor = (userId: string) => `automiza:user:${userId}`;
 export function getUserData(userId: string): UserStoredData {
   try {
     const raw = localStorage.getItem(keyFor(userId));
-    if (!raw) return { academias: [], chatbots: [], activity: [] };
+    if (!raw) return { 
+      academias: [], 
+      chatbots: [], 
+      activity: [],
+      onboardingProgress: { simulatorOpened: false, demoShared: false }
+    };
     const parsed = JSON.parse(raw);
     return {
       academias: Array.isArray(parsed.academias) ? parsed.academias : [],
       chatbots: Array.isArray(parsed.chatbots) ? parsed.chatbots : [],
       activity: Array.isArray(parsed.activity) ? parsed.activity : [],
+      onboardingProgress: parsed.onboardingProgress || { simulatorOpened: false, demoShared: false },
     };
   } catch (e) {
     console.warn("Failed to parse user data from storage", e);
-    return { academias: [], chatbots: [], activity: [] };
+    return { academias: [], chatbots: [], activity: [], onboardingProgress: { simulatorOpened: false, demoShared: false } };
   }
 }
 

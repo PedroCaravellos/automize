@@ -35,7 +35,7 @@ interface ChatbotSimulatorProps {
 }
 
 const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimulatorProps) => {
-  const { addActivity } = useAuth();
+  const { addActivity, updateOnboardingProgress } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -214,6 +214,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
   useEffect(() => {
     if (open && chatbot && academia) {
       initializeConversation();
+      updateOnboardingProgress({ simulatorOpened: true });
       // Add activity log
       addActivity(`Teste de chatbot iniciado — ${chatbot.nome} (${academia.nome}) — ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
     }
