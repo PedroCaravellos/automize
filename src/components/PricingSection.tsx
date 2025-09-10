@@ -53,7 +53,7 @@ const PricingSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-accent">
+    <section id="planos" className="py-20 bg-gradient-accent">
       <div className="container px-4 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-6">

@@ -3,7 +3,7 @@ import { ArrowRight, Bot, Zap } from "lucide-react";
 
 const HeroSection = () => {
   return (
-    <section className="min-h-screen flex items-center justify-center bg-gradient-hero relative overflow-hidden">
+    <section id="topo" className="min-h-screen flex items-center justify-center bg-gradient-hero relative overflow-hidden pt-16">
       {/* Background Animation Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 left-20 w-32 h-32 bg-secondary/20 rounded-full animate-float"></div>

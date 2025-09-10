@@ -2,16 +2,17 @@ import { Bot, Instagram, Linkedin, Mail, Phone } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-foreground text-primary-foreground py-16">
+    <footer id="contato" className="bg-foreground text-primary-foreground py-16">
       <div className="container px-4 mx-auto">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-secondary p-3 rounded-xl">
-                <Bot className="h-8 w-8 text-primary-foreground" />
-              </div>
-              <span className="text-2xl font-heading font-bold">Automiza</span>
+            <div className="mb-6">
+              <img 
+                src="/lovable-uploads/660751fc-5937-48f4-9ba1-b37f69bc8c83.png" 
+                alt="Automiza - Seu negócio no piloto automático" 
+                className="h-12"
+              />
             </div>
             <p className="text-primary-foreground/80 font-body leading-relaxed mb-6 max-w-md">
               Automatize o atendimento do seu negócio com chatbots inteligentes e personalizados. 
@@ -30,15 +31,16 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Links Úteis */}
+          {/* Navegação */}
           <div>
-            <h3 className="font-heading font-semibold text-lg mb-6">Links Úteis</h3>
+            <h3 className="font-heading font-semibold text-lg mb-6">Navegação</h3>
             <ul className="space-y-3 font-body">
-              <li><a href="#" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Como funciona</a></li>
-              <li><a href="#" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Preços</a></li>
-              <li><a href="#" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Casos de sucesso</a></li>
-              <li><a href="#" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Blog</a></li>
-              <li><a href="#" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Suporte</a></li>
+              <li><button onClick={() => document.getElementById('topo')?.scrollIntoView({ behavior: 'smooth' })} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Início</button></li>
+              <li><button onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Como funciona</button></li>
+              <li><button onClick={() => document.getElementById('beneficios')?.scrollIntoView({ behavior: 'smooth' })} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Benefícios</button></li>
+              <li><button onClick={() => document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' })} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Planos</button></li>
+              <li><button onClick={() => document.getElementById('depoimentos')?.scrollIntoView({ behavior: 'smooth' })} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Depoimentos</button></li>
+              <li><button onClick={() => document.getElementById('topo')?.scrollIntoView({ behavior: 'smooth' })} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Voltar ao topo</button></li>
             </ul>
           </div>
 

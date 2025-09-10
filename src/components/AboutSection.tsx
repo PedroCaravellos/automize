@@ -2,7 +2,7 @@ import { Bot, Target, Zap } from "lucide-react";
 
 const AboutSection = () => {
   return (
-    <section className="py-20 bg-background">
+    <section id="como-funciona" className="py-20 bg-background">
       <div className="container px-4 mx-auto">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-6">

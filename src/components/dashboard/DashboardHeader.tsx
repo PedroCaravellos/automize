@@ -23,13 +23,21 @@ export default function DashboardHeader() {
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary rounded-lg">
-            <Bot className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold">Automiza</h1>
-            <p className="text-xs text-muted-foreground">Dashboard</p>
-          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="flex items-center space-x-3"
+            aria-label="Recarregar dashboard"
+          >
+            <img 
+              src="/lovable-uploads/419fc9aa-9a41-4cc0-b8ce-190b4a7e6869.png" 
+              alt="Automiza" 
+              className="h-7 w-7"
+            />
+            <div>
+              <h1 className="text-xl font-bold">Automiza</h1>
+              <p className="text-xs text-muted-foreground">Dashboard</p>
+            </div>
+          </button>
         </div>
 
         <div className="flex items-center space-x-4">
