@@ -45,6 +45,51 @@ export interface AtividadeRecente {
 
 // Using global state from AuthContext; no props needed
 
+const templates: ChatbotTemplate[] = [
+  {
+    id: "boas-vindas-faq",
+    nome: "Boas-vindas + FAQ",
+    descricao: "Atendimento básico com perguntas frequentes",
+    mensagens: {
+      boasVindas: "Olá! 👋 Bem-vindo(a) à nossa academia! Como posso ajudá-lo hoje?",
+      faqs: [
+        { pergunta: "Qual o horário de funcionamento?", resposta: "Funcionamos de segunda a sexta das 6h às 22h, e aos sábados das 8h às 18h." },
+        { pergunta: "Como faço para me matricular?", resposta: "Você pode se matricular presencialmente na recepção ou pelo nosso WhatsApp. Precisará de RG, CPF e comprovante de residência." },
+        { pergunta: "Quais modalidades vocês oferecem?", resposta: "Oferecemos musculação, aulas funcionais, spinning, pilates e natação. Consulte nossa grade de horários!" }
+      ],
+      encerramento: "Obrigado pelo contato! Se precisar de mais alguma coisa, estarei aqui para ajudar. 💪"
+    }
+  },
+  {
+    id: "agendamentos",
+    nome: "Agendamentos simples",
+    descricao: "Gestão básica de horários e reservas",
+    mensagens: {
+      boasVindas: "Olá! 📅 Gostaria de agendar um horário ou tirar dúvidas sobre nossa academia?",
+      faqs: [
+        { pergunta: "Como agendar uma aula?", resposta: "Você pode agendar através do nosso app ou presencialmente na recepção. As aulas têm limite de vagas." },
+        { pergunta: "Posso cancelar um agendamento?", resposta: "Sim! Você pode cancelar até 2 horas antes do início da aula sem penalidades." },
+        { pergunta: "E se a aula estiver lotada?", resposta: "Você pode entrar na lista de espera. Te avisaremos se abrir uma vaga!" }
+      ],
+      encerramento: "Seu agendamento é importante para nós! Qualquer dúvida, estarei aqui. 🏋️‍♀️"
+    }
+  },
+  {
+    id: "cobranca",
+    nome: "Cobrança básica",
+    descricao: "Esclarecimentos sobre pagamentos e planos",
+    mensagens: {
+      boasVindas: "Olá! 💳 Precisa de informações sobre pagamentos ou planos? Estou aqui para ajudar!",
+      faqs: [
+        { pergunta: "Quais formas de pagamento vocês aceitam?", resposta: "Aceitamos cartão de crédito, débito, PIX e boleto bancário. Parcelamento em até 12x no cartão." },
+        { pergunta: "Como funciona o vencimento?", resposta: "A mensalidade vence todo dia 10. Após o vencimento, há 5 dias de tolerância antes da suspensão." },
+        { pergunta: "Posso pausar minha matrícula?", resposta: "Sim! Você pode pausar por até 3 meses mediante apresentação de atestado médico." }
+      ],
+      encerramento: "Espero ter esclarecido suas dúvidas sobre pagamentos. Conte conosco! 💙"
+    }
+  }
+];
+
 const ChatbotsSection = () => {
   const { hasAccess, academias, chatbots, createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot } = useAuth();
   const { toast } = useToast();

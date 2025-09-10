@@ -127,19 +127,11 @@ import { useAuth } from "@/contexts/AuthContext";
         </TabsContent>
 
         <TabsContent value="academias" className="space-y-6" forceMount>
-          <AcademiasSection 
-            academias={academias}
-            setAcademias={setAcademias}
-            onAddAtividade={handleAddAtividade}
-          />
+          <AcademiasSection />
         </TabsContent>
 
         <TabsContent value="chatbots" className="space-y-6" forceMount>
-          <ChatbotsSection 
-            academias={academias}
-            onUpdateAcademiaStatus={handleUpdateAcademiaStatus}
-            onAddAtividade={handleAddAtividade}
-          />
+          <ChatbotsSection />
         </TabsContent>
 
         <TabsContent value="integracoes" className="space-y-6" forceMount>
