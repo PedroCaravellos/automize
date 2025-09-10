@@ -76,7 +76,6 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
     return academias.find(a => a.id === selectedChatbot.academiaId) || null;
   };
 
-
   if (chatbots.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -197,7 +196,6 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
         chatbot={selectedChatbot}
         academia={getSelectedAcademia()}
       />
-
     </>
   );
 };

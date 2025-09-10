@@ -12,13 +12,10 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, RotateCcw, Send, X, ExternalLink } from "lucide-react";
+import { Bot, User, RotateCcw, Send, X } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
 import { Academia } from "./AcademiasSection";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import * as LZString from "lz-string";
-import SimulatorShareModal from "./SimulatorShareModal";
 
 interface Message {
   id: string;
@@ -36,11 +33,9 @@ interface ChatbotSimulatorProps {
 
 const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimulatorProps) => {
   const { addActivity } = useAuth();
-  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [conversationEnded, setConversationEnded] = useState(false);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -174,42 +169,6 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
     }
   };
 
-  const generateDemoLink = (): string => {
-    if (!chatbot || !academia) return "";
-
-    // Limit FAQs to 5 items max
-    const limitedFaqs = chatbot.mensagens.faqs.slice(0, 5);
-    
-    const demoData = {
-      botName: chatbot.nome,
-      academyName: `${academia.nome} - ${academia.unidade}`,
-      template: chatbot.template,
-      mensagens: {
-        boasVindas: chatbot.mensagens.boasVindas,
-        faqs: limitedFaqs,
-        encerramento: chatbot.mensagens.encerramento
-      },
-      ts: Date.now()
-    };
-
-    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(demoData));
-    return `${window.location.origin}/demo?d=${compressed}`;
-  };
-
-  const handleShareDemo = () => {
-    if (!chatbot || !academia) return;
-    
-    // Check if FAQs exceed limit
-    if (chatbot.mensagens.faqs.length > 5) {
-      toast({
-        description: "Apenas as primeiras 5 FAQs serão incluídas no link de demonstração.",
-        variant: "default"
-      });
-    }
-    
-    setShareModalOpen(true);
-  };
-
   // Initialize conversation when drawer opens
   useEffect(() => {
     if (open && chatbot && academia) {
@@ -225,7 +184,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[90vh] h-[80vh]">
         <DrawerHeader className="border-b">
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <DrawerTitle className="flex items-center gap-2">
                 <Bot className="h-5 w-5" />
@@ -239,22 +198,11 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
                 )}
               </DrawerDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShareDemo}
-                className="text-purple-600 hover:text-purple-600"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Compartilhar demo
+            <DrawerClose asChild>
+              <Button variant="ghost" size="sm">
+                <X className="h-4 w-4" />
               </Button>
-              <DrawerClose asChild>
-                <Button variant="ghost" size="sm">
-                  <X className="h-4 w-4" />
-                </Button>
-              </DrawerClose>
-            </div>
+            </DrawerClose>
           </div>
         </DrawerHeader>
 
@@ -351,14 +299,6 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
           </p>
         </DrawerFooter>
       </DrawerContent>
-
-      <SimulatorShareModal
-        open={shareModalOpen}
-        onOpenChange={setShareModalOpen}
-        onGenerateLink={generateDemoLink}
-        chatbot={chatbot}
-        academia={academia}
-      />
     </Drawer>
   );
 };
