@@ -98,7 +98,7 @@ const templates: ChatbotTemplate[] = [
 const ChatbotsSection = () => {
   const { 
     user, hasAccess, academias, chatbots, addActivity,
-    createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot 
+    createChatbot, updateChatbotMessages, updateChatbotDemo, toggleChatbotStatus, deleteChatbot 
   } = useAuth();
   const { toast } = useToast();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -167,15 +167,10 @@ const handleToggleStatus = (chatbotId: string) => {
     
     const slug = generateDemoSlug(chatbotId);
     
-    updateUserData(user.id, (data) => {
-      const chatbotIndex = data.chatbots.findIndex(bot => bot.id === chatbotId);
-      if (chatbotIndex >= 0) {
-        data.chatbots[chatbotIndex].demo = {
-          enabled: true,
-          slug: slug
-        };
-      }
-      return data;
+    // Update the chatbot with demo info
+    updateChatbotDemo(chatbotId, {
+      enabled: true,
+      slug: slug
     });
 
     const chatbot = chatbots.find(bot => bot.id === chatbotId);
@@ -191,15 +186,10 @@ const handleToggleStatus = (chatbotId: string) => {
     
     const newSlug = generateDemoSlug(chatbotId);
     
-    updateUserData(user.id, (data) => {
-      const chatbotIndex = data.chatbots.findIndex(bot => bot.id === chatbotId);
-      if (chatbotIndex >= 0) {
-        data.chatbots[chatbotIndex].demo = {
-          enabled: true,
-          slug: newSlug
-        };
-      }
-      return data;
+    // Update the chatbot with new demo slug
+    updateChatbotDemo(chatbotId, {
+      enabled: true,
+      slug: newSlug
     });
 
     const chatbot = chatbots.find(bot => bot.id === chatbotId);

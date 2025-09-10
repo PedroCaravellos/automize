@@ -28,6 +28,10 @@ interface ChatbotItem {
   status: 'Em configuração' | 'Ativo';
   interacoes: number;
   mensagens: ChatbotMessageSet;
+  demo?: {
+    enabled: boolean;
+    slug: string;
+  };
   createdAt: string;
 }
 interface AcademiaItem {
@@ -66,6 +70,7 @@ interface AuthContextType {
   // Chatbots
   createChatbot: (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }) => ChatbotItem | null;
   updateChatbotMessages: (id: string, mensagens: ChatbotMessageSet) => ChatbotItem | null;
+  updateChatbotDemo: (id: string, demo: { enabled: boolean; slug: string }) => ChatbotItem | null;
   toggleChatbotStatus: (id: string) => ChatbotItem | null;
   deleteChatbot: (id: string) => ChatbotItem | null;
 }
@@ -335,6 +340,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return bot;
   };
 
+  const updateChatbotDemo = (id: string, demo: { enabled: boolean; slug: string }): ChatbotItem | null => {
+    let updated: ChatbotItem | null = null;
+    setChatbots(prev => prev.map(b => {
+      if (b.id === id) {
+        updated = { ...b, demo };
+        return updated;
+      }
+      return b;
+    }));
+    return updated;
+  };
+
   const value = {
     user,
     session,
@@ -358,6 +375,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAcademiaStatus,
     createChatbot,
     updateChatbotMessages,
+    updateChatbotDemo,
     toggleChatbotStatus,
     deleteChatbot,
   };
