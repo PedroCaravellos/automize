@@ -3,6 +3,16 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserData, saveUserData, generateId, OnboardingProgress, BillingInfo, Invoice, Subscription, formatBRL } from '@/utils/userStorage';
 
+interface WhatsAppIntegrationState {
+  status: 'disconnected' | 'configured' | 'connected';
+  provider: string;
+  apiKey: string;
+  wabaId: string;
+  phoneNumberId: string;
+  verifyToken: string;
+  connectedAt?: Date;
+}
+
 interface Profile {
   id: string;
   user_id: string;
@@ -76,6 +86,11 @@ interface AuthContextType {
   simulateStartTrial: () => { success: boolean };
   addInvoice: (invoice: Invoice) => void;
   formatBRL: (value: number) => string;
+  // Integrations
+  whatsappIntegration: WhatsAppIntegrationState;
+  updateWhatsAppIntegration: (data: Partial<WhatsAppIntegrationState>) => void;
+  connectWhatsApp: () => void;
+  disconnectWhatsApp: () => void;
   // Academias
   addAcademia: (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>) => AcademiaItem;
   updateAcademia: (id: string, updates: Partial<Omit<AcademiaItem, 'id' | 'createdAt'>>) => void;
@@ -105,6 +120,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [billingInfo, setBillingInfo] = useState<BillingInfo>({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [subscription, setSubscription] = useState<Subscription>({ planoAtivo: false, nomePlano: '', trialAtivo: false });
+  const [whatsappIntegration, setWhatsappIntegration] = useState<WhatsAppIntegrationState>({
+    status: 'disconnected',
+    provider: '',
+    apiKey: '',
+    wabaId: '',
+    phoneNumberId: '',
+    verifyToken: ''
+  });
   const hydratedRef = useRef(false);
 
   const fetchProfile = async (userId: string) => {
@@ -138,6 +161,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
             setInvoices(data.invoices || []);
             setSubscription(data.subscription || { planoAtivo: false, nomePlano: '', trialAtivo: false });
+            setWhatsappIntegration(data.whatsappIntegration ? {
+              ...data.whatsappIntegration,
+              connectedAt: data.whatsappIntegration.connectedAt ? new Date(data.whatsappIntegration.connectedAt) : undefined
+            } : { status: 'disconnected', provider: '', apiKey: '', wabaId: '', phoneNumberId: '', verifyToken: '' });
             hydratedRef.current = true;
             setIsHydrating(false);
             
@@ -158,6 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setBillingInfo({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
           setInvoices([]);
           setSubscription({ planoAtivo: false, nomePlano: '', trialAtivo: false });
+          setWhatsappIntegration({ status: 'disconnected', provider: '', apiKey: '', wabaId: '', phoneNumberId: '', verifyToken: '' });
           hydratedRef.current = false;
           setIsHydrating(false);
         }
@@ -221,6 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setBillingInfo({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
     setInvoices([]);
     setSubscription({ planoAtivo: false, nomePlano: '', trialAtivo: false });
+    setWhatsappIntegration({ status: 'disconnected', provider: '', apiKey: '', wabaId: '', phoneNumberId: '', verifyToken: '' });
     hydratedRef.current = false;
   };
 
@@ -277,8 +306,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Persist snapshot whenever data changes
   useEffect(() => {
     if (!user?.id || !hydratedRef.current) return;
-    saveUserData(user.id, { academias, chatbots, activity, onboardingProgress, billingInfo, invoices, subscription });
-  }, [user?.id, academias, chatbots, activity, onboardingProgress, billingInfo, invoices, subscription]);
+    const whatsappToSave = {
+      ...whatsappIntegration,
+      connectedAt: whatsappIntegration.connectedAt?.toISOString()
+    };
+    saveUserData(user.id, { academias, chatbots, activity, onboardingProgress, billingInfo, invoices, subscription, whatsappIntegration: whatsappToSave });
+  }, [user?.id, academias, chatbots, activity, onboardingProgress, billingInfo, invoices, subscription, whatsappIntegration]);
 
   // Activity helper
   const addActivity = (text: string) => {
@@ -406,6 +439,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     return { success: true };
+  };
+
+  // WhatsApp Integration functions
+  const updateWhatsAppIntegration = (data: Partial<WhatsAppIntegrationState>) => {
+    setWhatsappIntegration(prev => ({ ...prev, ...data }));
+  };
+
+  const connectWhatsApp = () => {
+    if (!whatsappIntegration.provider || !whatsappIntegration.apiKey || !whatsappIntegration.wabaId) {
+      throw new Error('Dados incompletos para conectar WhatsApp');
+    }
+    
+    setWhatsappIntegration(prev => ({
+      ...prev,
+      status: 'connected',
+      connectedAt: new Date()
+    }));
+    
+    addActivity('WhatsApp Business conectado (simulado)');
+  };
+
+  const disconnectWhatsApp = () => {
+    setWhatsappIntegration(prev => ({
+      ...prev,
+      status: 'disconnected',
+      connectedAt: undefined
+    }));
+    
+    addActivity('WhatsApp Business desconectado (simulado)');
   };
 
   // Academia actions
@@ -550,9 +612,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAcademiaStatus,
     createChatbot,
     updateChatbotMessages,
-    
     toggleChatbotStatus,
     deleteChatbot,
+    // Integrations
+    whatsappIntegration,
+    updateWhatsAppIntegration,
+    connectWhatsApp,
+    disconnectWhatsApp,
   };
 
   return (

@@ -6,64 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Eye, EyeOff, Copy, MessageSquare, Instagram, Globe, Users, Zap, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Eye, EyeOff, Copy, MessageSquare, Instagram, Globe, Users, Zap, Clock, Info, CheckCircle, AlertCircle, Circle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-interface WhatsAppData {
-  provider: string;
-  apiKey: string;
-  wabaId: string;
-  phoneNumberId: string;
-  verifyToken: string;
-}
-
 export default function IntegrationsSection() {
-  const { profile, hasAccess, activateTrial } = useAuth();
+  const { profile, hasAccess, activateTrial, isHydrating, whatsappIntegration, updateWhatsAppIntegration, connectWhatsApp, disconnectWhatsApp } = useAuth();
   const { toast } = useToast();
   const [showApiKey, setShowApiKey] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
-  const [whatsappData, setWhatsappData] = useState<WhatsAppData>({
-    provider: "",
-    apiKey: "",
-    wabaId: "",
-    phoneNumberId: "",
-    verifyToken: ""
-  });
 
   const webhookUrl = `https://automiza.net/webhooks/whatsapp/${profile?.user_id || 'user-id'}`;
-
-  const handleSaveWhatsAppData = () => {
-    // Salvar localmente - sem integração real
-    localStorage.setItem('automiza_whatsapp_data', JSON.stringify(whatsappData));
-    toast({
-      title: "Dados salvos",
-      description: "Configurações do WhatsApp salvas localmente.",
-    });
-  };
-
-  const handleClearFields = () => {
-    setWhatsappData({
-      provider: "",
-      apiKey: "",
-      wabaId: "",
-      phoneNumberId: "",
-      verifyToken: ""
-    });
-    localStorage.removeItem('automiza_whatsapp_data');
-    toast({
-      title: "Campos limpos",
-      description: "Dados do WhatsApp foram removidos.",
-    });
-  };
-
-  const copyWebhookUrl = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    toast({
-      title: "URL copiada",
-      description: "URL do webhook copiada para a área de transferência.",
-    });
-  };
 
   const handleActivateTrial = async () => {
     setIsActivating(true);
@@ -90,16 +45,107 @@ export default function IntegrationsSection() {
     window.history.replaceState({}, '', url.toString());
   };
 
-  // Verificar se tem acesso
   const accessAllowed = hasAccess();
 
-  // Carregar dados salvos
-  useState(() => {
-    const savedData = localStorage.getItem('automiza_whatsapp_data');
-    if (savedData) {
-      setWhatsappData(JSON.parse(savedData));
+  const copyWebhookUrl = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    toast({
+      title: "URL copiada",
+      description: "URL do webhook copiada para a área de transferência.",
+    });
+  };
+
+  const handleSaveWhatsApp = () => {
+    if (!whatsappIntegration.provider || !whatsappIntegration.apiKey || !whatsappIntegration.wabaId) {
+      toast({
+        title: "Dados incompletos",
+        description: "Preencha pelo menos o provedor, API key e WABA ID.",
+        variant: "destructive",
+      });
+      return;
     }
-  });
+    
+    updateWhatsAppIntegration({ status: 'configured' });
+    toast({
+      title: "Dados salvos",
+      description: "Configurações do WhatsApp salvas com sucesso.",
+    });
+  };
+
+  const handleConnectWhatsApp = () => {
+    try {
+      connectWhatsApp();
+      toast({
+        title: "WhatsApp conectado!",
+        description: "Integração com WhatsApp Business ativada (simulado).",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao conectar",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDisconnectWhatsApp = () => {
+    disconnectWhatsApp();
+    toast({
+      title: "WhatsApp desconectado",
+      description: "Integração com WhatsApp Business desativada (simulado).",
+    });
+  };
+
+  const handleClearFields = () => {
+    updateWhatsAppIntegration({
+      status: 'disconnected',
+      provider: '',
+      apiKey: '',
+      wabaId: '',
+      phoneNumberId: '',
+      verifyToken: ''
+    });
+    toast({
+      title: "Campos limpos",
+      description: "Dados do WhatsApp foram removidos.",
+    });
+  };
+
+  const getStatusInfo = () => {
+    switch (whatsappIntegration.status) {
+      case 'connected':
+        return { icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', text: 'Conectado' };
+      case 'configured':
+        return { icon: AlertCircle, color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'Em configuração' };
+      default:
+        return { icon: Circle, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', text: 'Não conectado' };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
+  const StatusIcon = statusInfo.icon;
+
+  if (isHydrating) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <Skeleton className="h-4 w-96 mx-auto mb-2" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-64" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!accessAllowed) {
     return (
@@ -111,7 +157,6 @@ export default function IntegrationsSection() {
         </div>
 
         <div className="relative">
-          {/* Overlay de bloqueio */}
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
             <Card className="w-full max-w-md mx-4">
               <CardHeader className="text-center">
@@ -139,17 +184,20 @@ export default function IntegrationsSection() {
             </Card>
           </div>
 
-          {/* Conteúdo borrado por baixo */}
           <div className="opacity-50 pointer-events-none">
             <IntegrationsContent 
-              whatsappData={whatsappData}
-              setWhatsappData={setWhatsappData}
+              whatsappIntegration={whatsappIntegration}
+              updateWhatsAppIntegration={updateWhatsAppIntegration}
               showApiKey={showApiKey}
               setShowApiKey={setShowApiKey}
               webhookUrl={webhookUrl}
-              handleSaveWhatsAppData={handleSaveWhatsAppData}
+              handleSaveWhatsApp={handleSaveWhatsApp}
+              handleConnectWhatsApp={handleConnectWhatsApp}
+              handleDisconnectWhatsApp={handleDisconnectWhatsApp}
               handleClearFields={handleClearFields}
               copyWebhookUrl={copyWebhookUrl}
+              statusInfo={statusInfo}
+              StatusIcon={StatusIcon}
               disabled={true}
             />
           </div>
@@ -167,14 +215,18 @@ export default function IntegrationsSection() {
       </div>
 
       <IntegrationsContent 
-        whatsappData={whatsappData}
-        setWhatsappData={setWhatsappData}
+        whatsappIntegration={whatsappIntegration}
+        updateWhatsAppIntegration={updateWhatsAppIntegration}
         showApiKey={showApiKey}
         setShowApiKey={setShowApiKey}
         webhookUrl={webhookUrl}
-        handleSaveWhatsAppData={handleSaveWhatsAppData}
+        handleSaveWhatsApp={handleSaveWhatsApp}
+        handleConnectWhatsApp={handleConnectWhatsApp}
+        handleDisconnectWhatsApp={handleDisconnectWhatsApp}
         handleClearFields={handleClearFields}
         copyWebhookUrl={copyWebhookUrl}
+        statusInfo={statusInfo}
+        StatusIcon={StatusIcon}
         disabled={false}
       />
     </div>
@@ -182,26 +234,34 @@ export default function IntegrationsSection() {
 }
 
 interface IntegrationsContentProps {
-  whatsappData: WhatsAppData;
-  setWhatsappData: (data: WhatsAppData) => void;
+  whatsappIntegration: any;
+  updateWhatsAppIntegration: (data: any) => void;
   showApiKey: boolean;
   setShowApiKey: (show: boolean) => void;
   webhookUrl: string;
-  handleSaveWhatsAppData: () => void;
+  handleSaveWhatsApp: () => void;
+  handleConnectWhatsApp: () => void;
+  handleDisconnectWhatsApp: () => void;
   handleClearFields: () => void;
   copyWebhookUrl: () => void;
+  statusInfo: any;
+  StatusIcon: any;
   disabled: boolean;
 }
 
 function IntegrationsContent({
-  whatsappData,
-  setWhatsappData,
+  whatsappIntegration,
+  updateWhatsAppIntegration,
   showApiKey,
   setShowApiKey,
   webhookUrl,
-  handleSaveWhatsAppData,
+  handleSaveWhatsApp,
+  handleConnectWhatsApp,
+  handleDisconnectWhatsApp,
   handleClearFields,
   copyWebhookUrl,
+  statusInfo,
+  StatusIcon,
   disabled
 }: IntegrationsContentProps) {
   const otherIntegrations = [
@@ -211,6 +271,49 @@ function IntegrationsContent({
     { name: "CRM Pipedrive", icon: Users, description: "Sincronização com Pipedrive" }
   ];
 
+  const InfoTooltip = ({ content }: { content: string }) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-sm">
+          <p>{content}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
+  const FutureIntegrationModal = ({ integration }: { integration: any }) => {
+    const Icon = integration.icon;
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full">
+            Em breve
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon className="h-5 w-5" />
+              {integration.name}
+            </DialogTitle>
+            <DialogDescription>
+              {integration.description}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Esta integração estará disponível em futuras atualizações do Automiza. 
+              Acompanhe nossas novidades para ser notificado quando ela for lançada!
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   return (
     <>
       {/* WhatsApp Business Section */}
@@ -219,10 +322,14 @@ function IntegrationsContent({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
-              <CardTitle>WhatsApp Business (em breve)</CardTitle>
+              <CardTitle>WhatsApp Business</CardTitle>
             </div>
-            <Badge variant="outline" className="text-orange-600 border-orange-300">
-              Em desenvolvimento
+            <Badge 
+              variant="outline" 
+              className={`${statusInfo.color} ${statusInfo.border} ${statusInfo.bg}`}
+            >
+              <StatusIcon className="h-3 w-3 mr-1" />
+              {statusInfo.text}
             </Badge>
           </div>
         </CardHeader>
@@ -230,17 +337,24 @@ function IntegrationsContent({
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="pt-4">
               <p className="text-blue-800 text-sm">
-                Na próxima etapa você poderá conectar seu número oficial do WhatsApp Business via provedor parceiro.
+                {whatsappIntegration.status === 'connected' 
+                  ? `WhatsApp Business conectado com sucesso! Conectado em ${whatsappIntegration.connectedAt?.toLocaleString('pt-BR') || 'data não disponível'}.`
+                  : whatsappIntegration.status === 'configured'
+                  ? "Dados salvos! Clique em 'Conectar WhatsApp' para finalizar a integração (simulado)."
+                  : "Configure os dados do seu provedor WhatsApp Business oficial para conectar (simulação)."}
               </p>
             </CardContent>
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="provider">Provedor</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="provider">Provedor</Label>
+                <InfoTooltip content="Selecione o provedor oficial que você utiliza (360Dialog, Zenvia, Gupshup, Twilio)." />
+              </div>
               <Select 
-                value={whatsappData.provider} 
-                onValueChange={(value) => setWhatsappData({...whatsappData, provider: value})}
+                value={whatsappIntegration.provider} 
+                onValueChange={(value) => updateWhatsAppIntegration({provider: value})}
                 disabled={disabled}
               >
                 <SelectTrigger>
@@ -256,13 +370,16 @@ function IntegrationsContent({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="api-key">API Key / Token</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="api-key">API Key / Token</Label>
+                <InfoTooltip content="Chave de autenticação gerada pelo seu provedor." />
+              </div>
               <div className="relative">
                 <Input
                   id="api-key"
                   type={showApiKey ? "text" : "password"}
-                  value={whatsappData.apiKey}
-                  onChange={(e) => setWhatsappData({...whatsappData, apiKey: e.target.value})}
+                  value={whatsappIntegration.apiKey}
+                  onChange={(e) => updateWhatsAppIntegration({apiKey: e.target.value})}
                   placeholder="Insira sua API key"
                   disabled={disabled}
                 />
@@ -289,29 +406,38 @@ function IntegrationsContent({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="waba-id">WhatsApp Business Account ID (WABA ID)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="waba-id">WhatsApp Business Account ID (WABA ID)</Label>
+                <InfoTooltip content="WhatsApp Business Account ID, fornecido pelo provedor oficial." />
+              </div>
               <Input
                 id="waba-id"
-                value={whatsappData.wabaId}
-                onChange={(e) => setWhatsappData({...whatsappData, wabaId: e.target.value})}
+                value={whatsappIntegration.wabaId}
+                onChange={(e) => updateWhatsAppIntegration({wabaId: e.target.value})}
                 placeholder="123456789012345"
                 disabled={disabled}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone-id">Phone Number ID</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="phone-id">Phone Number ID</Label>
+                <InfoTooltip content="Identificador único do número de telefone conectado ao WhatsApp Business." />
+              </div>
               <Input
                 id="phone-id"
-                value={whatsappData.phoneNumberId}
-                onChange={(e) => setWhatsappData({...whatsappData, phoneNumberId: e.target.value})}
+                value={whatsappIntegration.phoneNumberId}
+                onChange={(e) => updateWhatsAppIntegration({phoneNumberId: e.target.value})}
                 placeholder="987654321098765"
                 disabled={disabled}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="webhook-url">Webhook URL</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="webhook-url">Webhook URL</Label>
+                <InfoTooltip content="Endereço onde os eventos e mensagens serão enviados pelo provedor." />
+              </div>
               <div className="flex gap-2">
                 <Input
                   id="webhook-url"
@@ -335,37 +461,41 @@ function IntegrationsContent({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="verify-token">Verify Token</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="verify-token">Verify Token</Label>
+                <InfoTooltip content="Token secreto que você define para validar a conexão junto ao provedor." />
+              </div>
               <Input
                 id="verify-token"
-                value={whatsappData.verifyToken}
-                onChange={(e) => setWhatsappData({...whatsappData, verifyToken: e.target.value})}
+                value={whatsappIntegration.verifyToken}
+                onChange={(e) => updateWhatsAppIntegration({verifyToken: e.target.value})}
                 placeholder="meu_token_secreto"
                 disabled={disabled}
               />
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <Button onClick={handleSaveWhatsAppData} disabled={disabled}>
+          <div className="flex gap-3 flex-wrap">
+            <Button onClick={handleSaveWhatsApp} disabled={disabled}>
               Salvar dados
             </Button>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" disabled={true}>
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Conectar WhatsApp
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Integração disponível em breve
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <Button variant="outline" disabled={true}>
-              Desconectar
-            </Button>
+            
+            {whatsappIntegration.status === 'connected' ? (
+              <Button variant="outline" onClick={handleDisconnectWhatsApp} disabled={disabled}>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Desconectar WhatsApp
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleConnectWhatsApp} 
+                disabled={disabled || whatsappIntegration.status === 'disconnected'}
+                variant={whatsappIntegration.status === 'configured' ? 'default' : 'outline'}
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Conectar WhatsApp
+              </Button>
+            )}
+            
             <Button variant="ghost" onClick={handleClearFields} disabled={disabled}>
               Limpar campos
             </Button>
@@ -397,9 +527,7 @@ function IntegrationsContent({
                     <p className="text-sm text-muted-foreground mb-3">
                       {integration.description}
                     </p>
-                    <Button variant="outline" size="sm" disabled className="w-full">
-                      Em breve
-                    </Button>
+                    <FutureIntegrationModal integration={integration} />
                   </CardContent>
                 </Card>
               );

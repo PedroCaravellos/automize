@@ -58,6 +58,16 @@ export interface Subscription {
   proximaRenovacaoEm?: string;   // ISO (30 dias após ativação)
 }
 
+export interface WhatsAppIntegration {
+  status: 'disconnected' | 'configured' | 'connected';
+  provider: string;
+  apiKey: string;
+  wabaId: string;
+  phoneNumberId: string;
+  verifyToken: string;
+  connectedAt?: string;
+}
+
 export interface UserStoredData {
   academias: StoredAcademia[];
   chatbots: StoredChatbot[];
@@ -66,6 +76,7 @@ export interface UserStoredData {
   billingInfo: BillingInfo;
   invoices: Invoice[];
   subscription: Subscription;
+  whatsappIntegration?: WhatsAppIntegration;
 }
 
 const keyFor = (userId: string) => `automiza:user:${userId}`;
