@@ -104,8 +104,11 @@ const PricingSection = () => {
                 variant={plan.popular ? "default" : "outline"} 
                 className="w-full font-heading font-semibold"
                 size="lg"
+                asChild
               >
-                {plan.popular ? "Começar agora" : "Escolher plano"}
+                <a href="/auth">
+                  {plan.popular ? "Começar agora" : "Escolher plano"}
+                </a>
               </Button>
             </div>
           ))}

@@ -36,9 +36,11 @@ const HeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button variant="hero" size="lg" className="shadow-button hover:shadow-hero transition-all">
-              Começar agora grátis
-              <ArrowRight className="ml-2 h-5 w-5" />
+            <Button variant="hero" size="lg" className="shadow-button hover:shadow-hero transition-all" asChild>
+              <a href="/auth">
+                Começar agora grátis
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
             </Button>
             <Button variant="outline-hero" size="lg">
               Ver demonstração
