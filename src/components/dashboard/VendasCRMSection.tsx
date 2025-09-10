@@ -56,8 +56,21 @@ export default function VendasCRMSection() {
       if (leadsResponse.error) throw leadsResponse.error;
       if (vendasResponse.error) throw vendasResponse.error;
 
-      setLeads((leadsResponse.data as Lead[]) || []);
-      setVendas((vendasResponse.data as Venda[]) || []);
+      // Map the database data to our interface types, handling missing columns
+      const mappedLeads = (leadsResponse.data || []).map(lead => ({
+        ...lead,
+        pipeline_stage: lead.pipeline_stage || 'inicial',
+        valor_estimado: lead.valor_estimado || undefined
+      })) as Lead[];
+      
+      const mappedVendas = (vendasResponse.data || []).map(venda => ({
+        ...venda,
+        produto_servico: venda.produto_servico || 'Não especificado',
+        data_fechamento: venda.data_fechamento || undefined
+      })) as Venda[];
+
+      setLeads(mappedLeads);
+      setVendas(mappedVendas);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
       toast({

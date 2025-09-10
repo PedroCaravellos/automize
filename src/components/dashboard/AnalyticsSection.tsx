@@ -24,32 +24,37 @@ export default function AnalyticsSection() {
   const fetchAnalytics = async () => {
     try {
       // Buscar dados de leads
-      const { data: leads } = await supabase
+      const { data: leads, error: leadsError } = await supabase
         .from('leads')
         .select('origem, status, valor_estimado, created_at');
 
       // Buscar dados de agendamentos
-      const { data: agendamentos } = await supabase
+      const { data: agendamentos, error: agendamentosError } = await supabase
         .from('agendamentos')
         .select('status, created_at');
 
       // Buscar dados de vendas
-      const { data: vendas } = await supabase
+      const { data: vendas, error: vendasError } = await supabase
         .from('vendas')
         .select('valor, status, data_fechamento, created_at');
+
+      if (leadsError || agendamentosError || vendasError) {
+        throw leadsError || agendamentosError || vendasError;
+      }
 
       // Calcular métricas
       const totalLeads = leads?.length || 0;
       const totalAgendamentos = agendamentos?.length || 0;
       const vendasFechadas = vendas?.filter(v => v.status === 'fechada') || [];
-      const totalVendas = vendasFechadas.reduce((sum, v) => sum + v.valor, 0);
+      const totalVendas = vendasFechadas.reduce((sum, v) => sum + (Number(v.valor) || 0), 0);
       const ticketMedio = vendasFechadas.length > 0 ? totalVendas / vendasFechadas.length : 0;
       const leadsConvertidos = leads?.filter(l => l.status === 'convertido').length || 0;
       const conversationRate = totalLeads > 0 ? (leadsConvertidos / totalLeads) * 100 : 0;
 
       // Leads por origem
       const leadsPorOrigem = leads?.reduce((acc: any, lead) => {
-        acc[lead.origem] = (acc[lead.origem] || 0) + 1;
+        const origem = lead.origem || 'sem origem';
+        acc[origem] = (acc[origem] || 0) + 1;
         return acc;
       }, {}) || {};
 
@@ -57,7 +62,7 @@ export default function AnalyticsSection() {
       const vendasPorMes = vendasFechadas.reduce((acc: any, venda) => {
         const data = new Date(venda.data_fechamento || venda.created_at);
         const mes = data.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-        acc[mes] = (acc[mes] || 0) + venda.valor;
+        acc[mes] = (acc[mes] || 0) + (Number(venda.valor) || 0);
         return acc;
       }, {});
 

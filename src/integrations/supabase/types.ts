@@ -212,9 +212,11 @@ export type Database = {
           nome: string
           observacoes: string | null
           origem: string | null
+          pipeline_stage: string | null
           status: string | null
           telefone: string | null
           updated_at: string
+          valor_estimado: number | null
         }
         Insert: {
           academia_id: string
@@ -224,9 +226,11 @@ export type Database = {
           nome: string
           observacoes?: string | null
           origem?: string | null
+          pipeline_stage?: string | null
           status?: string | null
           telefone?: string | null
           updated_at?: string
+          valor_estimado?: number | null
         }
         Update: {
           academia_id?: string
@@ -236,9 +240,11 @@ export type Database = {
           nome?: string
           observacoes?: string | null
           origem?: string | null
+          pipeline_stage?: string | null
           status?: string | null
           telefone?: string | null
           updated_at?: string
+          valor_estimado?: number | null
         }
         Relationships: [
           {
@@ -291,10 +297,12 @@ export type Database = {
           academia_id: string
           cliente_nome: string
           created_at: string
+          data_fechamento: string | null
           data_venda: string | null
           id: string
           lead_id: string | null
           plano: string | null
+          produto_servico: string | null
           status: string | null
           updated_at: string
           valor: number | null
@@ -303,10 +311,12 @@ export type Database = {
           academia_id: string
           cliente_nome: string
           created_at?: string
+          data_fechamento?: string | null
           data_venda?: string | null
           id?: string
           lead_id?: string | null
           plano?: string | null
+          produto_servico?: string | null
           status?: string | null
           updated_at?: string
           valor?: number | null
@@ -315,10 +325,12 @@ export type Database = {
           academia_id?: string
           cliente_nome?: string
           created_at?: string
+          data_fechamento?: string | null
           data_venda?: string | null
           id?: string
           lead_id?: string | null
           plano?: string | null
+          produto_servico?: string | null
           status?: string | null
           updated_at?: string
           valor?: number | null
