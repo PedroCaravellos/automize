@@ -69,6 +69,26 @@ serve(async (req) => {
 
     const { message, academia, chatbot, conversationHistory = [] }: ChatRequest = await req.json();
     
+    console.log('Received chatbot request:', {
+      message,
+      academiaName: academia?.nome,
+      chatbotFaqs: chatbot?.perguntasFrequentes?.length,
+      hasConversationHistory: conversationHistory.length > 0
+    });
+    
+    // Quick validation
+    if (!message || !academia || !chatbot) {
+      console.error('Missing required fields:', { hasMessage: !!message, hasAcademia: !!academia, hasChatbot: !!chatbot });
+      return new Response(JSON.stringify({ 
+        response: "Dados insuficientes para processar a solicitação.",
+        fallback: true,
+        error_reason: "missing_required_fields"
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     // Helper function to create appointment
     const createAgendamento = async (params: any) => {
       try {
@@ -336,6 +356,14 @@ Você tem acesso completo às informações desta academia específica. Use esse
 
     // Helper function for FAQ fallback
     const getFaqFallback = (userMessage: string) => {
+      console.log('Using FAQ fallback for message:', userMessage);
+      console.log('Available FAQs:', chatbot.perguntasFrequentes?.length || 0);
+      
+      if (!chatbot.perguntasFrequentes || chatbot.perguntasFrequentes.length === 0) {
+        console.log('No FAQs available for fallback');
+        return "Desculpe, estou com muitas solicitações no momento. Por favor, tente novamente em alguns segundos ou entre em contato conosco diretamente.";
+      }
+      
       const userWords = userMessage.toLowerCase().split(/\s+/).filter(word => word.length > 2);
       
       let bestMatch = null;
@@ -352,6 +380,8 @@ Você tem acesso completo às informações desta academia específica. Use esse
           bestMatch = faq;
         }
       }
+      
+      console.log('FAQ matching result:', { bestMatch: bestMatch?.pergunta, maxMatches });
       
       return bestMatch 
         ? bestMatch.resposta 
@@ -379,6 +409,8 @@ Você tem acesso completo às informações desta academia específica. Use esse
       await new Promise(resolve => setTimeout(resolve, randomDelay));
       
       console.log(`OpenAI call attempt ${attempt} for academia: ${academia.nome}`);
+      console.log('Request body model:', requestBody.model);
+      console.log('Request body messages count:', requestBody.messages?.length || 0);
       
       try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -417,34 +449,9 @@ Você tem acesso completo às informações desta academia específica. Use esse
                 content: fallbackResponse,
                 role: 'assistant'
               }
-            }]
+            }],
+            error_reason: `HTTP ${response.status}: ${errorText}`
           };
-        }
-
-        return await response.json();
-      } catch (error) {
-        console.error(`OpenAI call failed (attempt ${attempt}):`, error);
-        
-        if (attempt < maxRetries) {
-          const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
-          console.log(`Retrying in ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return callOpenAI(requestBody, attempt + 1);
-        }
-        
-        // Final fallback
-        console.log('All OpenAI attempts failed, using FAQ fallback');
-        const fallbackResponse = getFaqFallback(message);
-        
-        return {
-          fallback: true,
-          choices: [{
-            message: {
-              content: fallbackResponse,
-              role: 'assistant'
-            }
-          }]
-        };
       }
     };
 
@@ -545,6 +552,7 @@ Você tem acesso completo às informações desta academia específica. Use esse
     return new Response(JSON.stringify({ 
       response: aiResponse,
       fallback: isFallback,
+      error_reason: errorReason,
       usage: data.usage 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

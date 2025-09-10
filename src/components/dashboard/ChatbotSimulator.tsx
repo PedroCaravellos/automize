@@ -135,6 +135,13 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
 
     try {
       if (useAI) {
+        console.log('Sending to chatbot-ai:', { 
+          message: currentInput, 
+          academia: academia?.nome, 
+          chatbot: chatbot?.nome,
+          faqCount: chatbot?.mensagens?.faqs?.length 
+        });
+        
         // Use AI-powered response
         const conversationHistory = messages.map(msg => ({
           role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
@@ -168,8 +175,11 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
         });
 
         if (error) {
+          console.error('Supabase function invoke error:', error);
           throw new Error(error.message);
         }
+
+        console.log('Chatbot AI response:', data);
 
         const botResponse = data.response || "Desculpe, não consegui processar sua solicitação.";
         const isFallback = data.fallback || false;
