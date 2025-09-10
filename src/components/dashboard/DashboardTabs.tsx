@@ -6,9 +6,29 @@ import { Building, Bot, Zap, HelpCircle, Plus, CreditCard } from "lucide-react";
 import PlanManagement from "./PlanManagement";
 import IntegrationsSection from "./IntegrationsSection";
 import AcademiasSection from "./AcademiasSection";
+import ChatbotsSection, { AtividadeRecente } from "./ChatbotsSection";
+import { Academia } from "./AcademiasSection";
 
 const DashboardTabs = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [academias, setAcademias] = useState<Academia[]>([]);
+  const [atividadeRecente, setAtividadeRecente] = useState<AtividadeRecente[]>([]);
+
+  const handleUpdateAcademiaStatus = (academiaId: string, status: Academia["statusChatbot"]) => {
+    setAcademias(prev => prev.map(academia => 
+      academia.id === academiaId 
+        ? { ...academia, statusChatbot: status }
+        : academia
+    ));
+  };
+
+  const handleAddAtividade = (atividade: Omit<AtividadeRecente, "id">) => {
+    const novaAtividade: AtividadeRecente = {
+      id: Date.now().toString(),
+      ...atividade
+    };
+    setAtividadeRecente(prev => [novaAtividade, ...prev.slice(0, 9)]); // Manter apenas os últimos 10
+  };
 
   return (
     <div className="space-y-6">
@@ -74,7 +94,7 @@ const DashboardTabs = () => {
                 <p className="text-muted-foreground mb-4">
                   Configure seu primeiro chatbot personalizado em minutos.
                 </p>
-                <Button>
+                <Button onClick={() => setActiveTab("chatbots")}>
                   <Plus className="mr-2 h-4 w-4" />
                   Criar Chatbot
                 </Button>
@@ -102,35 +122,42 @@ const DashboardTabs = () => {
               <CardTitle>Atividade Recente</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
-                Nenhuma atividade ainda. Crie seu primeiro chatbot para começar!
-              </p>
+              {atividadeRecente.length > 0 ? (
+                <div className="space-y-2">
+                  {atividadeRecente.slice(0, 5).map((atividade) => (
+                    <div key={atividade.id} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {new Date(atividade.timestamp).toLocaleTimeString('pt-BR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })} - {atividade.descricao}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  Nenhuma atividade ainda. Crie seu primeiro chatbot para começar!
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="academias" className="space-y-6">
-          <AcademiasSection />
+          <AcademiasSection 
+            academias={academias}
+            setAcademias={setAcademias}
+            onAddAtividade={handleAddAtividade}
+          />
         </TabsContent>
 
         <TabsContent value="chatbots" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5" />
-                Chatbots
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Em breve você poderá criar e editar chatbots personalizados.
-              </p>
-              <Button disabled className="w-full sm:w-auto">
-                <Bot className="mr-2 h-4 w-4" />
-                Criar chatbot
-              </Button>
-            </CardContent>
-          </Card>
+          <ChatbotsSection 
+            academias={academias}
+            onUpdateAcademiaStatus={handleUpdateAcademiaStatus}
+            onAddAtividade={handleAddAtividade}
+          />
         </TabsContent>
 
         <TabsContent value="integracoes" className="space-y-6">

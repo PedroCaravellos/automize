@@ -17,10 +17,22 @@ export interface Academia {
   createdAt: string;
 }
 
-const AcademiasSection = () => {
+interface AcademiasSectionProps {
+  academias: Academia[];
+  setAcademias: React.Dispatch<React.SetStateAction<Academia[]>>;
+  onAddAtividade: (atividade: Omit<AtividadeRecente, "id">) => void;
+}
+
+interface AtividadeRecente {
+  id: string;
+  tipo: string;
+  descricao: string;
+  timestamp: string;
+}
+
+const AcademiasSection = ({ academias, setAcademias, onAddAtividade }: AcademiasSectionProps) => {
   const { hasAccess } = useAuth();
   const { toast } = useToast();
-  const [academias, setAcademias] = useState<Academia[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAcademia, setEditingAcademia] = useState<Academia | null>(null);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
@@ -55,6 +67,11 @@ const AcademiasSection = () => {
         title: "Academia atualizada",
         description: "Os dados da academia foram atualizados com sucesso.",
       });
+      onAddAtividade({
+        tipo: "academia",
+        descricao: `Academia atualizada – ${academiaData.nome}`,
+        timestamp: new Date().toISOString(),
+      });
     } else {
       // Adicionar nova academia
       const novaAcademia: Academia = {
@@ -68,17 +85,30 @@ const AcademiasSection = () => {
         title: "Academia cadastrada",
         description: "A academia foi cadastrada com sucesso.",
       });
+      onAddAtividade({
+        tipo: "academia",
+        descricao: `Academia cadastrada – ${academiaData.nome}`,
+        timestamp: new Date().toISOString(),
+      });
     }
     setIsModalOpen(false);
     setEditingAcademia(null);
   };
 
   const handleDeleteAcademia = (id: string) => {
+    const academia = academias.find(a => a.id === id);
     setAcademias(prev => prev.filter(academia => academia.id !== id));
     toast({
       title: "Academia removida",
       description: "A academia foi removida com sucesso.",
     });
+    if (academia) {
+      onAddAtividade({
+        tipo: "academia",
+        descricao: `Academia removida – ${academia.nome}`,
+        timestamp: new Date().toISOString(),
+      });
+    }
   };
 
   const handlePlansClick = () => {
