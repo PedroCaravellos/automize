@@ -45,12 +45,15 @@ serve(async (req) => {
 
   try {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    console.log('Checking OpenAI API Key:', openAIApiKey ? 'Key found' : 'Key NOT found');
+    
     if (!openAIApiKey) {
+      console.error('OPENAI_API_KEY environment variable is not set');
       throw new Error('OPENAI_API_KEY is not set');
     }
 
     const { message, academia, chatbot, conversationHistory = [] }: ChatRequest = await req.json();
-    console.log('Processing message:', message);
+    console.log('Processing message for academia:', academia?.nome, 'Message:', message);
 
     // Build comprehensive context about the academy
     let academiaContext = `Você é um assistente inteligente da academia ${academia.nome}`;
@@ -142,9 +145,13 @@ Você tem acesso completo às informações desta academia específica. Use esse
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
