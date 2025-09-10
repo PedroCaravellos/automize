@@ -10,7 +10,9 @@ import {
   Share, 
   CreditCard, 
   Check, 
-  ChevronRight 
+  ChevronRight,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -35,6 +37,7 @@ const OnboardingChecklist = ({
   onOpenSimulator, 
   onOpenShareDemo 
 }: OnboardingChecklistProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
   const { 
     academias, 
     chatbots, 
@@ -92,19 +95,54 @@ const OnboardingChecklist = ({
   const completedItems = checklistItems.filter(item => item.completed).length;
   const totalItems = checklistItems.length;
   const progressPercentage = (completedItems / totalItems) * 100;
+  const isCompleted = completedItems === totalItems;
+
+  // Auto-minimize when completed (but allow manual expansion)
+  const shouldShowMinimized = isCompleted && !isExpanded;
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={shouldShowMinimized ? "border-green-200 dark:border-green-800" : ""}>
+      <CardHeader className={shouldShowMinimized ? "pb-3" : ""}>
         <div className="flex items-center justify-between">
-          <CardTitle>Checklist de Onboarding</CardTitle>
-          <Badge variant={completedItems === totalItems ? "default" : "secondary"}>
-            {completedItems}/{totalItems} concluídos
-          </Badge>
+          <div className="flex items-center gap-3">
+            <CardTitle className={shouldShowMinimized ? "text-sm" : ""}>
+              {shouldShowMinimized ? "✅ Onboarding Concluído" : "Checklist de Onboarding"}
+            </CardTitle>
+            {shouldShowMinimized && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsExpanded(true)}
+                className="h-8 px-2"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          {!shouldShowMinimized && (
+            <div className="flex items-center gap-2">
+              <Badge variant={isCompleted ? "default" : "secondary"}>
+                {completedItems}/{totalItems} concluídos
+              </Badge>
+              {isCompleted && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsExpanded(false)}
+                  className="h-8 px-2"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
-        <Progress value={progressPercentage} className="w-full" />
+        {!shouldShowMinimized && (
+          <Progress value={progressPercentage} className="w-full" />
+        )}
       </CardHeader>
-      <CardContent className="space-y-4">
+      {!shouldShowMinimized && (
+        <CardContent className="space-y-4">
         {checklistItems.map((item) => (
           <div
             key={item.id}
@@ -147,7 +185,7 @@ const OnboardingChecklist = ({
           </div>
         ))}
         
-        {completedItems === totalItems && (
+        {isCompleted && (
           <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
             <p className="text-sm font-medium text-green-600 dark:text-green-400">
               🎉 Parabéns! Você completou o onboarding!
@@ -157,7 +195,8 @@ const OnboardingChecklist = ({
             </p>
           </div>
         )}
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 };
