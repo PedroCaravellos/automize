@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, MessageSquare, Smartphone, Activity, Users, BarChart3, Settings } from "lucide-react";
 import ActionBlockModal from "./ActionBlockModal";
 import DashboardTabs from "./DashboardTabs";
+import DashboardSummary from "./DashboardSummary";
 
 export default function DashboardContent() {
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [blockedAction, setBlockedAction] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
   const { hasAccess } = useAuth();
 
   const handleActionClick = (action: string) => {
@@ -58,7 +60,9 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      <DashboardTabs />
+      <DashboardSummary onTabChange={setActiveTab} />
+
+      <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
       
       <ActionBlockModal
         open={blockModalOpen}
