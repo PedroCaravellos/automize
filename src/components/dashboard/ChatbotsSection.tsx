@@ -187,7 +187,9 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
   };
 
   const handlePlansClick = () => {
-    window.location.href = "/#planos";
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'plan');
+    window.history.replaceState({}, '', url.toString());
   };
 
   return (

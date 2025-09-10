@@ -73,6 +73,7 @@ interface AuthContextType {
   updateBillingInfo: (info: Partial<BillingInfo>) => void;
   simulateActivatePlan: (plano: 'Basico' | 'Pro' | 'Premium') => { invoiceId: string };
   simulateCancelSubscription: () => void;
+  simulateStartTrial: () => { success: boolean };
   addInvoice: (invoice: Invoice) => void;
   formatBRL: (value: number) => string;
   // Academias
@@ -382,6 +383,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const simulateStartTrial = (): { success: boolean } => {
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    // Update subscription
+    setSubscription(prev => ({
+      ...prev,
+      trialAtivo: true,
+      trialFimEm: trialEnd.toISOString()
+    }));
+
+    // Add activity
+    addActivity("Trial de 7 dias ativado (simulado)");
+
+    // Update profile to sync with legacy system
+    if (profile) {
+      updateProfile({
+        trial_ativo: true,
+        trial_fim_em: trialEnd.toISOString()
+      });
+    }
+    
+    return { success: true };
+  };
+
   // Academia actions
   const addAcademia = (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>): AcademiaItem => {
     const nova: AcademiaItem = {
@@ -515,6 +541,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateBillingInfo,
     simulateActivatePlan,
     simulateCancelSubscription,
+    simulateStartTrial,
     addInvoice,
     formatBRL,
     addAcademia,

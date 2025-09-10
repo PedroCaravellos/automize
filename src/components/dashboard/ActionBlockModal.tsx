@@ -14,20 +14,18 @@ interface ActionBlockModalProps {
 
 export default function ActionBlockModal({ open, onOpenChange, onPlansClick, action }: ActionBlockModalProps) {
   const [isActivating, setIsActivating] = useState(false);
-  const { activateTrial } = useAuth();
+  const { simulateStartTrial } = useAuth();
   const { toast } = useToast();
 
-  const handleActivateTrial = async () => {
+  const handleActivateTrial = () => {
     setIsActivating(true);
     try {
-      await activateTrial();
+      simulateStartTrial();
       toast({
         title: "Trial ativado!",
-        description: "Você tem 7 dias para explorar todas as funcionalidades.",
+        description: "Você tem 7 dias para explorar todas as funcionalidades (simulado).",
       });
       onOpenChange(false);
-      // Recarregar a página para atualizar o estado de acesso
-      window.location.reload();
     } catch (error) {
       toast({
         title: "Erro",

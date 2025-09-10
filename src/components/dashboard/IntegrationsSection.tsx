@@ -85,7 +85,9 @@ export default function IntegrationsSection() {
   };
 
   const handleGoToPlans = () => {
-    window.location.href = "/#planos";
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'plan');
+    window.history.replaceState({}, '', url.toString());
   };
 
   // Verificar se tem acesso

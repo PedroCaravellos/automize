@@ -32,7 +32,8 @@ export default function PlanManagement({ preselectedPlan }: PlanManagementProps)
     invoices, 
     updateBillingInfo, 
     simulateActivatePlan,
-    simulateCancelSubscription, 
+    simulateCancelSubscription,
+    simulateStartTrial,
     formatBRL,
     isHydrating,
     addActivity
@@ -158,6 +159,19 @@ const PLAN_PRICES = {
       title: "Assinatura cancelada",
       description: "Sua assinatura foi cancelada com sucesso (simulado).",
     });
+    
+    // Redirect to plan tab
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'plan');
+    window.history.replaceState({}, '', url.toString());
+  };
+
+  const handleStartTrial = () => {
+    simulateStartTrial();
+    toast({
+      title: "Trial ativado!",
+      description: "Você tem 7 dias grátis para explorar todas as funcionalidades.",
+    });
   };
 
   const handleDownloadInvoice = (invoice: any) => {
@@ -252,8 +266,13 @@ const PLAN_PRICES = {
     }
     
     return (
-      <div className="text-muted-foreground">
-        Sem plano ativo. Selecione um plano para liberar o uso.
+      <div className="space-y-3">
+        <div className="text-muted-foreground">
+          Sem plano ativo. Selecione um plano para liberar o uso.
+        </div>
+        <Button onClick={handleStartTrial} className="w-fit">
+          Ativar teste de 7 dias (simulado)
+        </Button>
       </div>
     );
   };

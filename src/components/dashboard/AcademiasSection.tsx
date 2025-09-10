@@ -75,8 +75,9 @@ const handleDeleteAcademia = (id: string) => {
   };
 
   const handlePlansClick = () => {
-    // Navegar para seção de planos na landing page
-    window.location.href = "/#planos";
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'plan');
+    window.history.replaceState({}, '', url.toString());
   };
 
 return (

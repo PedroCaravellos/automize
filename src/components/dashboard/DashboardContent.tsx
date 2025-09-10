@@ -23,8 +23,8 @@ export default function DashboardContent() {
   };
 
   const handlePlansClick = () => {
-    // Rolar para a seção de planos na landing page
-    window.location.href = "/#planos";
+    // Navigate to plan tab
+    window.location.href = "/dashboard?tab=plan";
   };
 
   const handleBack = () => {
