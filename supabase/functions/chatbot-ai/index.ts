@@ -115,16 +115,33 @@ serve(async (req) => {
 
         // Parse and validate date with intelligent correction
         let dataHora = new Date(params.data_hora);
-        console.log('Parsing date:', { original: params.data_hora, parsed: dataHora, isValid: !isNaN(dataHora.getTime()) });
+        console.log('Parsing date:', { 
+          original: params.data_hora, 
+          parsed: dataHora, 
+          isValid: !isNaN(dataHora.getTime()),
+          currentYear: new Date().getFullYear()
+        });
         
         if (isNaN(dataHora.getTime())) {
           return { error: 'Data/hora inválida. Use o formato YYYY-MM-DDTHH:mm:ss' };
         }
         
-        // If date is in the past, automatically suggest next available time
+        // Fix year if it's in the past - common issue with date parsing
         const now = new Date();
+        const currentYear = now.getFullYear();
+        
+        // If the parsed year is old (like 2023, 2024 when we're in 2025), update it
+        if (dataHora.getFullYear() < currentYear) {
+          console.log('Updating old year to current year:', {
+            oldYear: dataHora.getFullYear(),
+            newYear: currentYear
+          });
+          dataHora.setFullYear(currentYear);
+        }
+        
+        // If date is still in the past, move to next year
         if (dataHora < now) {
-          console.log('Date is in the past, finding next available slot:', { 
+          console.log('Date is in the past, moving to next occurrence:', { 
             original: dataHora.toISOString(), 
             now: now.toISOString() 
           });
@@ -162,6 +179,14 @@ serve(async (req) => {
           return { error: 'Horário não disponível. Tente outro horário.' };
         }
 
+        console.log('Attempting to create appointment in database:', {
+          academia_id: academia.id,
+          cliente_nome: params.cliente_nome,
+          data_hora: dataHora.toISOString(),
+          servico: params.servico,
+          status: 'agendado'
+        });
+
         // Create appointment
         const { data, error } = await supabase
           .from('agendamentos')
@@ -179,9 +204,23 @@ serve(async (req) => {
           .single();
 
         if (error) {
-          console.error('Database error creating appointment:', error);
+          console.error('Database error creating appointment:', {
+            error: error,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
           return { error: 'Erro ao salvar agendamento. Tente novamente ou entre em contato conosco.' };
         }
+
+        console.log('✅ Appointment created successfully:', {
+          id: data.id,
+          cliente_nome: data.cliente_nome,
+          data_hora: data.data_hora,
+          servico: data.servico,
+          status: data.status
+        });
 
         const formatoData = dataHora.toLocaleDateString('pt-BR', { 
           weekday: 'long', 
@@ -325,11 +364,17 @@ FUNCIONALIDADES ESPECIAIS:
 - Você pode criar agendamentos usando a função create_agendamento quando o cliente solicitar
 - Você pode registrar leads usando a função upsert_lead quando o cliente demonstrar interesse mas não agendar
 - Para agendamentos, SEMPRE confirme dados essenciais: nome completo, serviço/modalidade desejada, data específica e horário
-- SEJA INTELIGENTE COM DATAS: Se o cliente mencionar "quinta-feira às 15h", calcule automaticamente a próxima quinta-feira disponível e use formato ISO (2024-12-05T15:00:00)
-- Se o cliente disser "amanhã às 9h", calcule amanhã e formate corretamente (2024-12-04T09:00:00)
-- Para registrar interesse, capture ao menos o nome e uma forma de contato (telefone ou email)
-- IMPORTANTE: Quando o usuário fornecer todos os dados (nome, data, hora, serviço), execute imediatamente a função de agendamento
-- SEMPRE trabalhe com o ano 2024 ou superior para agendamentos futuros
+
+REGRAS CRÍTICAS PARA DATAS E AGENDAMENTOS:
+- CONTEXTO TEMPORAL: Estamos em ${new Date().getFullYear()}, não em anos passados como 2023
+- INTERPRETAÇÃO DE DATAS: Quando o cliente disser "11/09", "11 de setembro" ou similar, SEMPRE considere o ano atual (${new Date().getFullYear()}) ou próximo se já passou
+- FORMATO OBRIGATÓRIO: Use SEMPRE o formato ISO: "${new Date().getFullYear()}-MM-DDTHH:mm:ss"
+- EXEMPLOS CORRETOS:
+  * "11/09 às 10h" = "${new Date().getFullYear()}-09-11T10:00:00"
+  * "quinta-feira às 15h" = calcule a próxima quinta-feira em ${new Date().getFullYear()}
+  * "amanhã às 9h" = calcule amanhã em ${new Date().getFullYear()}
+- NUNCA USE ANOS ANTIGOS como 2023 ou 2024 se não estivermos neles
+- Quando todos os dados estiverem completos (nome, data, hora, serviço), execute IMEDIATAMENTE a função create_agendamento
 
 Você tem acesso completo às informações desta academia específica. Use esse conhecimento para dar respostas personalizadas e úteis.`;
 
@@ -408,16 +453,23 @@ Você tem acesso completo às informações desta academia específica. Use esse
     ];
 
     // Prepare messages for OpenAI
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+    const currentDay = currentDate.getDate();
+    
     const messages = [
       { 
         role: 'system', 
         content: `${systemPrompt}
 
 IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
-- Hoje é ${new Date().toLocaleDateString('pt-BR')} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })})
-- O ano atual é ${new Date().getFullYear()}
-- Quando o cliente mencionar datas relativas (amanhã, quinta-feira, semana que vem), calcule a data exata
-- SEMPRE use anos futuros (2024 ou superior) nos agendamentos
+- DATA ATUAL: ${currentDay}/${currentMonth.toString().padStart(2, '0')}/${currentYear} (${currentDate.toLocaleDateString('pt-BR', { weekday: 'long' })})
+- ANO ATUAL: ${currentYear}
+- Quando o cliente disser apenas "11/09" ou similar, SEMPRE considere o ano atual (${currentYear}) ou próximo ano se a data já passou
+- NUNCA use anos antigos como 2023 ou 2024 se estivermos em ${currentYear}
+- Para criar agendamento use SEMPRE o formato: "${currentYear}-MM-DDTHH:mm:ss"
+- Exemplo: para 11/09 às 10h use "${currentYear}-09-11T10:00:00"
 - Formato de data obrigatório: YYYY-MM-DDTHH:mm:ss (exemplo: 2024-12-05T15:00:00)
 - Se a data calculada estiver no passado, automaticamente mova para a próxima ocorrência disponível
 - CONFIRME sempre a data calculada com o cliente antes de executar o agendamento` 
