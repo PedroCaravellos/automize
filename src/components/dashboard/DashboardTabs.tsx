@@ -2,18 +2,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, Bot, Zap, HelpCircle, Plus, CreditCard } from "lucide-react";
+import { Building, Bot, Zap, HelpCircle, Plus } from "lucide-react";
 import PlanManagement from "./PlanManagement";
 import IntegrationsSection from "./IntegrationsSection";
 import AcademiasSection from "./AcademiasSection";
 import ChatbotsSection from "./ChatbotsSection";
 import { useAuth } from "@/contexts/AuthContext";
 
- const DashboardTabs = () => {
+const DashboardTabs = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const { activity } = useAuth();
-  // State lifted to global AuthContext. Activity feed read from context.
-  // No local lists to avoid unmount data loss and parent updates during child render.
 
   return (
     <div className="space-y-6">
@@ -28,7 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6" forceMount>
-          {/* Conteúdo atual do DashboardContent será movido aqui */}
+          {/* Cards de métricas */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -37,9 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">
-                  Nenhum chatbot criado ainda
-                </p>
+                <p className="text-xs text-muted-foreground">Nenhum chatbot criado ainda</p>
               </CardContent>
             </Card>
 
@@ -50,9 +46,7 @@ import { useAuth } from "@/contexts/AuthContext";
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">
-                  Aguardando primeiro chatbot
-                </p>
+                <p className="text-xs text-muted-foreground">Aguardando primeiro chatbot</p>
               </CardContent>
             </Card>
 
@@ -63,23 +57,20 @@ import { useAuth } from "@/contexts/AuthContext";
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">
-                  Leads convertidos este mês
-                </p>
+                <p className="text-xs text-muted-foreground">Leads convertidos este mês</p>
               </CardContent>
             </Card>
           </div>
 
+          {/* Ações rápidas */}
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Criar Chatbot</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Configure seu primeiro chatbot personalizado em minutos.
-                </p>
-                <Button onClick={() => setActiveTab("chatbots")}>
+                <p className="text-muted-foreground mb-4">Configure seu primeiro chatbot personalizado em minutos.</p>
+                <Button onClick={() => setActiveTab("chatbots")}> 
                   <Plus className="mr-2 h-4 w-4" />
                   Criar Chatbot
                 </Button>
@@ -91,9 +82,7 @@ import { useAuth } from "@/contexts/AuthContext";
                 <CardTitle>Conectar WhatsApp</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Integre seu chatbot com WhatsApp Business.
-                </p>
+                <p className="text-muted-foreground mb-4">Integre seu chatbot com WhatsApp Business.</p>
                 <Button variant="outline">
                   <Zap className="mr-2 h-4 w-4" />
                   Conectar WhatsApp
@@ -102,6 +91,7 @@ import { useAuth } from "@/contexts/AuthContext";
             </Card>
           </div>
 
+          {/* Atividade recente */}
           <Card>
             <CardHeader>
               <CardTitle>Atividade Recente</CardTitle>
@@ -118,30 +108,33 @@ import { useAuth } from "@/contexts/AuthContext";
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">
-                  Nenhuma atividade ainda. Crie seu primeiro chatbot para começar!
-                </p>
+                <p className="text-muted-foreground">Nenhuma atividade ainda. Crie seu primeiro chatbot para começar!</p>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Academias */}
         <TabsContent value="academias" className="space-y-6" forceMount>
           <AcademiasSection />
         </TabsContent>
 
+        {/* Chatbots */}
         <TabsContent value="chatbots" className="space-y-6" forceMount>
           <ChatbotsSection />
         </TabsContent>
 
+        {/* Integrações */}
         <TabsContent value="integracoes" className="space-y-6" forceMount>
           <IntegrationsSection />
         </TabsContent>
 
+        {/* Plano */}
         <TabsContent value="plano" className="space-y-6" forceMount>
           <PlanManagement />
         </TabsContent>
 
+        {/* Ajuda */}
         <TabsContent value="ajuda" className="space-y-6" forceMount>
           <Card>
             <CardHeader>
