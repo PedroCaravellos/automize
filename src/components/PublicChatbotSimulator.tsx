@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, RotateCcw, Send } from "lucide-react";
+import { Bot, User, RotateCcw, Send, Brain, MessageSquare } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -32,6 +33,8 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [conversationEnded, setConversationEnded] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [useAI, setUseAI] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -84,8 +87,8 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
     return bestMatch;
   };
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim() || conversationEnded) return;
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || conversationEnded || isTyping) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -95,9 +98,11 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputValue.trim();
+    setInputValue("");
 
     // Check for end command
-    if (inputValue.toLowerCase().includes("encerrar")) {
+    if (currentInput.toLowerCase().includes("encerrar")) {
       setTimeout(() => {
         const endMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -108,34 +113,95 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
         setMessages(prev => [...prev, endMessage]);
         setConversationEnded(true);
       }, 1000);
-      setInputValue("");
       return;
     }
 
-    // Find FAQ match
-    const faqMatch = findBestFaqMatch(inputValue);
-    
-    setTimeout(() => {
-      let botResponse = "";
-      
-      if (faqMatch) {
-        botResponse = replaceVariables(faqMatch.resposta);
+    setIsTyping(true);
+
+    try {
+      if (useAI) {
+        // Use AI-powered response
+        const conversationHistory = messages.map(msg => ({
+          role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
+          content: msg.text
+        }));
+
+        const { data, error } = await supabase.functions.invoke('chatbot-ai', {
+          body: {
+            message: currentInput,
+            academia: {
+              nome: demoData.academyName,
+              unidade: '',
+              segmento: 'Academia'
+            },
+            chatbot: {
+              mensagemBoasVindas: demoData.mensagens.boasVindas,
+              perguntasFrequentes: demoData.mensagens.faqs,
+              mensagemEncerramento: demoData.mensagens.encerramento
+            },
+            conversationHistory
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        const botResponse = data.response || data.fallback || "Desculpe, não consegui processar sua solicitação.";
+        
+        setTimeout(() => {
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            text: botResponse,
+            sender: "bot",
+            timestamp: new Date(),
+          };
+          
+          setMessages(prev => [...prev, botMessage]);
+          setIsTyping(false);
+        }, 500);
+
       } else {
-        const faqTitles = demoData.mensagens.faqs.map(faq => faq.pergunta).join(", ");
-        botResponse = `Não entendi perfeitamente. Você pode reformular ou escolher uma das opções: ${faqTitles}.`;
+        // Use traditional FAQ matching
+        const faqMatch = findBestFaqMatch(currentInput);
+        
+        setTimeout(() => {
+          let botResponse = "";
+          
+          if (faqMatch) {
+            botResponse = replaceVariables(faqMatch.resposta);
+          } else {
+            const faqTitles = demoData.mensagens.faqs.map(faq => faq.pergunta).join(", ");
+            botResponse = `Não entendi perfeitamente. Você pode reformular ou escolher uma das opções: ${faqTitles}.`;
+          }
+
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            text: botResponse,
+            sender: "bot",
+            timestamp: new Date(),
+          };
+          
+          setMessages(prev => [...prev, botMessage]);
+          setIsTyping(false);
+        }, 800);
       }
-
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: botResponse,
-        sender: "bot",
-        timestamp: new Date(),
-      };
+    } catch (error) {
+      console.error('Error sending message:', error);
       
-      setMessages(prev => [...prev, botMessage]);
-    }, 800);
-
-    setInputValue("");
+      setTimeout(() => {
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: "Desculpe, estou enfrentando dificuldades técnicas. Vou usar o modo básico.",
+          sender: "bot",
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+        setIsTyping(false);
+        setUseAI(false); // Fallback to FAQ mode
+      }, 500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -177,10 +243,21 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
       <div className="lg:col-span-2">
         <Card className="h-[600px] flex flex-col">
           <CardHeader className="border-b">
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              {demoData.botName} - Demonstração
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                {demoData.botName} - Demonstração
+              </CardTitle>
+              <Button
+                variant={useAI ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseAI(!useAI)}
+                className={useAI ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+              >
+                {useAI ? <Brain className="h-4 w-4 mr-2" /> : <MessageSquare className="h-4 w-4 mr-2" />}
+                {useAI ? "IA" : "FAQ"}
+              </Button>
+            </div>
           </CardHeader>
           
           <CardContent className="flex-1 flex flex-col p-0 min-h-0">
@@ -225,6 +302,26 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
                     </div>
                   </div>
                 ))}
+                
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="flex gap-2 max-w-[80%]">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                          <Bot className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                      <div className="px-3 py-2 rounded-lg bg-muted text-foreground">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
@@ -253,7 +350,7 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
                 />
                 <Button 
                   onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || conversationEnded}
+                  disabled={!inputValue.trim() || conversationEnded || isTyping}
                   size="sm"
                 >
                   <Send className="h-4 w-4" />
@@ -264,7 +361,7 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
         </Card>
         
         <p className="text-xs text-muted-foreground text-center mt-4">
-          Simulação local — sem WhatsApp
+          {useAI ? "🧠 IA Inteligente ativada" : "📋 Modo FAQ básico"} — Simulação local sem WhatsApp
         </p>
       </div>
     </div>
