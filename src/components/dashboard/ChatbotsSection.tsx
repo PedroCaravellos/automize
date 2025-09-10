@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { generateDemoSlug, updateUserData } from "@/utils/userStorage";
+import { updateUserData } from "@/utils/userStorage";
 import ChatbotWizard from "./ChatbotWizard";
 import ChatbotTable from "./ChatbotTable";
 import ChatbotEditModal from "./ChatbotEditModal";
@@ -33,10 +33,6 @@ export interface Chatbot {
     boasVindas: string;
     faqs: { pergunta: string; resposta: string }[];
     encerramento: string;
-  };
-  demo?: {
-    enabled: boolean;
-    slug: string;
   };
   createdAt: string;
 }
@@ -98,7 +94,7 @@ const templates: ChatbotTemplate[] = [
 const ChatbotsSection = () => {
   const { 
     user, hasAccess, academias, chatbots, addActivity,
-    createChatbot, updateChatbotMessages, updateChatbotDemo, toggleChatbotStatus, deleteChatbot 
+    createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot 
   } = useAuth();
   const { toast } = useToast();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -162,41 +158,6 @@ const handleToggleStatus = (chatbotId: string) => {
     // Test functionality is handled in the table component
   };
 
-  const handleGenerateDemo = (chatbotId: string): string => {
-    if (!user?.id) return "";
-    
-    const slug = generateDemoSlug(chatbotId);
-    
-    // Update the chatbot with demo info
-    updateChatbotDemo(chatbotId, {
-      enabled: true,
-      slug: slug
-    });
-
-    const chatbot = chatbots.find(bot => bot.id === chatbotId);
-    if (chatbot) {
-      addActivity(`Link de demo gerado — ${chatbot.nome}`);
-    }
-
-    return slug;
-  };
-
-  const handleRevokeDemo = (chatbotId: string) => {
-    if (!user?.id) return;
-    
-    const newSlug = generateDemoSlug(chatbotId);
-    
-    // Update the chatbot with new demo slug
-    updateChatbotDemo(chatbotId, {
-      enabled: true,
-      slug: newSlug
-    });
-
-    const chatbot = chatbots.find(bot => bot.id === chatbotId);
-    if (chatbot) {
-      addActivity(`Link de demo revogado — ${chatbot.nome}`);
-    }
-  };
 
 const handleSaveChatbot = (dadosChatbot: {
     academiaId: string;
@@ -252,8 +213,6 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
               onToggleStatus={handleToggleStatus}
               onDelete={handleDeleteChatbot}
               onTest={handleTestChatbot}
-              onGenerateDemo={handleGenerateDemo}
-              onRevokeDemo={handleRevokeDemo}
             />
         </CardContent>
       </Card>

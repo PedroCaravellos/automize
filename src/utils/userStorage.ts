@@ -19,10 +19,6 @@ export interface StoredChatbot {
     faqs: { pergunta: string; resposta: string }[];
     encerramento: string;
   };
-  demo?: {
-    enabled: boolean;
-    slug: string;
-  };
   createdAt: string;
 }
 
@@ -78,9 +74,3 @@ export function generateId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export function generateDemoSlug(botId: string): string {
-  const randomBytes = new Uint8Array(12);
-  crypto.getRandomValues(randomBytes);
-  const hash = Array.from(randomBytes, byte => byte.toString(36)).join('').slice(0, 16);
-  return `${botId}-${hash}`;
-}

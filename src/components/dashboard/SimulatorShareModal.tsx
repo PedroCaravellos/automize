@@ -11,36 +11,38 @@ import {
 } from "@/components/ui/dialog";
 import { Copy, RotateCcw, ExternalLink } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
+import { Academia } from "./AcademiasSection";
 import { useToast } from "@/hooks/use-toast";
 
-interface ChatbotShareModalProps {
+interface SimulatorShareModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onGenerateLink: () => string;
   chatbot: Chatbot | null;
-  onGenerateLink: (chatbotId: string) => string;
-  onRevokeLink: (chatbotId: string) => void;
+  academia: Academia | null;
 }
 
-const ChatbotShareModal = ({ 
+const SimulatorShareModal = ({ 
   open, 
   onOpenChange, 
-  chatbot, 
   onGenerateLink,
-  onRevokeLink 
-}: ChatbotShareModalProps) => {
+  chatbot,
+  academia
+}: SimulatorShareModalProps) => {
   const { toast } = useToast();
-  const [isRevoking, setIsRevoking] = useState(false);
+  const [currentLink, setCurrentLink] = useState("");
 
-  if (!chatbot) return null;
-
-  const hasLink = chatbot.demo?.enabled;
-  const demoLink = hasLink ? `${window.location.origin}/demo/${chatbot.demo?.slug}` : "";
+  const handleGenerateLink = () => {
+    const newLink = onGenerateLink();
+    setCurrentLink(newLink);
+    toast({ description: "Link de demo gerado com sucesso!" });
+  };
 
   const handleCopyLink = async () => {
-    if (!demoLink) return;
+    if (!currentLink) return;
     
     try {
-      await navigator.clipboard.writeText(demoLink);
+      await navigator.clipboard.writeText(currentLink);
       toast({ description: "Link copiado para a área de transferência!" });
     } catch (error) {
       toast({ 
@@ -50,20 +52,25 @@ const ChatbotShareModal = ({
     }
   };
 
-  const handleGenerateLink = () => {
-    const newLink = onGenerateLink(chatbot.id);
-    toast({ description: "Link de demo gerado com sucesso!" });
+  const handleGenerateNewLink = () => {
+    const newLink = onGenerateLink();
+    setCurrentLink(newLink);
+    toast({ description: "Novo link de demo gerado!" });
   };
 
-  const handleRevokeLink = () => {
-    setIsRevoking(true);
-    onRevokeLink(chatbot.id);
-    setIsRevoking(false);
-    toast({ description: "Link de demo revogado. Um novo link pode ser gerado." });
+  // Generate initial link when modal opens
+  const handleOpenChange = (open: boolean) => {
+    if (open && !currentLink) {
+      const link = onGenerateLink();
+      setCurrentLink(link);
+    }
+    onOpenChange(open);
   };
+
+  if (!chatbot || !academia) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -71,10 +78,7 @@ const ChatbotShareModal = ({
             Compartilhar Demo
           </DialogTitle>
           <DialogDescription>
-            {hasLink 
-              ? "Link público para demonstração do chatbot:" 
-              : "Gere um link público para demonstração do chatbot:"
-            }
+            Compartilhe um link público para demonstração do chatbot
           </DialogDescription>
         </DialogHeader>
 
@@ -83,14 +87,17 @@ const ChatbotShareModal = ({
             <label className="text-sm font-medium mb-2 block">
               Chatbot: {chatbot.nome}
             </label>
+            <p className="text-xs text-muted-foreground mb-3">
+              Academia: {academia.nome} - {academia.unidade}
+            </p>
             
-            {hasLink ? (
+            {currentLink ? (
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <Input
-                    value={demoLink}
+                    value={currentLink}
                     readOnly
-                    className="flex-1"
+                    className="flex-1 text-xs"
                     onClick={(e) => e.currentTarget.select()}
                   />
                   <Button
@@ -104,13 +111,18 @@ const ChatbotShareModal = ({
                 </div>
                 
                 <p className="text-xs text-muted-foreground">
-                  Este link mostra apenas uma simulação do seu bot. Não permite edição.
+                  Este link contém apenas as mensagens do seu bot (sem dados sensíveis).
+                  {chatbot.mensagens.faqs.length > 5 && (
+                    <span className="block mt-1 text-orange-600">
+                      Apenas as primeiras 5 FAQs foram incluídas no link.
+                    </span>
+                  )}
                 </p>
               </div>
             ) : (
               <div className="text-center py-6">
                 <p className="text-sm text-muted-foreground mb-4">
-                  Nenhum link de demo foi gerado ainda.
+                  Gere um link público para demonstração do chatbot.
                 </p>
                 <Button onClick={handleGenerateLink}>
                   Gerar Link de Demo
@@ -121,15 +133,14 @@ const ChatbotShareModal = ({
         </div>
 
         <DialogFooter className="flex justify-between">
-          {hasLink && (
+          {currentLink && (
             <Button
               variant="outline"
-              onClick={handleRevokeLink}
-              disabled={isRevoking}
-              className="text-orange-600 hover:text-orange-600"
+              onClick={handleGenerateNewLink}
+              className="text-purple-600 hover:text-purple-600"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
-              {isRevoking ? "Revogando..." : "Revogar Link"}
+              Gerar novo link
             </Button>
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -141,4 +152,4 @@ const ChatbotShareModal = ({
   );
 };
 
-export default ChatbotShareModal;
+export default SimulatorShareModal;
