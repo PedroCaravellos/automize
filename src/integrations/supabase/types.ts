@@ -14,6 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
+      agendamentos: {
+        Row: {
+          academia_id: string
+          cliente_email: string | null
+          cliente_nome: string
+          cliente_telefone: string | null
+          created_at: string
+          data_hora: string
+          id: string
+          observacoes: string | null
+          servico: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          academia_id: string
+          cliente_email?: string | null
+          cliente_nome: string
+          cliente_telefone?: string | null
+          created_at?: string
+          data_hora: string
+          id?: string
+          observacoes?: string | null
+          servico: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          academia_id?: string
+          cliente_email?: string | null
+          cliente_nome?: string
+          cliente_telefone?: string | null
+          created_at?: string
+          data_hora?: string
+          id?: string
+          observacoes?: string | null
+          servico?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      automacoes: {
+        Row: {
+          academia_id: string
+          actions: Json
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          trigger_config: Json | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          academia_id: string
+          actions: Json
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          trigger_config?: Json | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          academia_id?: string
+          actions?: Json
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          trigger_config?: Json | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          academia_id: string
+          created_at: string
+          data_ultimo_contato: string | null
+          email: string | null
+          id: string
+          interesse: string | null
+          nome: string
+          observacoes: string | null
+          origem: string
+          pipeline_stage: string
+          status: string
+          telefone: string | null
+          updated_at: string
+          valor_estimado: number | null
+        }
+        Insert: {
+          academia_id: string
+          created_at?: string
+          data_ultimo_contato?: string | null
+          email?: string | null
+          id?: string
+          interesse?: string | null
+          nome: string
+          observacoes?: string | null
+          origem?: string
+          pipeline_stage?: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+        }
+        Update: {
+          academia_id?: string
+          created_at?: string
+          data_ultimo_contato?: string | null
+          email?: string | null
+          id?: string
+          interesse?: string | null
+          nome?: string
+          observacoes?: string | null
+          origem?: string
+          pipeline_stage?: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -52,6 +184,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vendas: {
+        Row: {
+          academia_id: string
+          created_at: string
+          data_fechamento: string | null
+          id: string
+          lead_id: string | null
+          observacoes: string | null
+          produto_servico: string
+          status: string
+          tipo_plano: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          academia_id: string
+          created_at?: string
+          data_fechamento?: string | null
+          id?: string
+          lead_id?: string | null
+          observacoes?: string | null
+          produto_servico: string
+          status?: string
+          tipo_plano?: string | null
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          academia_id?: string
+          created_at?: string
+          data_fechamento?: string | null
+          id?: string
+          lead_id?: string | null
+          observacoes?: string | null
+          produto_servico?: string
+          status?: string
+          tipo_plano?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

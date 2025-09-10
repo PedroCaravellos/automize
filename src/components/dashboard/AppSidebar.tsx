@@ -1,0 +1,77 @@
+import { useState } from "react";
+import { Calendar, BarChart3, Building, Bot, Zap, Settings, HelpCircle, Users, DollarSign, Workflow } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
+
+const items = [
+  { title: "Dashboard", url: "/dashboard", icon: BarChart3, tab: "overview" },
+  { title: "Academias", url: "/dashboard", icon: Building, tab: "academias" },
+  { title: "Chatbots", url: "/dashboard", icon: Bot, tab: "chatbots" },
+  { title: "Agendamentos", url: "/dashboard", icon: Calendar, tab: "agendamentos" },
+  { title: "Vendas & CRM", url: "/dashboard", icon: DollarSign, tab: "vendas" },
+  { title: "Analytics", url: "/dashboard", icon: BarChart3, tab: "analytics" },
+  { title: "Automações", url: "/dashboard", icon: Workflow, tab: "automacoes" },
+  { title: "Integrações", url: "/dashboard", icon: Zap, tab: "integracoes" },
+  { title: "Configurações", url: "/dashboard", icon: Settings, tab: "plan" },
+  { title: "Ajuda", url: "/dashboard", icon: HelpCircle, tab: "ajuda" },
+];
+
+interface AppSidebarProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+}
+
+export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const location = useLocation();
+
+  const handleTabClick = (tab: string) => {
+    onTabChange(tab);
+  };
+
+  const getNavCls = (tab: string) =>
+    activeTab === tab 
+      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+      : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
+
+  return (
+    <Sidebar
+      className={collapsed ? "w-14" : "w-60"}
+      collapsible="icon"
+    >
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Automize</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    onClick={() => handleTabClick(item.tab)}
+                    className={getNavCls(item.tab)}
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {!collapsed && <span>{item.title}</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+}

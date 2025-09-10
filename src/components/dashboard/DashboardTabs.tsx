@@ -7,13 +7,21 @@ import PlanManagement from "./PlanManagement";
 import IntegrationsSection from "./IntegrationsSection";
 import AcademiasSection from "./AcademiasSection";
 import ChatbotsSection from "./ChatbotsSection";
+import AgendamentosSection from "./AgendamentosSection";
+import VendasCRMSection from "./VendasCRMSection";
+import AnalyticsSection from "./AnalyticsSection";
+import AutomacoesSection from "./AutomacoesSection";
 import OnboardingChecklist from "./OnboardingChecklist";
 import ChatbotSimulator from "./ChatbotSimulator";
 import SimulatorShareModal from "./SimulatorShareModal";
 import { useAuth } from "@/contexts/AuthContext";
 
-const DashboardTabs = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+interface DashboardTabsProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+}
+
+const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
   const [preselectedPlan, setPreselectedPlan] = useState<string | null>(null);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -26,7 +34,7 @@ const DashboardTabs = () => {
     const plan = urlParams.get('plan');
     
     if (tab === 'plan') {
-      setActiveTab('plan');
+      onTabChange('plan');
       if (plan && ['Basico', 'Pro', 'Premium'].includes(plan)) {
         setPreselectedPlan(plan);
       }
@@ -41,7 +49,7 @@ const DashboardTabs = () => {
       const intentPlan = url.searchParams.get('plan');
       
       if (intentTab === 'plan') {
-        setActiveTab('plan');
+        onTabChange('plan');
         if (intentPlan && ['Basico', 'Pro', 'Premium'].includes(intentPlan)) {
           setPreselectedPlan(intentPlan);
         }
@@ -61,14 +69,14 @@ const DashboardTabs = () => {
     }
   };
 
-  const handleOpenShareDemo = () => {
-    const firstBot = chatbots[0];
-    if (firstBot) {
-      setSimulatorOpen(true);
-      setShareModalOpen(true);
-      updateOnboardingProgress({ demoShared: true });
-    }
-  };
+            const handleOpenShareDemo = () => {
+              const firstBot = chatbots[0];
+              if (firstBot) {
+                setSimulatorOpen(true);
+                setShareModalOpen(true);
+                updateOnboardingProgress({ demoShared: true });
+              }
+            };
 
   const generateDemoLink = (): string => {
     const firstBot = chatbots[0];
@@ -89,22 +97,15 @@ const DashboardTabs = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="academias">Minhas Academias</TabsTrigger>
-          <TabsTrigger value="chatbots">Chatbots</TabsTrigger>
-          <TabsTrigger value="integracoes">Integrações</TabsTrigger>
-          <TabsTrigger value="plan">Meu Plano</TabsTrigger>
-          <TabsTrigger value="ajuda">Ajuda</TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+        {/* Conteúdo das abas sem TabsList (navegação via sidebar) */}
 
         {/* VISÃO GERAL */}
         <TabsContent value="overview" className="space-y-6" forceMount>
           <div className={activeTab !== "overview" ? "hidden" : ""}>
             {/* Onboarding Checklist */}
             <OnboardingChecklist
-              onNavigateTo={setActiveTab}
+              onNavigateTo={onTabChange}
               onOpenSimulator={handleOpenSimulator}
               onOpenShareDemo={handleOpenShareDemo}
             />
@@ -155,7 +156,7 @@ const DashboardTabs = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">Configure seu primeiro chatbot personalizado em minutos.</p>
-                  <Button onClick={() => setActiveTab("chatbots")}> 
+                  <Button onClick={() => onTabChange("chatbots")}> 
                     <Plus className="mr-2 h-4 w-4" />
                     Criar Chatbot
                   </Button>
@@ -168,7 +169,7 @@ const DashboardTabs = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">Integre seu chatbot com WhatsApp Business.</p>
-                  <Button variant="outline" onClick={() => setActiveTab("integracoes")}>
+                  <Button variant="outline" onClick={() => onTabChange("integracoes")}>
                     <Zap className="mr-2 h-4 w-4" />
                     Conectar WhatsApp
                   </Button>
@@ -214,6 +215,34 @@ const DashboardTabs = () => {
           </div>
         </TabsContent>
 
+        {/* AGENDAMENTOS */}
+        <TabsContent value="agendamentos" className="space-y-6" forceMount>
+          <div className={activeTab !== "agendamentos" ? "hidden" : ""}>
+            <AgendamentosSection />
+          </div>
+        </TabsContent>
+
+        {/* VENDAS & CRM */}
+        <TabsContent value="vendas" className="space-y-6" forceMount>
+          <div className={activeTab !== "vendas" ? "hidden" : ""}>
+            <VendasCRMSection />
+          </div>
+        </TabsContent>
+
+        {/* ANALYTICS */}
+        <TabsContent value="analytics" className="space-y-6" forceMount>
+          <div className={activeTab !== "analytics" ? "hidden" : ""}>
+            <AnalyticsSection />
+          </div>
+        </TabsContent>
+
+        {/* AUTOMAÇÕES */}
+        <TabsContent value="automacoes" className="space-y-6" forceMount>
+          <div className={activeTab !== "automacoes" ? "hidden" : ""}>
+            <AutomacoesSection />
+          </div>
+        </TabsContent>
+
         {/* INTEGRAÇÕES */}
         <TabsContent value="integracoes" className="space-y-6" forceMount>
           <div className={activeTab !== "integracoes" ? "hidden" : ""}>
@@ -221,7 +250,7 @@ const DashboardTabs = () => {
           </div>
         </TabsContent>
 
-        {/* MEU PLANO */}
+        {/* CONFIGURAÇÕES (MEU PLANO) */}
         <TabsContent value="plan" className="space-y-6" forceMount>
           <div className={activeTab !== "plan" ? "hidden" : ""}>
             <PlanManagement preselectedPlan={preselectedPlan} />

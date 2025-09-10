@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import DashboardContent from "@/components/dashboard/DashboardContent";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/dashboard/AppSidebar";
+import DashboardTabs from "@/components/dashboard/DashboardTabs";
 
 export default function Dashboard() {
   const { isHydrating } = useAuth();
+  const [activeTab, setActiveTab] = useState("overview");
 
   if (isHydrating) {
     return (
@@ -14,12 +18,21 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader />
-      
-      <main className="container mx-auto py-6 px-6">
-        <DashboardContent />
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        
+        <div className="flex-1 flex flex-col">
+          <header className="h-12 flex items-center border-b px-4">
+            <SidebarTrigger className="mr-2" />
+            <DashboardHeader />
+          </header>
+          
+          <main className="flex-1 p-6">
+            <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }

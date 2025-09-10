@@ -58,7 +58,7 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      <DashboardTabs />
+      {/* DashboardTabs removido - agora é controlado pela página principal */}
       
       <ActionBlockModal
         open={blockModalOpen}
