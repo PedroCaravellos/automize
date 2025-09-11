@@ -291,6 +291,34 @@ serve(async (req) => {
           }
         }
 
+        // Check if academia.id is a demo ID (starts with 'aca_') or missing - treat as demo mode
+        const isDemoMode = !academia.id || academia.id.startsWith('aca_');
+        
+        if (isDemoMode) {
+          console.log('Demo mode detected for lead - academia ID:', academia.id);
+          
+          // Even in demo mode, create a visual lead representation
+          const leadDemo = {
+            id: `lead_demo_${Date.now()}`,
+            academia_id: academia.id || 'demo_academia',
+            nome: params.nome || 'Cliente Demo',
+            telefone: params.telefone || null,
+            email: params.email || null,
+            origem: 'chatbot',
+            status: 'novo',
+            pipeline_stage: 'inicial',
+            observacoes: `Lead de demonstração. Interesse via chatbot sobre ${academia.nome}. ${params.observacoes || ''}`,
+            created_at: new Date().toISOString(),
+          };
+          
+          return {
+            success: true,
+            lead: leadDemo,
+            demo: true,
+            message: `✅ Interesse registrado com sucesso!\n\nObrigado ${params.nome}! Registrei seu interesse em conhecer mais sobre a ${academia.nome}.\n\n🎯 Este é um lead de demonstração. Em um sistema real, nossa equipe entraria em contato em breve!\n\n📞 ${params.telefone ? `Telefone: ${params.telefone}` : 'Lembre-se de deixar seu contato para que possamos te ajudar melhor!'}`
+          };
+        }
+
         // Resolve a valid academia_id. If we are in demo (missing or non-uuid id),
         // create or reuse a DB academia for this user so that leads become visible via RLS.
         const isUuid = (val: string | undefined) => !!val && /[0-9a-fA-F-]{36}/.test(val);
@@ -391,7 +419,7 @@ serve(async (req) => {
         return {
           success: true,
           lead: data,
-          message: 'Interesse registrado com sucesso! Nossa equipe entrará em contato.',
+          message: `✅ Interesse registrado com sucesso!\n\nObrigado ${params.nome}! Registrei seu interesse em conhecer mais sobre a ${academia.nome}. Nossa equipe entrará em contato em breve!\n\n📞 ${params.telefone ? `Telefone para contato: ${params.telefone}` : 'Lembre-se de deixar seu WhatsApp para que possamos te ajudar melhor!'}`,
         };
       } catch (error) {
         console.error('Error in upsertLead:', error);
@@ -465,10 +493,22 @@ INSTRUÇÕES IMPORTANTES:
 9. Se o cliente quiser encerrar, use a mensagem: "${chatbot.mensagemEncerramento}"
 10. NUNCA invente informações que não foram fornecidas - seja sempre preciso
 
+REGRAS OBRIGATÓRIAS PARA COLETA DE LEADS:
+- SEMPRE que alguém perguntar sobre planos, valores, modalidades, ou demonstrar qualquer interesse em conhecer a academia, você DEVE registrar um lead
+- SEJA PROATIVO: Após fornecer as informações solicitadas, SEMPRE pergunte: "Para que nossa equipe possa entrar em contato com mais detalhes, pode me informar seu nome e WhatsApp?"
+- NÃO aceite "não precisa" ou "só queria saber" - INSISTA educadamente: "É rapidinho! Assim posso te ajudar melhor com informações personalizadas."
+- Use a função upsert_lead IMEDIATAMENTE quando tiver pelo menos o nome do cliente
+- EXEMPLOS de quando usar upsert_lead:
+  * Cliente pergunta sobre valores/planos → Responde + pede nome/contato + executa upsert_lead
+  * Cliente quer saber modalidades → Responde + pede nome/contato + executa upsert_lead  
+  * Cliente demonstra interesse → Responde + pede nome/contato + executa upsert_lead
+  * Cliente diz "me interessei" → IMEDIATAMENTE pede nome/contato + executa upsert_lead
+
 FUNCIONALIDADES ESPECIAIS:
 - Você pode criar agendamentos usando a função create_agendamento quando o cliente solicitar
-- Você pode registrar leads usando a função upsert_lead quando o cliente demonstrar interesse mas não agendar
+- Você DEVE registrar leads usando a função upsert_lead SEMPRE que o cliente demonstrar interesse (mesmo que seja só uma pergunta sobre planos)
 - Para agendamentos, SEMPRE confirme dados essenciais: nome completo, serviço/modalidade desejada, data específica e horário
+- Para leads, SEMPRE colete pelo menos o nome - WhatsApp é altamente recomendado mas não obrigatório
 
 REGRAS CRÍTICAS PARA DATAS E AGENDAMENTOS:
 - CONTEXTO TEMPORAL: Estamos em ${new Date().getFullYear()}, não em anos passados como 2023
@@ -526,17 +566,17 @@ Você tem acesso completo às informações desta academia específica. Use esse
         type: "function",
         function: {
           name: "upsert_lead",
-          description: "Registra interesse do cliente como lead quando não há agendamento imediato",
+          description: "OBRIGATÓRIO usar sempre que alguém demonstrar interesse em planos, valores, modalidades ou qualquer aspecto da academia. Use IMEDIATAMENTE quando tiver pelo menos o nome do cliente.",
           parameters: {
             type: "object",
             properties: {
               nome: {
                 type: "string",
-                description: "Nome do cliente interessado"
+                description: "Nome completo do cliente interessado - OBRIGATÓRIO"
               },
               telefone: {
                 type: "string",
-                description: "Telefone para contato (opcional)"
+                description: "WhatsApp ou telefone para contato - ALTAMENTE RECOMENDADO"
               },
               email: {
                 type: "string",
@@ -548,7 +588,7 @@ Você tem acesso completo às informações desta academia específica. Use esse
               },
               observacoes: {
                 type: "string",
-                description: "Observações sobre o interesse do cliente"
+                description: "Observações detalhadas sobre o interesse específico do cliente"
               }
             },
             required: ["nome"]
