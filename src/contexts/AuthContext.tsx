@@ -115,6 +115,7 @@ interface AuthContextType {
   setAcademiaStatus: (id: string, status: AcademiaItem['statusChatbot']) => void;
   // Agendamentos Demo
   addAgendamentoDemo: (agendamento: Omit<AgendamentoDemo, 'id' | 'created_at'>) => AgendamentoDemo;
+  removeAgendamentoDemo: (id: string) => void;
   // Chatbots
   createChatbot: (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }) => ChatbotItem | null;
   updateChatbotMessages: (id: string, mensagens: ChatbotMessageSet) => ChatbotItem | null;
@@ -678,6 +679,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return novoAgendamento;
   };
 
+  const removeAgendamentoDemo = (id: string) => {
+    const agendamento = agendamentosDemo.find(a => a.id === id);
+    setAgendamentosDemo(prev => prev.filter(a => a.id !== id));
+    if (agendamento) addActivity(`Agendamento removido – ${agendamento.cliente_nome}`);
+  };
+
   // Chatbot actions
   const createChatbot = (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }): ChatbotItem | null => {
     const academia = academias.find(a => a.id === data.academiaId);
@@ -792,6 +799,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     removeAcademia,
     setAcademiaStatus,
     addAgendamentoDemo,
+    removeAgendamentoDemo,
     createChatbot,
     updateChatbotMessages,
     toggleChatbotStatus,

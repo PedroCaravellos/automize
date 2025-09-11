@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Clock, User, Phone } from "lucide-react";
+import { Calendar, Plus, Clock, User, Phone, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -22,7 +22,7 @@ interface Agendamento {
 export default function AgendamentosSection() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
-  const { academias, hasAccess, agendamentosDemo } = useAuth();
+  const { academias, hasAccess, agendamentosDemo, removeAgendamentoDemo } = useAuth();
 
   useEffect(() => {
     fetchAgendamentos();
@@ -83,6 +83,25 @@ export default function AgendamentosSection() {
       realizado: 'bg-gray-100 text-gray-800',
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
+
+  const handleDeleteAgendamento = (agendamento: any) => {
+    if (confirm(`Tem certeza que deseja excluir o agendamento de ${agendamento.cliente_nome}?`)) {
+      if ((agendamento as any).isDemo) {
+        removeAgendamentoDemo(agendamento.id);
+        toast({
+          title: "Agendamento excluído",
+          description: "O agendamento de demonstração foi removido com sucesso.",
+        });
+      } else {
+        // TODO: Implementar exclusão de agendamentos reais quando necessário
+        toast({
+          title: "Função não implementada",
+          description: "A exclusão de agendamentos reais será implementada em breve.",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   
@@ -216,13 +235,23 @@ export default function AgendamentosSection() {
                       </p>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">{formatDate(agendamento.data_hora)}</p>
-                    {agendamento.observacoes && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {agendamento.observacoes}
-                      </p>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="font-medium">{formatDate(agendamento.data_hora)}</p>
+                      {agendamento.observacoes && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {agendamento.observacoes}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteAgendamento(agendamento)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
