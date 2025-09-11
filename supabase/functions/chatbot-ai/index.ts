@@ -274,37 +274,111 @@ serve(async (req) => {
     const upsertLead = async (params: any) => {
       try {
         console.log('Creating/updating lead with params:', params);
-        
-        if (!academia.id || academia.id.startsWith('aca_')) {
-          console.log('Demo mode: Creating demonstration lead');
-          return { 
-            success: true, 
-            message: `Interesse registrado na demonstração para ${params.nome}! Em um sistema real, nosso time entraria em contato. Obrigado pelo interesse!`,
-            demo: true
-          };
+
+        // Try to get the authenticated user (from the Authorization header)
+        const authHeader = req.headers.get('Authorization') || '';
+        let userId: string | null = null;
+        if (authHeader) {
+          try {
+            const supabaseAuth = createClient(supabaseUrl, supabaseServiceKey, {
+              global: { headers: { Authorization: authHeader } },
+            });
+            const { data: authData } = await supabaseAuth.auth.getUser();
+            userId = authData?.user?.id || null;
+            console.log('Resolved user from JWT:', userId ? 'OK' : 'NOT FOUND');
+          } catch (e) {
+            console.warn('Could not resolve user from Authorization header:', e);
+          }
+        }
+
+        // Resolve a valid academia_id. If we are in demo (missing or non-uuid id),
+        // create or reuse a DB academia for this user so that leads become visible via RLS.
+        const isUuid = (val: string | undefined) => !!val && /[0-9a-fA-F-]{36}/.test(val);
+        let targetAcademiaId: string | null = isUuid(academia.id) ? (academia.id as string) : null;
+
+        if (!targetAcademiaId) {
+          if (!userId) {
+            console.log('No valid academia id and no user context -> demo lead only');
+            return {
+              success: true,
+              message: `Interesse registrado na demonstração para ${params.nome}! Em um sistema real, nosso time entraria em contato. Obrigado pelo interesse!`,
+              demo: true,
+            };
+          }
+
+          // Try to find an existing academia for this user with the same name/unidade
+          const { data: existingAcademias, error: findErr } = await supabase
+            .from('academias')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('nome', academia.nome)
+            .maybeSingle();
+
+          if (findErr && findErr.code !== 'PGRST116') {
+            console.warn('Error looking up existing academia:', findErr);
+          }
+
+          if (existingAcademias?.id) {
+            targetAcademiaId = existingAcademias.id;
+            console.log('Reusing existing academia id:', targetAcademiaId);
+          } else {
+            // Create a minimal academia row for this user
+            const modalidadesArray = academia.modalidades
+              ? academia.modalidades.split(',').map((s: string) => s.trim()).filter(Boolean)
+              : null;
+            const { data: createdAcademia, error: createErr } = await supabase
+              .from('academias')
+              .insert({
+                user_id: userId,
+                nome: academia.nome,
+                unidade: academia.unidade || null,
+                endereco: academia.endereco || null,
+                telefone: academia.telefone || null,
+                whatsapp: academia.whatsapp || null,
+                horario_funcionamento: academia.horarios || null,
+                modalidades: modalidadesArray,
+                valores: null,
+                promocoes: academia.promocoes || null,
+                diferenciais: academia.diferenciais || null,
+              })
+              .select('id')
+              .single();
+
+            if (createErr) {
+              console.error('Failed to create academia for user lead capture:', createErr);
+              return { error: 'Não foi possível registrar o interesse agora. Tente novamente mais tarde.' };
+            }
+
+            targetAcademiaId = createdAcademia.id;
+            console.log('Created new academia for user. id:', targetAcademiaId);
+          }
         }
 
         if (!params.nome) {
           return { error: 'Nome é obrigatório' };
         }
 
-        // Create lead in Supabase
+        // Create or update lead in Supabase (service role bypasses RLS for write)
         const { data, error } = await supabase
           .from('leads')
-          .upsert({
-            academia_id: academia.id,
-            nome: params.nome,
-            telefone: params.telefone || null,
-            email: params.email || null,
-            origem: 'chatbot',
-            status: 'novo',
-            pipeline_stage: 'contato_inicial',
-            valor_estimado: params.valor_estimado || null,
-            observacoes: params.observacoes || `Interesse demonstrado via chatbot em: ${academia.modalidades || 'atividades da academia'}`
-          }, {
-            onConflict: 'telefone,academia_id',
-            ignoreDuplicates: false
-          })
+          .upsert(
+            {
+              academia_id: targetAcademiaId,
+              nome: params.nome,
+              telefone: params.telefone || null,
+              email: params.email || null,
+              origem: 'chatbot',
+              status: 'novo',
+              pipeline_stage: 'inicial',
+              valor_estimado: params.valor_estimado || null,
+              observacoes:
+                params.observacoes || `Interesse via chatbot sobre planos/serviços na academia ${academia.nome}`,
+            },
+            {
+              onConflict: 'telefone,academia_id',
+              ignoreDuplicates: false,
+            }
+          )
           .select()
           .single();
 
@@ -314,10 +388,10 @@ serve(async (req) => {
         }
 
         console.log('Lead created successfully:', data);
-        return { 
-          success: true, 
+        return {
+          success: true,
           lead: data,
-          message: 'Interesse registrado com sucesso! Nossa equipe entrará em contato.'
+          message: 'Interesse registrado com sucesso! Nossa equipe entrará em contato.',
         };
       } catch (error) {
         console.error('Error in upsertLead:', error);
