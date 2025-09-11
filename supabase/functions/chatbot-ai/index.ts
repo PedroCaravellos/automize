@@ -94,11 +94,25 @@ serve(async (req) => {
       try {
         console.log('Creating appointment with params:', params);
         
-        if (!academia.id) {
-          console.log('Demo mode: Creating demonstration appointment');
+        // Check if academia.id is a demo ID (starts with 'aca_') or missing - treat as demo mode
+        const isDemoMode = !academia.id || academia.id.startsWith('aca_');
+        
+        if (isDemoMode) {
+          console.log('Demo mode detected - academia ID:', academia.id);
+          const dataFormatada = new Date(params.data_hora).toLocaleDateString('pt-BR', { 
+            weekday: 'long', 
+            day: '2-digit', 
+            month: 'long', 
+            year: 'numeric' 
+          });
+          const horaFormatada = new Date(params.data_hora).toLocaleTimeString('pt-BR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+          
           return { 
             success: true, 
-            message: `Agendamento de demonstração confirmado! Em um sistema real, este agendamento seria salvo para ${params.cliente_nome} no dia ${new Date(params.data_hora).toLocaleDateString('pt-BR')} às ${new Date(params.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}. Entre em contato conosco para agendar de verdade!`,
+            message: `✅ Agendamento de demonstração confirmado!\n\n📅 Data: ${dataFormatada}\n⏰ Horário: ${horaFormatada}\n👤 Cliente: ${params.cliente_nome}\n🏃‍♂️ Serviço: ${params.servico}\n\n🎯 Este é um agendamento de demonstração. Para agendar de verdade, entre em contato conosco pelos canais disponíveis!`,
             demo: true
           };
         }
