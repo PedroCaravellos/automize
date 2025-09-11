@@ -315,7 +315,7 @@ serve(async (req) => {
             success: true,
             lead: leadDemo,
             demo: true,
-            message: `✅ Interesse registrado com sucesso!\n\nObrigado ${params.nome}! Registrei seu interesse em conhecer mais sobre a ${academia.nome}.\n\n🎯 Este é um lead de demonstração. Em um sistema real, nossa equipe entraria em contato em breve!\n\n📞 ${params.telefone ? `Telefone: ${params.telefone}` : 'Lembre-se de deixar seu contato para que possamos te ajudar melhor!'}`
+            message: `Perfeito! ${params.telefone ? `Tenho seu contato aqui` : `Ótimo`}. Qualquer dúvida, estarei sempre à disposição para ajudar! 💪`
           };
         }
 
@@ -329,7 +329,7 @@ serve(async (req) => {
             console.log('No valid academia id and no user context -> demo lead only');
             return {
               success: true,
-              message: `Interesse registrado na demonstração para ${params.nome}! Em um sistema real, nosso time entraria em contato. Obrigado pelo interesse!`,
+              message: `Perfeito! Qualquer dúvida, estarei sempre à disposição para ajudar! 💪`,
               demo: true,
             };
           }
@@ -419,7 +419,7 @@ serve(async (req) => {
         return {
           success: true,
           lead: data,
-          message: `✅ Interesse registrado com sucesso!\n\nObrigado ${params.nome}! Registrei seu interesse em conhecer mais sobre a ${academia.nome}. Nossa equipe entrará em contato em breve!\n\n📞 ${params.telefone ? `Telefone para contato: ${params.telefone}` : 'Lembre-se de deixar seu WhatsApp para que possamos te ajudar melhor!'}`,
+          message: `Perfeito! ${params.telefone ? `Tenho seu contato aqui` : `Ótimo`}. Qualquer dúvida, estarei sempre à disposição para ajudar! 💪`,
         };
       } catch (error) {
         console.error('Error in upsertLead:', error);
@@ -493,11 +493,12 @@ INSTRUÇÕES IMPORTANTES:
 9. Se o cliente quiser encerrar, use a mensagem: "${chatbot.mensagemEncerramento}"
 10. NUNCA invente informações que não foram fornecidas - seja sempre preciso
 
-REGRAS OBRIGATÓRIAS PARA COLETA DE LEADS:
-- SEMPRE que alguém perguntar sobre planos, valores, modalidades, ou demonstrar qualquer interesse em conhecer a academia, você DEVE registrar um lead
-- SEJA PROATIVO: Após fornecer as informações solicitadas, SEMPRE pergunte: "Para que nossa equipe possa entrar em contato com mais detalhes, pode me informar seu nome e WhatsApp?"
-- NÃO aceite "não precisa" ou "só queria saber" - INSISTA educadamente: "É rapidinho! Assim posso te ajudar melhor com informações personalizadas."
-- Use a função upsert_lead IMEDIATAMENTE quando tiver pelo menos o nome do cliente
+REGRAS PARA COLETA DE CONTATOS:
+- Quando alguém demonstrar interesse real em conhecer a academia (perguntar sobre matriculas, agendar visita, etc.), colete discretamente nome e contato
+- Seja natural: após dar informações, pergunte "Para que eu possa te ajudar melhor, qual seu nome?" e depois "Tem WhatsApp para eu anotar aqui?"
+- Se conseguir nome e telefone, use a função upsert_lead silenciosamente
+- NUNCA mencione que está "registrando" ou "salvando" informações
+- Seja sutil e natural na coleta
 - EXEMPLOS de quando usar upsert_lead:
   * Cliente pergunta sobre valores/planos → Responde + pede nome/contato + executa upsert_lead
   * Cliente quer saber modalidades → Responde + pede nome/contato + executa upsert_lead  
@@ -836,7 +837,7 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
         const lastFunctionResult = JSON.parse(messages[messages.length - 1].content);
         if (lastFunctionResult.success) {
           aiMessage = {
-            content: lastFunctionResult.message || "Operação realizada com sucesso! Nossa equipe entrará em contato.",
+            content: lastFunctionResult.message || "Perfeito! Qualquer dúvida, estarei sempre à disposição para ajudar! 💪",
             role: 'assistant'
           };
         } else {
