@@ -388,29 +388,75 @@ serve(async (req) => {
           return { error: 'Nome é obrigatório' };
         }
 
-        // Create or update lead in Supabase (service role bypasses RLS for write)
-        const { data, error } = await supabase
-          .from('leads')
-          .upsert(
-            {
-              academia_id: targetAcademiaId,
-              nome: params.nome,
-              telefone: params.telefone || null,
-              email: params.email || null,
-              origem: 'chatbot',
-              status: 'novo',
-              pipeline_stage: 'inicial',
-              valor_estimado: params.valor_estimado || null,
-              observacoes:
-                params.observacoes || `Interesse via chatbot sobre planos/serviços na academia ${academia.nome}`,
-            },
-            {
-              onConflict: 'telefone,academia_id',
-              ignoreDuplicates: false,
+        // Create or update lead without relying on DB constraints
+        let data: any = null;
+        let error: any = null;
+
+        try {
+          let existing: any = null;
+
+          // Try to find existing by telefone or email within the same academia
+          if (params.telefone || params.email) {
+            const orFilters = [
+              params.telefone ? `telefone.eq.${params.telefone}` : '',
+              params.email ? `email.eq.${params.email}` : ''
+            ].filter(Boolean).join(',');
+
+            const { data: found, error: findErr } = await supabase
+              .from('leads')
+              .select('*')
+              .eq('academia_id', targetAcademiaId)
+              .or(orFilters || 'id.eq.__never__')
+              .maybeSingle();
+
+            if (findErr && findErr.code !== 'PGRST116') {
+              console.warn('Lead lookup error:', findErr);
             }
-          )
-          .select()
-          .single();
+            existing = found || null;
+          }
+
+          if (existing?.id) {
+            const { data: updated, error: updateErr } = await supabase
+              .from('leads')
+              .update({
+                nome: params.nome || existing.nome,
+                telefone: params.telefone ?? existing.telefone,
+                email: params.email ?? existing.email,
+                origem: 'chatbot',
+                status: existing.status || 'novo',
+                pipeline_stage: existing.pipeline_stage || 'inicial',
+                valor_estimado: params.valor_estimado ?? existing.valor_estimado,
+                observacoes: params.observacoes || existing.observacoes || `Interesse via chatbot sobre planos/serviços na academia ${academia.nome}`,
+              })
+              .eq('id', existing.id)
+              .select()
+              .single();
+
+            data = updated;
+            error = updateErr;
+          } else {
+            const { data: inserted, error: insertErr } = await supabase
+              .from('leads')
+              .insert({
+                academia_id: targetAcademiaId,
+                nome: params.nome,
+                telefone: params.telefone || null,
+                email: params.email || null,
+                origem: 'chatbot',
+                status: 'novo',
+                pipeline_stage: 'inicial',
+                valor_estimado: params.valor_estimado || null,
+                observacoes: params.observacoes || `Interesse via chatbot sobre planos/serviços na academia ${academia.nome}`,
+              })
+              .select()
+              .single();
+
+            data = inserted;
+            error = insertErr;
+          }
+        } catch (e) {
+          error = e;
+        }
 
         if (error) {
           console.error('Error creating lead:', error);
@@ -769,6 +815,7 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
 
     // Handle function calling
     let agendamentoDemo = null;
+    let leadSaved = false;
     
     if (aiMessage.tool_calls && !data.fallback) {
       console.log('Processing tool calls:', aiMessage.tool_calls.length);
@@ -813,6 +860,9 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
           }
         } else if (functionName === 'upsert_lead') {
           functionResult = await upsertLead(functionArgs);
+          if (functionResult?.success) {
+            leadSaved = true;
+          }
         } else {
           functionResult = { error: 'Função não reconhecida' };
         }
@@ -848,6 +898,29 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
       } else {
         aiMessage = secondCallData.choices[0].message;
       }
+    }
+
+    // Fallback: if no tool saved a lead, try to auto-save from this message
+    try {
+      if (!leadSaved) {
+        const { phones, emails } = extractContacts(message);
+        const historyText = (conversationHistory || []).map((m) => m.content).join(' ');
+        const combined = `${message} ${historyText}`;
+        const nameMatch = combined.match(/(?:me chamo|eu sou|meu nome é|sou)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s]{1,60})/i);
+        if ((phones[0] || emails[0]) && nameMatch) {
+          const res = await upsertLead({
+            nome: nameMatch[1].trim(),
+            telefone: phones[0] || null,
+            email: emails[0] || null,
+            observacoes: 'Contato capturado automaticamente (fallback)'
+          });
+          if (res?.success) {
+            leadSaved = true;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Auto-save lead fallback failed:', e);
     }
 
     const aiResponse = aiMessage.content;
