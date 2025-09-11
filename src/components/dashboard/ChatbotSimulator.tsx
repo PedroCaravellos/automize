@@ -36,7 +36,7 @@ interface ChatbotSimulatorProps {
 }
 
 const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimulatorProps) => {
-  const { addActivity, updateOnboardingProgress } = useAuth();
+  const { addActivity, updateOnboardingProgress, addAgendamentoDemo } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -183,6 +183,19 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
 
         const botResponse = data.response || "Desculpe, não consegui processar sua solicitação.";
         const isFallback = data.fallback || false;
+        
+        // Check if there's a demo appointment to save
+        if (data.agendamento_demo) {
+          try {
+            addAgendamentoDemo(data.agendamento_demo);
+            toast({
+              title: "Agendamento de demo criado!",
+              description: "O agendamento aparecerá na seção de agendamentos.",
+            });
+          } catch (error) {
+            console.error('Erro ao salvar agendamento demo:', error);
+          }
+        }
         
         setTimeout(() => {
           const botMessage: Message = {

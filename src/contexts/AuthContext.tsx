@@ -54,6 +54,19 @@ interface AcademiaItem {
   diferenciais?: string;
 }
 
+interface AgendamentoDemo {
+  id: string;
+  academia_id: string;
+  cliente_nome: string;
+  cliente_telefone?: string;
+  cliente_email?: string;
+  data_hora: string;
+  servico: string;
+  observacoes?: string;
+  status: 'agendado' | 'confirmado' | 'cancelado' | 'realizado';
+  created_at: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -74,6 +87,7 @@ interface AuthContextType {
   // Global app state
   academias: AcademiaItem[];
   chatbots: ChatbotItem[];
+  agendamentosDemo: AgendamentoDemo[];
   activity: ActivityEvent[];
   addActivity: (text: string) => void;
   // Onboarding progress
@@ -99,6 +113,8 @@ interface AuthContextType {
   updateAcademia: (id: string, updates: Partial<Omit<AcademiaItem, 'id' | 'createdAt'>>) => void;
   removeAcademia: (id: string) => void;
   setAcademiaStatus: (id: string, status: AcademiaItem['statusChatbot']) => void;
+  // Agendamentos Demo
+  addAgendamentoDemo: (agendamento: Omit<AgendamentoDemo, 'id' | 'created_at'>) => AgendamentoDemo;
   // Chatbots
   createChatbot: (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }) => ChatbotItem | null;
   updateChatbotMessages: (id: string, mensagens: ChatbotMessageSet) => ChatbotItem | null;
@@ -118,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [intendedRoute, setIntendedRoute] = useState<string | null>(null);
   const [academias, setAcademias] = useState<AcademiaItem[]>([]);
   const [chatbots, setChatbots] = useState<ChatbotItem[]>([]);
+  const [agendamentosDemo, setAgendamentosDemo] = useState<AgendamentoDemo[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [onboardingProgress, setOnboardingProgress] = useState<OnboardingProgress>({ simulatorOpened: false, demoShared: false });
   const [billingInfo, setBillingInfo] = useState<BillingInfo>({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
@@ -444,7 +461,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Persist snapshot whenever data changes
   useEffect(() => {
     if (!user?.id || !hydratedRef.current) return;
-    saveUserData(user.id, { academias, chatbots, activity, onboardingProgress, billingInfo, invoices, subscription });
+    saveUserData(user.id, { academias, chatbots, agendamentosDemo, activity, onboardingProgress, billingInfo, invoices, subscription });
   }, [user?.id, academias, chatbots, activity, onboardingProgress, billingInfo, invoices, subscription]);
 
   // Activity helper
@@ -646,6 +663,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAcademias(prev => prev.map(a => (a.id === id ? { ...a, statusChatbot: status } : a)));
   };
 
+  // Agendamento demo actions
+  const addAgendamentoDemo = (data: Omit<AgendamentoDemo, 'id' | 'created_at'>): AgendamentoDemo => {
+    const novoAgendamento: AgendamentoDemo = {
+      id: generateId('agd'),
+      ...data,
+      created_at: new Date().toISOString(),
+    };
+    setAgendamentosDemo(prev => [...prev, novoAgendamento]);
+    addActivity(`Agendamento criado – ${data.cliente_nome} – ${new Date(data.data_hora).toLocaleDateString('pt-BR')}`);
+    return novoAgendamento;
+  };
+
   // Chatbot actions
   const createChatbot = (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }): ChatbotItem | null => {
     const academia = academias.find(a => a.id === data.academiaId);
@@ -739,6 +768,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIntendedRoute,
     academias,
     chatbots,
+    agendamentosDemo,
     activity,
     addActivity,
     onboardingProgress,
@@ -758,6 +788,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateAcademia,
     removeAcademia,
     setAcademiaStatus,
+    addAgendamentoDemo,
     createChatbot,
     updateChatbotMessages,
     toggleChatbotStatus,

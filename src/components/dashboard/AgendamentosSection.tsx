@@ -22,7 +22,7 @@ interface Agendamento {
 export default function AgendamentosSection() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
-  const { academias, hasAccess } = useAuth();
+  const { academias, hasAccess, agendamentosDemo } = useAuth();
 
   useEffect(() => {
     fetchAgendamentos();
@@ -85,6 +85,16 @@ export default function AgendamentosSection() {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  
+  // Combine real agendamentos with demo ones
+  const todosAgendamentos = [
+    ...agendamentos,
+    ...agendamentosDemo.map(demo => ({
+      ...demo,
+      isDemo: true
+    }))
+  ].sort((a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime());
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -115,7 +125,7 @@ export default function AgendamentosSection() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {agendamentos.filter(a => {
+              {todosAgendamentos.filter(a => {
                 const today = new Date().toDateString();
                 const agendDate = new Date(a.data_hora).toDateString();
                 return today === agendDate && a.status !== 'cancelado';
@@ -131,7 +141,7 @@ export default function AgendamentosSection() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {agendamentos.filter(a => {
+              {todosAgendamentos.filter(a => {
                 const now = new Date();
                 const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
                 const agendDate = new Date(a.data_hora);
@@ -148,7 +158,7 @@ export default function AgendamentosSection() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {agendamentos.filter(a => a.status === 'confirmado').length}
+              {todosAgendamentos.filter(a => a.status === 'confirmado').length}
             </div>
           </CardContent>
         </Card>
@@ -160,7 +170,7 @@ export default function AgendamentosSection() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {agendamentos.filter(a => a.status === 'realizado').length}
+              {todosAgendamentos.filter(a => a.status === 'realizado').length}
             </div>
           </CardContent>
         </Card>
@@ -172,7 +182,7 @@ export default function AgendamentosSection() {
           <CardTitle>Próximos Agendamentos</CardTitle>
         </CardHeader>
         <CardContent>
-          {agendamentos.length === 0 ? (
+          {todosAgendamentos.length === 0 ? (
             <div className="text-center py-8">
               <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-2 text-sm font-semibold">Nenhum agendamento</h3>
@@ -182,7 +192,7 @@ export default function AgendamentosSection() {
             </div>
           ) : (
             <div className="space-y-4">
-              {agendamentos.slice(0, 10).map((agendamento) => (
+              {todosAgendamentos.slice(0, 10).map((agendamento) => (
                 <div key={agendamento.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -190,6 +200,11 @@ export default function AgendamentosSection() {
                       <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(agendamento.status)}`}>
                         {agendamento.status}
                       </span>
+                      {(agendamento as any).isDemo && (
+                        <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                          DEMO
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">{agendamento.servico}</p>
                     <p className="text-sm text-muted-foreground">

@@ -35,6 +35,7 @@ interface ChatRequest {
     role: 'user' | 'assistant';
     content: string;
   }>;
+  onAgendamentoCriado?: (agendamento: any) => void;
 }
 
 serve(async (req) => {
@@ -113,7 +114,17 @@ serve(async (req) => {
           return { 
             success: true, 
             message: `✅ Agendamento de demonstração confirmado!\n\n📅 Data: ${dataFormatada}\n⏰ Horário: ${horaFormatada}\n👤 Cliente: ${params.cliente_nome}\n🏃‍♂️ Serviço: ${params.servico}\n\n🎯 Este é um agendamento de demonstração. Para agendar de verdade, entre em contato conosco pelos canais disponíveis!`,
-            demo: true
+            demo: true,
+            agendamento_demo: {
+              academia_id: academia.id,
+              cliente_nome: params.cliente_nome,
+              data_hora: params.data_hora,
+              servico: params.servico,
+              cliente_telefone: params.cliente_telefone || null,
+              cliente_email: params.cliente_email || null,
+              observacoes: params.observacoes || null,
+              status: 'agendado'
+            }
           };
         }
 

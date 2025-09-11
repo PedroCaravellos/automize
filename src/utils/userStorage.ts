@@ -77,6 +77,7 @@ export interface Subscription {
 export interface UserStoredData {
   academias: StoredAcademia[];
   chatbots: StoredChatbot[];
+  agendamentosDemo?: any[];
   activity: ActivityEvent[];
   onboardingProgress: OnboardingProgress;
   billingInfo: BillingInfo;
@@ -92,6 +93,7 @@ export function getUserData(userId: string): UserStoredData {
     if (!raw) return { 
       academias: [], 
       chatbots: [], 
+      agendamentosDemo: [],
       activity: [],
       onboardingProgress: { simulatorOpened: false, demoShared: false },
       billingInfo: { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' },
@@ -102,6 +104,7 @@ export function getUserData(userId: string): UserStoredData {
     return {
       academias: Array.isArray(parsed.academias) ? parsed.academias : [],
       chatbots: Array.isArray(parsed.chatbots) ? parsed.chatbots : [],
+      agendamentosDemo: Array.isArray(parsed.agendamentosDemo) ? parsed.agendamentosDemo : [],
       activity: Array.isArray(parsed.activity) ? parsed.activity : [],
       onboardingProgress: parsed.onboardingProgress || { simulatorOpened: false, demoShared: false },
       billingInfo: parsed.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' },
