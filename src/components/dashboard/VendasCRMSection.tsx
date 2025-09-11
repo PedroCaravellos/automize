@@ -37,7 +37,11 @@ interface Venda {
   created_at: string;
 }
 
-export default function VendasCRMSection() {
+interface VendasCRMSectionProps {
+  onRefreshRequest?: () => void;
+}
+
+export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionProps = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +51,14 @@ export default function VendasCRMSection() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Listen for refresh requests
+  useEffect(() => {
+    if (onRefreshRequest) {
+      window.addEventListener('refreshDashboardData', fetchData);
+      return () => window.removeEventListener('refreshDashboardData', fetchData);
+    }
+  }, [onRefreshRequest]);
 
   const fetchData = async () => {
     try {

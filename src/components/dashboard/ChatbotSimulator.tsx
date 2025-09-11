@@ -33,9 +33,10 @@ interface ChatbotSimulatorProps {
   onOpenChange: (open: boolean) => void;
   chatbot: Chatbot | null;
   academia: Academia | null;
+  onConversationEnd?: () => void;
 }
 
-const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimulatorProps) => {
+const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia, onConversationEnd }: ChatbotSimulatorProps) => {
   const { addActivity, updateOnboardingProgress, addAgendamentoDemo } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -127,6 +128,10 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
         };
         setMessages(prev => [...prev, endMessage]);
         setConversationEnded(true);
+        // Trigger dashboard refresh after conversation ends
+        setTimeout(() => {
+          onConversationEnd?.();
+        }, 1500);
       }, 1000);
       return;
     }
@@ -284,6 +289,10 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia }: ChatbotSimu
     
     setMessages(prev => [...prev, endMessage]);
     setConversationEnded(true);
+    // Trigger dashboard refresh after conversation ends
+    setTimeout(() => {
+      onConversationEnd?.();
+    }, 1500);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

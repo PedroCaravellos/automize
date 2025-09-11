@@ -27,6 +27,12 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const { activity, chatbots, academias, updateOnboardingProgress, intendedRoute, setIntendedRoute } = useAuth();
 
+  // Function to refresh dashboard data
+  const refreshDashboardData = () => {
+    // Dispatch custom event to trigger refresh in VendasCRMSection
+    window.dispatchEvent(new CustomEvent('refreshDashboardData'));
+  };
+
   // Handle query params on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -225,7 +231,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
         {/* VENDAS & CRM */}
         <TabsContent value="vendas" className="space-y-6" forceMount>
           <div className={activeTab !== "vendas" ? "hidden" : ""}>
-            <VendasCRMSection />
+            <VendasCRMSection onRefreshRequest={refreshDashboardData} />
           </div>
         </TabsContent>
 
@@ -290,6 +296,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
             onOpenChange={setSimulatorOpen}
             chatbot={chatbots[0]}
             academia={academias.find(a => a.id === chatbots[0].academiaId) || null}
+            onConversationEnd={refreshDashboardData}
           />
           <SimulatorShareModal
             open={shareModalOpen}
