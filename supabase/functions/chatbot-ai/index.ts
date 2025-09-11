@@ -645,6 +645,8 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
     let aiMessage = data.choices[0].message;
 
     // Handle function calling
+    let agendamentoDemo = null;
+    
     if (aiMessage.tool_calls && !data.fallback) {
       console.log('Processing tool calls:', aiMessage.tool_calls.length);
       
@@ -682,6 +684,10 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
         
         if (functionName === 'create_agendamento') {
           functionResult = await createAgendamento(functionArgs);
+          // Capture agendamento demo data if successful
+          if (functionResult.success && functionResult.agendamento_demo) {
+            agendamentoDemo = functionResult.agendamento_demo;
+          }
         } else if (functionName === 'upsert_lead') {
           functionResult = await upsertLead(functionArgs);
         } else {
@@ -731,12 +737,19 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
       response_length: aiResponse?.length || 0
     });
 
-    return new Response(JSON.stringify({ 
+    const responseData: any = { 
       response: aiResponse,
       fallback: isFallback,
       error_reason: errorReason,
       usage: data.usage 
-    }), {
+    };
+    
+    // Include agendamento demo data if available
+    if (agendamentoDemo) {
+      responseData.agendamento_demo = agendamentoDemo;
+    }
+
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

@@ -216,6 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const data = getUserData(session.user.id);
             setAcademias(data.academias || []);
             setChatbots(data.chatbots || []);
+            setAgendamentosDemo(data.agendamentosDemo || []);
             setActivity(data.activity || []);
             setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
             setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
@@ -271,6 +272,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const data = getUserData(finalSession.user.id);
           setAcademias(data.academias || []);
           setChatbots(data.chatbots || []);
+          setAgendamentosDemo(data.agendamentosDemo || []);
           setActivity(data.activity || []);
           setOnboardingProgress(data.onboardingProgress || { simulatorOpened: false, demoShared: false });
           setBillingInfo(data.billingInfo || { nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
@@ -323,6 +325,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setAcademias([]);
     setChatbots([]);
+    setAgendamentosDemo([]);
     setActivity([]);
     setOnboardingProgress({ simulatorOpened: false, demoShared: false });
     setBillingInfo({ nomeOuRazao: '', documento: '', emailCobranca: '', endereco: '' });
