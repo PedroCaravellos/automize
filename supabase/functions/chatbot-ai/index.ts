@@ -275,7 +275,7 @@ serve(async (req) => {
       try {
         console.log('Creating/updating lead with params:', params);
         
-        if (!academia.id) {
+        if (!academia.id || academia.id.startsWith('aca_')) {
           console.log('Demo mode: Creating demonstration lead');
           return { 
             success: true, 
@@ -288,17 +288,22 @@ serve(async (req) => {
           return { error: 'Nome é obrigatório' };
         }
 
+        // Create lead in Supabase
         const { data, error } = await supabase
           .from('leads')
-          .insert({
+          .upsert({
             academia_id: academia.id,
             nome: params.nome,
             telefone: params.telefone || null,
             email: params.email || null,
-            origem: params.origem || 'chatbot',
-            observacoes: params.observacoes || null,
+            origem: 'chatbot',
             status: 'novo',
-            pipeline_stage: 'novo'
+            pipeline_stage: 'contato_inicial',
+            valor_estimado: params.valor_estimado || null,
+            observacoes: params.observacoes || `Interesse demonstrado via chatbot em: ${academia.modalidades || 'atividades da academia'}`
+          }, {
+            onConflict: 'telefone,academia_id',
+            ignoreDuplicates: false
           })
           .select()
           .single();
@@ -308,6 +313,7 @@ serve(async (req) => {
           return { error: 'Erro ao registrar interesse' };
         }
 
+        console.log('Lead created successfully:', data);
         return { 
           success: true, 
           lead: data,

@@ -6,6 +6,7 @@ import { DollarSign, Plus, Users, TrendingUp, Target } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import ActionBlockModal from "./ActionBlockModal";
 
 interface Lead {
   id: string;
@@ -40,6 +41,7 @@ export default function VendasCRMSection() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const { academias, hasAccess } = useAuth();
 
   useEffect(() => {
@@ -94,6 +96,18 @@ export default function VendasCRMSection() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddLead = () => {
+    if (!hasAccess()) {
+      setIsBlockModalOpen(true);
+      return;
+    }
+    // TODO: Implement manual lead creation modal
+    toast({
+      title: "Em desenvolvimento",
+      description: "A criação manual de leads será implementada em breve.",
+    });
   };
 
   const getAcademiaNome = (academiaId: string) => {
@@ -154,7 +168,7 @@ export default function VendasCRMSection() {
           <h2 className="text-2xl font-bold">Vendas & CRM</h2>
           <p className="text-muted-foreground">Gerencie leads e acompanhe vendas</p>
         </div>
-        <Button disabled={!hasAccess()}>
+        <Button onClick={handleAddLead} disabled={!hasAccess()}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Lead
         </Button>
@@ -308,6 +322,17 @@ export default function VendasCRMSection() {
           )}
         </CardContent>
       </Card>
+
+      <ActionBlockModal
+        open={isBlockModalOpen}
+        onOpenChange={setIsBlockModalOpen}
+        onPlansClick={() => {
+          const url = new URL(window.location.href);
+          url.searchParams.set('tab', 'plan');
+          window.history.replaceState({}, '', url.toString());
+        }}
+        action="gerenciar leads"
+      />
     </div>
   );
 }

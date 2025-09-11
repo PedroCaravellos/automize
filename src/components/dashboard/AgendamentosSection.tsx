@@ -85,7 +85,7 @@ export default function AgendamentosSection() {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  const handleDeleteAgendamento = (agendamento: any) => {
+  const handleDeleteAgendamento = async (agendamento: any) => {
     if (confirm(`Tem certeza que deseja excluir o agendamento de ${agendamento.cliente_nome}?`)) {
       if ((agendamento as any).isDemo) {
         removeAgendamentoDemo(agendamento.id);
@@ -94,12 +94,31 @@ export default function AgendamentosSection() {
           description: "O agendamento de demonstração foi removido com sucesso.",
         });
       } else {
-        // TODO: Implementar exclusão de agendamentos reais quando necessário
-        toast({
-          title: "Função não implementada",
-          description: "A exclusão de agendamentos reais será implementada em breve.",
-          variant: "destructive"
-        });
+        try {
+          const { error } = await supabase
+            .from('agendamentos')
+            .delete()
+            .eq('id', agendamento.id);
+
+          if (error) {
+            throw error;
+          }
+
+          // Refresh the list
+          fetchAgendamentos();
+          
+          toast({
+            title: "Agendamento excluído",
+            description: "O agendamento foi removido com sucesso.",
+          });
+        } catch (error) {
+          console.error('Error deleting appointment:', error);
+          toast({
+            title: "Erro ao excluir",
+            description: "Não foi possível excluir o agendamento.",
+            variant: "destructive"
+          });
+        }
       }
     }
   };
