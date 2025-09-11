@@ -291,13 +291,14 @@ serve(async (req) => {
           }
         }
 
-        // Check if academia.id is a demo ID (starts with 'aca_') or missing - treat as demo mode
-        const isDemoMode = !academia.id || academia.id.startsWith('aca_');
+        // Check if academia.id is a demo ID (starts with 'aca_') or missing
+        const isDemoId = !academia.id || academia.id.startsWith('aca_');
         
-        if (isDemoMode) {
-          console.log('Demo mode detected for lead - academia ID:', academia.id);
+        // If there's NO authenticated user context, keep it as demo-only (no DB writes)
+        if (isDemoId && !userId) {
+          console.log('Demo mode (unauthenticated) detected for lead - academia ID:', academia.id);
           
-          // Even in demo mode, create a visual lead representation
+          // Create a visual/demo lead representation only
           const leadDemo = {
             id: `lead_demo_${Date.now()}`,
             academia_id: academia.id || 'demo_academia',
@@ -315,12 +316,13 @@ serve(async (req) => {
             success: true,
             lead: leadDemo,
             demo: true,
-            message: `Perfeito! ${params.telefone ? `Tenho seu contato aqui` : `Ótimo`}. Qualquer dúvida, estarei sempre à disposição para ajudar! 💪`
+            message: `Perfeito! Se precisar de mais alguma informação, é só me chamar. 💪`
           };
         }
 
-        // Resolve a valid academia_id. If we are in demo (missing or non-uuid id),
-        // create or reuse a DB academia for this user so that leads become visible via RLS.
+        // From here on, persist to DB (we have a valid user or a real academia id)
+        // Resolve a valid academia_id. If we are in demo (non-uuid id),
+        // create or reuse a DB academia for this user so that leads become visíveis via RLS.
         const isUuid = (val: string | undefined) => !!val && /[0-9a-fA-F-]{36}/.test(val);
         let targetAcademiaId: string | null = isUuid(academia.id) ? (academia.id as string) : null;
 
@@ -419,7 +421,7 @@ serve(async (req) => {
         return {
           success: true,
           lead: data,
-          message: `Perfeito! ${params.telefone ? `Tenho seu contato aqui` : `Ótimo`}. Qualquer dúvida, estarei sempre à disposição para ajudar! 💪`,
+          message: `Perfeito! Se precisar de mais alguma informação, é só me chamar. 💪`,
         };
       } catch (error) {
         console.error('Error in upsertLead:', error);
