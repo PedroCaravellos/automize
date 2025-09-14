@@ -113,7 +113,7 @@ serve(async (req) => {
           
           return { 
             success: true, 
-            message: `✅ Agendamento de demonstração confirmado!\n\n📅 Data: ${dataFormatada}\n⏰ Horário: ${horaFormatada}\n👤 Cliente: ${params.cliente_nome}\n🏃‍♂️ Serviço: ${params.servico}\n\n🎯 Este é um agendamento de demonstração. Para agendar de verdade, entre em contato conosco pelos canais disponíveis!`,
+            message: `✅ Agendamento de demonstração confirmado!\n\n📅 Data: ${dataFormatada}\n⏰ Horário: ${horaFormatada}\n👤 Cliente: ${params.cliente_nome}\n🏃‍♂️ Serviço: ${params.servico}\n\n🎯 Este é um agendamento de demonstração. Para agendar de verdade, solicite atendimento humano ou aguarde que nossa equipe entrará em contato!`,
             demo: true,
             agendamento_demo: {
               academia_id: academia.id,
@@ -236,7 +236,7 @@ serve(async (req) => {
             hint: error.hint,
             code: error.code
           });
-          return { error: 'Erro ao salvar agendamento. Tente novamente ou entre em contato conosco.' };
+          return { error: 'Erro ao salvar agendamento. Tente novamente ou aguarde um momento.' };
         }
 
         console.log('✅ Appointment created successfully:', {
@@ -262,7 +262,7 @@ serve(async (req) => {
         return { 
           success: true, 
           agendamento: data,
-          message: `✅ Agendamento confirmado com sucesso!\n\n📅 Data: ${formatoData}\n⏰ Horário: ${formatoHora}\n👤 Cliente: ${params.cliente_nome}\n🏃‍♂️ Serviço: ${params.servico}\n\nSeu agendamento foi registrado em nosso sistema! Nossa equipe aguarda você no horário marcado. Em caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.`
+          message: `✅ Agendamento confirmado com sucesso!\n\n📅 Data: ${formatoData}\n⏰ Horário: ${formatoHora}\n👤 Cliente: ${params.cliente_nome}\n🏃‍♂️ Serviço: ${params.servico}\n\nSeu agendamento foi registrado em nosso sistema! Nossa equipe aguarda você no horário marcado. Em caso de dúvidas ou necessidade de reagendamento, é só me avisar aqui mesmo!`
         };
       } catch (error) {
         console.error('Error in createAgendamento:', error);
@@ -535,7 +535,7 @@ INSTRUÇÕES IMPORTANTES:
 3. Use SEMPRE as informações específicas fornecidas acima sobre a academia (horários, modalidades, valores, etc.)
 4. Se o cliente perguntar sobre agendamentos, horários, preços ou qualquer informação, priorize os dados fornecidos
 5. Se o cliente demonstrar interesse em matricular-se ou conhecer a academia, seja proativo e mencione as promoções atuais
-6. Se não souber uma informação específica que não foi fornecida, seja honesto e sugira entrar em contato pelos canais disponíveis
+6. Se não souber uma informação específica que não foi fornecida, seja honesto e ofereça transferir para atendimento humano da academia
 7. Mantenha respostas concisas mas completas, sempre personalizadas para esta academia específica
 8. Destaque os diferenciais da academia quando relevante para a conversa
 9. Se o cliente quiser encerrar, use a mensagem: "${chatbot.mensagemEncerramento}"
@@ -543,7 +543,7 @@ INSTRUÇÕES IMPORTANTES:
 
 REGRAS PARA COLETA DE CONTATOS:
 - Quando alguém demonstrar interesse real em conhecer a academia (perguntar sobre matriculas, agendar visita, etc.), colete discretamente nome e contato
-- Seja natural: após dar informações, pergunte "Para que eu possa te ajudar melhor, qual seu nome?" e depois "Tem WhatsApp para eu anotar aqui?"
+- Seja natural: após dar informações, pergunte "Para que eu possa te ajudar melhor, qual seu nome?" e depois "Posso anotar seu telefone também?"
 - Se conseguir nome e telefone, use a função upsert_lead silenciosamente
 - NUNCA mencione que está "registrando" ou "salvando" informações
 - Seja sutil e natural na coleta
@@ -557,7 +557,7 @@ FUNCIONALIDADES ESPECIAIS:
 - Você pode criar agendamentos usando a função create_agendamento quando o cliente solicitar
 - Você DEVE registrar leads usando a função upsert_lead SEMPRE que o cliente demonstrar interesse (mesmo que seja só uma pergunta sobre planos)
 - Para agendamentos, SEMPRE confirme dados essenciais: nome completo, serviço/modalidade desejada, data específica e horário
-- Para leads, SEMPRE colete pelo menos o nome - WhatsApp é altamente recomendado mas não obrigatório
+- Para leads, SEMPRE colete pelo menos o nome - telefone é altamente recomendado mas não obrigatório
 
 REGRAS CRÍTICAS PARA DATAS E AGENDAMENTOS:
 - CONTEXTO TEMPORAL: Estamos em ${new Date().getFullYear()}, não em anos passados como 2023
@@ -625,7 +625,7 @@ Você tem acesso completo às informações desta academia específica. Use esse
               },
               telefone: {
                 type: "string",
-                description: "WhatsApp ou telefone para contato - ALTAMENTE RECOMENDADO"
+                description: "Telefone para contato - ALTAMENTE RECOMENDADO"
               },
               email: {
                 type: "string",
@@ -679,7 +679,7 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
       
       if (!chatbot.perguntasFrequentes || chatbot.perguntasFrequentes.length === 0) {
         console.log('No FAQs available for fallback');
-        return "Desculpe, estou com muitas solicitações no momento. Por favor, tente novamente em alguns segundos ou entre em contato conosco diretamente.";
+        return "Desculpe, estou com muitas solicitações no momento. Por favor, tente novamente em alguns segundos.";
       }
       
       const userWords = userMessage.toLowerCase().split(/\s+/).filter(word => word.length > 2);
@@ -703,7 +703,7 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
       
       return bestMatch 
         ? bestMatch.resposta 
-        : "Desculpe, estou com muitas solicitações no momento. Por favor, tente novamente em alguns segundos ou entre em contato conosco diretamente.";
+        : "Desculpe, estou com muitas solicitações no momento. Por favor, tente novamente em alguns segundos.";
     };
 
     // Helper function for regex contact extraction
