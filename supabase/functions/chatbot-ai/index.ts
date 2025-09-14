@@ -937,7 +937,8 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
       response: aiResponse,
       fallback: isFallback,
       error_reason: errorReason,
-      usage: data.usage 
+      usage: data.usage,
+      lead_saved: leadSaved 
     };
     
     // Include agendamento demo data if available

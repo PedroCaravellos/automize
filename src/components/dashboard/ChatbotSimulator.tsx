@@ -186,6 +186,13 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia, onConversatio
 
         console.log('Chatbot AI response:', data);
 
+        // If a lead was saved, refresh dashboard data promptly
+        if (data?.lead_saved) {
+          setTimeout(() => {
+            onConversationEnd?.();
+          }, 500);
+        }
+
         const botResponse = data.response || "Desculpe, não consegui processar sua solicitação.";
         const isFallback = data.fallback || false;
         
