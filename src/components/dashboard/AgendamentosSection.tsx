@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Clock, User, Phone, Trash2 } from "lucide-react";
+import { Calendar, Plus, Clock, User, Phone, Trash2, Edit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import NovoAgendamentoModal from "./NovoAgendamentoModal";
+import EditAgendamentoModal from "./EditAgendamentoModal";
 
 interface Agendamento {
   id: string;
@@ -24,6 +25,8 @@ export default function AgendamentosSection() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
   const [academiasDb, setAcademiasDb] = useState<AcademiaShort[]>([]);
   const { academias, hasAccess, agendamentosDemo, removeAgendamentoDemo } = useAuth();
 
@@ -139,6 +142,30 @@ export default function AgendamentosSection() {
         }
       }
     }
+  };
+
+  const handleEditAgendamento = (agendamento: any) => {
+    // Don't allow editing demo agendamentos
+    if ((agendamento as any).isDemo) {
+      toast({
+        title: "Não é possível editar",
+        description: "Agendamentos de demonstração não podem ser editados.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!hasAccess()) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para editar agendamentos.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setEditingAgendamento(agendamento);
+    setEditModalOpen(true);
   };
 
 interface AcademiaShort {
@@ -289,6 +316,17 @@ interface AcademiaShort {
                         </p>
                       )}
                     </div>
+                    {!(agendamento as any).isDemo && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditAgendamento(agendamento)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        disabled={!hasAccess()}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -309,6 +347,13 @@ interface AcademiaShort {
         open={modalOpen}
         onOpenChange={setModalOpen}
         onAgendamentoCriado={fetchAgendamentos}
+      />
+
+      <EditAgendamentoModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        agendamento={editingAgendamento}
+        onAgendamentoUpdated={fetchAgendamentos}
       />
     </div>
   );
