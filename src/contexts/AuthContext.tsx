@@ -41,7 +41,7 @@ interface AcademiaItem {
   id: string;
   nome: string;
   unidade: string;
-  segmento: 'Academia' | 'Estúdio' | 'Box' | 'Clínica' | 'Barbearia' | 'Restaurante' | 'Escola' | 'Oficina' | 'Loja' | 'Consultoria' | 'Outros';
+  segmento: string; // broadened for compatibility with stored data
   statusChatbot: 'Nenhum' | 'Em configuração' | 'Ativo';
   createdAt: string;
   endereco?: string;
