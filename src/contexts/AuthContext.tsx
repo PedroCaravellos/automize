@@ -37,11 +37,11 @@ interface ChatbotItem {
   mensagens: ChatbotMessageSet;
   createdAt: string;
 }
-interface AcademiaItem {
+interface NegocioItem {
   id: string;
   nome: string;
   unidade: string;
-  segmento: 'Academia' | 'Estúdio' | 'Box';
+  segmento: 'Academia' | 'Estúdio' | 'Box' | 'Clínica' | 'Barbearia' | 'Restaurante' | 'Escola' | 'Oficina' | 'Loja' | 'Consultoria' | 'Outros';
   statusChatbot: 'Nenhum' | 'Em configuração' | 'Ativo';
   createdAt: string;
   endereco?: string;
@@ -56,7 +56,7 @@ interface AcademiaItem {
 
 interface AgendamentoDemo {
   id: string;
-  academia_id: string;
+  negocio_id: string;
   cliente_nome: string;
   cliente_telefone?: string;
   cliente_email?: string;
@@ -85,7 +85,7 @@ interface AuthContextType {
   trialDaysRemaining: () => number;
   setIntendedRoute: (route: string | null) => void;
   // Global app state
-  academias: AcademiaItem[];
+  negocios: NegocioItem[];
   chatbots: ChatbotItem[];
   agendamentosDemo: AgendamentoDemo[];
   activity: ActivityEvent[];
@@ -108,11 +108,11 @@ interface AuthContextType {
   // Integrations
   simulateConnectWhatsApp: (data: Partial<WhatsAppIntegration>) => void;
   simulateDisconnectWhatsApp: () => void;
-  // Academias
-  addAcademia: (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>) => AcademiaItem;
-  updateAcademia: (id: string, updates: Partial<Omit<AcademiaItem, 'id' | 'createdAt'>>) => void;
-  removeAcademia: (id: string) => void;
-  setAcademiaStatus: (id: string, status: AcademiaItem['statusChatbot']) => void;
+  // Negócios
+  addNegocio: (data: Omit<NegocioItem, 'id' | 'createdAt' | 'statusChatbot'>) => NegocioItem;
+  updateNegocio: (id: string, updates: Partial<Omit<NegocioItem, 'id' | 'createdAt'>>) => void;
+  removeNegocio: (id: string) => void;
+  setNegocioStatus: (id: string, status: NegocioItem['statusChatbot']) => void;
   // Agendamentos Demo
   addAgendamentoDemo: (agendamento: Omit<AgendamentoDemo, 'id' | 'created_at'>) => AgendamentoDemo;
   removeAgendamentoDemo: (id: string) => void;
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isHydrating, setIsHydrating] = useState(true);
   const [intendedRoute, setIntendedRoute] = useState<string | null>(null);
-  const [academias, setAcademias] = useState<AcademiaItem[]>([]);
+  const [negocios, setNegocios] = useState<NegocioItem[]>([]);
   const [chatbots, setChatbots] = useState<ChatbotItem[]>([]);
   const [agendamentosDemo, setAgendamentosDemo] = useState<AgendamentoDemo[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             fetchProfile(session.user.id);
             // Hydrate user data from localStorage
             const data = getUserData(session.user.id);
-            setAcademias(data.academias || []);
+            setNegocios(data.negocios || []);
             setChatbots(data.chatbots || []);
             setAgendamentosDemo(data.agendamentosDemo || []);
             setActivity(data.activity || []);
@@ -236,7 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }, 0);
         } else {
           setProfile(null);
-          setAcademias([]);
+          setNegocios([]);
           setChatbots([]);
           setActivity([]);
           setOnboardingProgress({ simulatorOpened: false, demoShared: false });
@@ -271,7 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (finalSession?.user) {
           fetchProfile(finalSession.user.id);
           const data = getUserData(finalSession.user.id);
-          setAcademias(data.academias || []);
+          setNegocios(data.negocios || []);
           setChatbots(data.chatbots || []);
           setAgendamentosDemo(data.agendamentosDemo || []);
           setActivity(data.activity || []);

@@ -14,92 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
-      academias: {
-        Row: {
-          created_at: string
-          diferenciais: string | null
-          endereco: string | null
-          horario_funcionamento: string | null
-          id: string
-          modalidades: string[] | null
-          nome: string
-          promocoes: string | null
-          telefone: string | null
-          unidade: string | null
-          updated_at: string
-          user_id: string
-          valores: Json | null
-          whatsapp: string | null
-        }
-        Insert: {
-          created_at?: string
-          diferenciais?: string | null
-          endereco?: string | null
-          horario_funcionamento?: string | null
-          id?: string
-          modalidades?: string[] | null
-          nome: string
-          promocoes?: string | null
-          telefone?: string | null
-          unidade?: string | null
-          updated_at?: string
-          user_id: string
-          valores?: Json | null
-          whatsapp?: string | null
-        }
-        Update: {
-          created_at?: string
-          diferenciais?: string | null
-          endereco?: string | null
-          horario_funcionamento?: string | null
-          id?: string
-          modalidades?: string[] | null
-          nome?: string
-          promocoes?: string | null
-          telefone?: string | null
-          unidade?: string | null
-          updated_at?: string
-          user_id?: string
-          valores?: Json | null
-          whatsapp?: string | null
-        }
-        Relationships: []
-      }
       agendamentos: {
         Row: {
-          academia_id: string
           cliente_email: string | null
           cliente_nome: string
           cliente_telefone: string | null
           created_at: string
           data_hora: string
           id: string
+          negocio_id: string
           observacoes: string | null
           servico: string
           status: string | null
           updated_at: string
         }
         Insert: {
-          academia_id: string
           cliente_email?: string | null
           cliente_nome: string
           cliente_telefone?: string | null
           created_at?: string
           data_hora: string
           id?: string
+          negocio_id: string
           observacoes?: string | null
           servico: string
           status?: string | null
           updated_at?: string
         }
         Update: {
-          academia_id?: string
           cliente_email?: string | null
           cliente_nome?: string
           cliente_telefone?: string | null
           created_at?: string
           data_hora?: string
           id?: string
+          negocio_id?: string
           observacoes?: string | null
           servico?: string
           status?: string | null
@@ -108,45 +57,45 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "agendamentos_academia_id_fkey"
-            columns: ["academia_id"]
+            columns: ["negocio_id"]
             isOneToOne: false
-            referencedRelation: "academias"
+            referencedRelation: "negocios"
             referencedColumns: ["id"]
           },
         ]
       }
       automacoes: {
         Row: {
-          academia_id: string
           actions: Json | null
           ativo: boolean | null
           created_at: string
           descricao: string | null
           id: string
+          negocio_id: string
           nome: string
           trigger_config: Json | null
           trigger_type: string
           updated_at: string
         }
         Insert: {
-          academia_id: string
           actions?: Json | null
           ativo?: boolean | null
           created_at?: string
           descricao?: string | null
           id?: string
+          negocio_id: string
           nome: string
           trigger_config?: Json | null
           trigger_type: string
           updated_at?: string
         }
         Update: {
-          academia_id?: string
           actions?: Json | null
           ativo?: boolean | null
           created_at?: string
           descricao?: string | null
           id?: string
+          negocio_id?: string
           nome?: string
           trigger_config?: Json | null
           trigger_type?: string
@@ -155,40 +104,40 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "automacoes_academia_id_fkey"
-            columns: ["academia_id"]
+            columns: ["negocio_id"]
             isOneToOne: false
-            referencedRelation: "academias"
+            referencedRelation: "negocios"
             referencedColumns: ["id"]
           },
         ]
       }
       chatbots: {
         Row: {
-          academia_id: string
           ativo: boolean | null
           created_at: string
           id: string
           instrucoes: string | null
+          negocio_id: string
           nome: string
           personalidade: string | null
           updated_at: string
         }
         Insert: {
-          academia_id: string
           ativo?: boolean | null
           created_at?: string
           id?: string
           instrucoes?: string | null
+          negocio_id: string
           nome: string
           personalidade?: string | null
           updated_at?: string
         }
         Update: {
-          academia_id?: string
           ativo?: boolean | null
           created_at?: string
           id?: string
           instrucoes?: string | null
+          negocio_id?: string
           nome?: string
           personalidade?: string | null
           updated_at?: string
@@ -196,19 +145,19 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "chatbots_academia_id_fkey"
-            columns: ["academia_id"]
+            columns: ["negocio_id"]
             isOneToOne: false
-            referencedRelation: "academias"
+            referencedRelation: "negocios"
             referencedColumns: ["id"]
           },
         ]
       }
       leads: {
         Row: {
-          academia_id: string
           created_at: string
           email: string | null
           id: string
+          negocio_id: string
           nome: string
           observacoes: string | null
           origem: string | null
@@ -219,10 +168,10 @@ export type Database = {
           valor_estimado: number | null
         }
         Insert: {
-          academia_id: string
           created_at?: string
           email?: string | null
           id?: string
+          negocio_id: string
           nome: string
           observacoes?: string | null
           origem?: string | null
@@ -233,10 +182,10 @@ export type Database = {
           valor_estimado?: number | null
         }
         Update: {
-          academia_id?: string
           created_at?: string
           email?: string | null
           id?: string
+          negocio_id?: string
           nome?: string
           observacoes?: string | null
           origem?: string | null
@@ -249,12 +198,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "leads_academia_id_fkey"
-            columns: ["academia_id"]
+            columns: ["negocio_id"]
             isOneToOne: false
-            referencedRelation: "academias"
+            referencedRelation: "negocios"
             referencedColumns: ["id"]
           },
         ]
+      }
+      negocios: {
+        Row: {
+          created_at: string
+          diferenciais: string | null
+          endereco: string | null
+          horario_funcionamento: string | null
+          id: string
+          nome: string
+          promocoes: string | null
+          servicos_oferecidos: string[] | null
+          telefone: string | null
+          tipo_negocio: string | null
+          unidade: string | null
+          updated_at: string
+          user_id: string
+          valores: Json | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          diferenciais?: string | null
+          endereco?: string | null
+          horario_funcionamento?: string | null
+          id?: string
+          nome: string
+          promocoes?: string | null
+          servicos_oferecidos?: string[] | null
+          telefone?: string | null
+          tipo_negocio?: string | null
+          unidade?: string | null
+          updated_at?: string
+          user_id: string
+          valores?: Json | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          diferenciais?: string | null
+          endereco?: string | null
+          horario_funcionamento?: string | null
+          id?: string
+          nome?: string
+          promocoes?: string | null
+          servicos_oferecidos?: string[] | null
+          telefone?: string | null
+          tipo_negocio?: string | null
+          unidade?: string | null
+          updated_at?: string
+          user_id?: string
+          valores?: Json | null
+          whatsapp?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -294,13 +297,13 @@ export type Database = {
       }
       vendas: {
         Row: {
-          academia_id: string
           cliente_nome: string
           created_at: string
           data_fechamento: string | null
           data_venda: string | null
           id: string
           lead_id: string | null
+          negocio_id: string
           plano: string | null
           produto_servico: string | null
           status: string | null
@@ -308,13 +311,13 @@ export type Database = {
           valor: number | null
         }
         Insert: {
-          academia_id: string
           cliente_nome: string
           created_at?: string
           data_fechamento?: string | null
           data_venda?: string | null
           id?: string
           lead_id?: string | null
+          negocio_id: string
           plano?: string | null
           produto_servico?: string | null
           status?: string | null
@@ -322,13 +325,13 @@ export type Database = {
           valor?: number | null
         }
         Update: {
-          academia_id?: string
           cliente_nome?: string
           created_at?: string
           data_fechamento?: string | null
           data_venda?: string | null
           id?: string
           lead_id?: string | null
+          negocio_id?: string
           plano?: string | null
           produto_servico?: string | null
           status?: string | null
@@ -338,9 +341,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "vendas_academia_id_fkey"
-            columns: ["academia_id"]
+            columns: ["negocio_id"]
             isOneToOne: false
-            referencedRelation: "academias"
+            referencedRelation: "negocios"
             referencedColumns: ["id"]
           },
           {

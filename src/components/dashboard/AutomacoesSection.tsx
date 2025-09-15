@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface Automacao {
   id: string;
-  academia_id: string;
+  negocio_id: string;
   nome: string;
   descricao?: string;
   trigger_type: 'novo_lead' | 'agendamento' | 'follow_up' | 'tempo_decorrido';
@@ -23,7 +23,7 @@ interface Automacao {
 export default function AutomacoesSection() {
   const [automacoes, setAutomacoes] = useState<Automacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const { academias, hasAccess } = useAuth();
+  const { negocios, hasAccess } = useAuth();
 
   useEffect(() => {
     fetchAutomacoes();
@@ -98,9 +98,9 @@ export default function AutomacoesSection() {
     }
   };
 
-  const getAcademiaNome = (academiaId: string) => {
-    const academia = academias.find(a => a.id === academiaId);
-    return academia ? `${academia.nome} - ${academia.unidade}` : 'Academia não encontrada';
+  const getNegocioNome = (negocioId: string) => {
+    const negocio = negocios.find(n => n.id === negocioId);
+    return negocio ? `${negocio.nome}${negocio.unidade ? ' - ' + negocio.unidade : ''}` : 'Negócio não encontrado';
   };
 
   const getTriggerIcon = (trigger: string) => {
@@ -133,10 +133,10 @@ export default function AutomacoesSection() {
       return;
     }
 
-    if (academias.length === 0) {
+    if (negocios.length === 0) {
       toast({
-        title: "Nenhuma Academia",
-        description: "Crie uma academia primeiro para usar automações.",
+        title: "Nenhum Negócio",
+        description: "Crie um negócio primeiro para usar automações.",
         variant: "destructive",
       });
       return;
@@ -144,7 +144,7 @@ export default function AutomacoesSection() {
 
     try {
       const exemploAutomacao = {
-        academia_id: academias[0].id,
+        negocio_id: negocios[0].id,
         nome: "Welcome Follow-up",
         descricao: "Enviar mensagem de boas-vindas 1 hora após o primeiro contato",
         trigger_type: 'novo_lead',
@@ -154,7 +154,7 @@ export default function AutomacoesSection() {
         },
         actions: {
           send_message: {
-            template: "Olá {nome}! Obrigado pelo interesse em nossa academia. Em breve entraremos em contato!",
+            template: "Olá {nome}! Obrigado pelo interesse em nosso negócio. Em breve entraremos em contato!",
             channel: "whatsapp"
           }
         },
@@ -305,7 +305,7 @@ export default function AutomacoesSection() {
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          {getAcademiaNome(automacao.academia_id)}
+                          {getNegocioNome(automacao.negocio_id)}
                         </p>
                       </div>
                     </div>

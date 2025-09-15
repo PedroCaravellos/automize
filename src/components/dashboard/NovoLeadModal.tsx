@@ -8,10 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-interface Academia {
+interface Negocio {
   id: string;
   nome: string;
-  unidade: string;
+  unidade: string | null;
 }
 
 interface NovoLeadModalProps {
@@ -25,14 +25,14 @@ export default function NovoLeadModal({
   onOpenChange,
   onLeadCriado
 }: NovoLeadModalProps) {
-  const [academias, setAcademias] = useState<Academia[]>([]);
+  const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingAcademias, setLoadingAcademias] = useState(false);
+  const [loadingNegocios, setLoadingNegocios] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
     telefone: "",
     email: "",
-    academia_id: "",
+    negocio_id: "",
     origem: "" as "chatbot" | "whatsapp" | "site" | "indicacao" | "outro" | "",
     status: "novo" as const,
     pipeline_stage: "inicial" as const,
@@ -41,34 +41,34 @@ export default function NovoLeadModal({
     valor_estimado: ""
   });
 
-  // Fetch academias from database when modal opens
+  // Fetch negocios from database when modal opens
   useEffect(() => {
     if (open) {
-      fetchAcademias();
+      fetchNegocios();
     }
   }, [open]);
 
-  const fetchAcademias = async () => {
-    setLoadingAcademias(true);
+  const fetchNegocios = async () => {
+    setLoadingNegocios(true);
     try {
       const { data, error } = await supabase
-        .from('academias')
+        .from('negocios')
         .select('id, nome, unidade');
 
       if (error) {
         throw error;
       }
 
-      setAcademias((data || []) as Academia[]);
+      setNegocios((data || []) as Negocio[]);
     } catch (error) {
-      console.error('Erro ao buscar academias:', error);
+      console.error('Erro ao buscar negócios:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar as academias.",
+        description: "Não foi possível carregar os negócios.",
         variant: "destructive"
       });
     } finally {
-      setLoadingAcademias(false);
+      setLoadingNegocios(false);
     }
   };
 
@@ -77,7 +77,7 @@ export default function NovoLeadModal({
       nome: "",
       telefone: "",
       email: "",
-      academia_id: "",
+      negocio_id: "",
       origem: "",
       status: "novo",
       pipeline_stage: "inicial",
@@ -90,7 +90,7 @@ export default function NovoLeadModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.nome || !formData.academia_id || !formData.origem) {
+    if (!formData.nome || !formData.negocio_id || !formData.origem) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -108,7 +108,7 @@ export default function NovoLeadModal({
           nome: formData.nome,
           telefone: formData.telefone || null,
           email: formData.email || null,
-          academia_id: formData.academia_id,
+          negocio_id: formData.negocio_id,
           origem: formData.origem,
           status: formData.status,
           pipeline_stage: formData.pipeline_stage,
@@ -183,21 +183,21 @@ export default function NovoLeadModal({
             </div>
           </div>
 
-          {/* Academia */}
+          {/* Negócio */}
           <div className="space-y-2">
-            <Label>Academia *</Label>
+            <Label>Negócio *</Label>
             <Select 
-              value={formData.academia_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, academia_id: value }))}
-              disabled={loadingAcademias}
+              value={formData.negocio_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, negocio_id: value }))}
+              disabled={loadingNegocios}
             >
               <SelectTrigger>
-                <SelectValue placeholder={loadingAcademias ? "Carregando..." : "Selecione uma academia"} />
+                <SelectValue placeholder={loadingNegocios ? "Carregando..." : "Selecione um negócio"} />
               </SelectTrigger>
               <SelectContent>
-                {academias.map((academia) => (
-                  <SelectItem key={academia.id} value={academia.id}>
-                    {academia.nome} - {academia.unidade}
+                {negocios.map((negocio) => (
+                  <SelectItem key={negocio.id} value={negocio.id}>
+                    {negocio.nome}{negocio.unidade ? ` - ${negocio.unidade}` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>

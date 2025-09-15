@@ -17,7 +17,7 @@ import {
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: BarChart3, tab: "overview" },
-  { title: "Academias", url: "/dashboard", icon: Building, tab: "academias" },
+  { title: "Meus Negócios", url: "/dashboard", icon: Building, tab: "negocios" },
   { title: "Chatbots", url: "/dashboard", icon: Bot, tab: "chatbots" },
   { title: "Agendamentos", url: "/dashboard", icon: Calendar, tab: "agendamentos" },
   { title: "Vendas & CRM", url: "/dashboard", icon: DollarSign, tab: "vendas" },

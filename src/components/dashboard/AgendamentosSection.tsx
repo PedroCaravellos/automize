@@ -10,7 +10,7 @@ import EditAgendamentoModal from "./EditAgendamentoModal";
 
 interface Agendamento {
   id: string;
-  academia_id: string;
+  negocio_id: string;
   cliente_nome: string;
   cliente_telefone?: string;
   cliente_email?: string;
@@ -27,12 +27,12 @@ export default function AgendamentosSection() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
-  const [academiasDb, setAcademiasDb] = useState<AcademiaShort[]>([]);
-  const { academias, hasAccess, agendamentosDemo, removeAgendamentoDemo } = useAuth();
+  const [negociosDb, setNegociosDb] = useState<NegocioShort[]>([]);
+  const { negocios, hasAccess, agendamentosDemo, removeAgendamentoDemo } = useAuth();
 
   useEffect(() => {
     fetchAgendamentos();
-    fetchAcademias();
+    fetchNegocios();
   }, []);
 
   const fetchAgendamentos = async () => {
@@ -66,23 +66,23 @@ export default function AgendamentosSection() {
     }
   };
 
-  const fetchAcademias = async () => {
+  const fetchNegocios = async () => {
     try {
       const { data, error } = await supabase
-        .from('academias')
+        .from('negocios')
         .select('id, nome, unidade');
       if (error) throw error;
-      setAcademiasDb((data as AcademiaShort[]) || []);
+      setNegociosDb((data as NegocioShort[]) || []);
     } catch (error) {
-      console.error('Erro ao buscar academias:', error);
+      console.error('Erro ao buscar negócios:', error);
     }
   };
 
-  const getAcademiaNome = (academiaId: string) => {
-    const aDb = academiasDb.find(a => a.id === academiaId);
-    if (aDb) return `${aDb.nome} - ${aDb.unidade}`;
-    const aLocal = academias.find(a => a.id === academiaId);
-    return aLocal ? `${aLocal.nome} - ${aLocal.unidade}` : 'Academia não encontrada';
+  const getNegocioNome = (negocioId: string) => {
+    const nDb = negociosDb.find(n => n.id === negocioId);
+    if (nDb) return `${nDb.nome}${nDb.unidade ? ' - ' + nDb.unidade : ''}`;
+    const nLocal = negocios.find(n => n.id === negocioId);
+    return nLocal ? `${nLocal.nome}${nLocal.unidade ? ' - ' + nLocal.unidade : ''}` : 'Negócio não encontrado';
   };
 
   const formatDate = (dateString: string) => {
@@ -168,10 +168,10 @@ export default function AgendamentosSection() {
     setEditModalOpen(true);
   };
 
-interface AcademiaShort {
+interface NegocioShort {
   id: string;
   nome: string;
-  unidade: string;
+  unidade: string | null;
 }
 
   // Combine real agendamentos with demo ones
@@ -299,7 +299,7 @@ interface AcademiaShort {
                     </div>
                     <p className="text-sm text-muted-foreground">{agendamento.servico}</p>
                     <p className="text-sm text-muted-foreground">
-                      {getAcademiaNome(agendamento.academia_id)}
+                      {getNegocioNome(agendamento.negocio_id)}
                     </p>
                     {agendamento.cliente_telefone && (
                       <p className="text-sm text-muted-foreground">

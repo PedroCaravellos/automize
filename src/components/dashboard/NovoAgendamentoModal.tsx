@@ -14,10 +14,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 
-interface Academia {
+interface Negocio {
   id: string;
   nome: string;
-  unidade: string;
+  unidade: string | null;
 }
 
 interface NovoAgendamentoModalProps {
@@ -32,49 +32,49 @@ export default function NovoAgendamentoModal({
   onAgendamentoCriado
 }: NovoAgendamentoModalProps) {
   
-  const [academias, setAcademias] = useState<Academia[]>([]);
+  const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingAcademias, setLoadingAcademias] = useState(false);
+  const [loadingNegocios, setLoadingNegocios] = useState(false);
   const [formData, setFormData] = useState({
     cliente_nome: "",
     cliente_telefone: "",
     cliente_email: "",
     servico: "",
-    academia_id: "",
+    negocio_id: "",
     data: undefined as Date | undefined,
     hora: "",
     status: "agendado" as const,
     observacoes: ""
   });
 
-  // Fetch academias from database when modal opens
+  // Fetch negocios from database when modal opens
   useEffect(() => {
     if (open) {
-      fetchAcademias();
+      fetchNegocios();
     }
   }, [open]);
 
-  const fetchAcademias = async () => {
-    setLoadingAcademias(true);
+  const fetchNegocios = async () => {
+    setLoadingNegocios(true);
     try {
       const { data, error } = await supabase
-        .from('academias')
+        .from('negocios')
         .select('id, nome, unidade');
 
       if (error) {
         throw error;
       }
 
-      setAcademias((data || []) as Academia[]);
+      setNegocios((data || []) as Negocio[]);
     } catch (error) {
-      console.error('Erro ao buscar academias:', error);
+      console.error('Erro ao buscar negócios:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar as academias.",
+        description: "Não foi possível carregar os negócios.",
         variant: "destructive"
       });
     } finally {
-      setLoadingAcademias(false);
+      setLoadingNegocios(false);
     }
   };
 
@@ -84,7 +84,7 @@ export default function NovoAgendamentoModal({
       cliente_telefone: "",
       cliente_email: "",
       servico: "",
-      academia_id: "",
+      negocio_id: "",
       data: undefined,
       hora: "",
       status: "agendado",
@@ -95,7 +95,7 @@ export default function NovoAgendamentoModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.cliente_nome || !formData.servico || !formData.academia_id || !formData.data || !formData.hora) {
+    if (!formData.cliente_nome || !formData.servico || !formData.negocio_id || !formData.data || !formData.hora) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -119,7 +119,7 @@ export default function NovoAgendamentoModal({
           cliente_telefone: formData.cliente_telefone || null,
           cliente_email: formData.cliente_email || null,
           servico: formData.servico,
-          academia_id: formData.academia_id,
+          negocio_id: formData.negocio_id,
           data_hora: dataHora.toISOString(),
           status: formData.status,
           observacoes: formData.observacoes || null
@@ -192,21 +192,21 @@ export default function NovoAgendamentoModal({
             </div>
           </div>
 
-          {/* Academia */}
+          {/* Negócio */}
           <div className="space-y-2">
-            <Label>Academia *</Label>
+            <Label>Negócio *</Label>
             <Select 
-              value={formData.academia_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, academia_id: value }))}
-              disabled={loadingAcademias}
+              value={formData.negocio_id} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, negocio_id: value }))}
+              disabled={loadingNegocios}
             >
               <SelectTrigger>
-                <SelectValue placeholder={loadingAcademias ? "Carregando..." : "Selecione uma academia"} />
+                <SelectValue placeholder={loadingNegocios ? "Carregando..." : "Selecione um negócio"} />
               </SelectTrigger>
               <SelectContent>
-                {academias.map((academia) => (
-                  <SelectItem key={academia.id} value={academia.id}>
-                    {academia.nome} - {academia.unidade}
+                {negocios.map((negocio) => (
+                  <SelectItem key={negocio.id} value={negocio.id}>
+                    {negocio.nome}{negocio.unidade ? ` - ${negocio.unidade}` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>

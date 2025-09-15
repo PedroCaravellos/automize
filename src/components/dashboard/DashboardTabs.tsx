@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building, Bot, Zap, HelpCircle, Plus } from "lucide-react";
 import PlanManagement from "./PlanManagement";
 import IntegrationsSection from "./IntegrationsSection";
-import AcademiasSection from "./AcademiasSection";
+import NegociosSection from "./NegociosSection";
 import ChatbotsSection from "./ChatbotsSection";
 import AgendamentosSection from "./AgendamentosSection";
 import VendasCRMSection from "./VendasCRMSection";
@@ -207,10 +207,10 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
           </div>
         </TabsContent>
 
-        {/* MINHAS ACADEMIAS */}
-        <TabsContent value="academias" className="space-y-6" forceMount>
-          <div className={activeTab !== "academias" ? "hidden" : ""}>
-            <AcademiasSection />
+        {/* MEUS NEGÓCIOS */}
+        <TabsContent value="negocios" className="space-y-6" forceMount>
+          <div className={activeTab !== "negocios" ? "hidden" : ""}>
+            <NegociosSection />
           </div>
         </TabsContent>
 

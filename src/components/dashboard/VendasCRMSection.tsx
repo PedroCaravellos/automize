@@ -12,7 +12,7 @@ import EditLeadModal from "./EditLeadModal";
 
 interface Lead {
   id: string;
-  academia_id: string;
+  negocio_id: string;
   nome: string;
   telefone?: string;
   email?: string;
@@ -29,7 +29,7 @@ interface Lead {
 interface Venda {
   id: string;
   lead_id?: string;
-  academia_id: string;
+  negocio_id: string;
   produto_servico: string;
   valor: number;
   tipo_plano?: 'mensal' | 'trimestral' | 'semestral' | 'anual';
@@ -38,7 +38,7 @@ interface Venda {
   observacoes?: string;
   created_at: string;
 }
-interface AcademiaRef { id: string; nome: string; unidade: string | null; }
+interface NegocioRef { id: string; nome: string; unidade: string | null; }
 
 interface VendasCRMSectionProps {
   onRefreshRequest?: () => void;
@@ -47,13 +47,13 @@ interface VendasCRMSectionProps {
 export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionProps = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [vendas, setVendas] = useState<Venda[]>([]);
-  const [academiasDb, setAcademiasDb] = useState<AcademiaRef[]>([]);
+  const [negociosDb, setNegociosDb] = useState<NegocioRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isEditLeadModalOpen, setIsEditLeadModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const { academias, hasAccess } = useAuth();
+  const { negocios, hasAccess } = useAuth();
 
   useEffect(() => {
     fetchData();
@@ -95,10 +95,10 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         return;
       }
 
-      const [leadsResponse, vendasResponse, academiasResponse] = await Promise.all([
+      const [leadsResponse, vendasResponse, negociosResponse] = await Promise.all([
         supabase.from('leads').select('*').order('created_at', { ascending: false }),
         supabase.from('vendas').select('*').order('created_at', { ascending: false }),
-        supabase.from('academias').select('id, nome, unidade')
+        supabase.from('negocios').select('id, nome, unidade')
       ]);
 
       if (leadsResponse.error) {
@@ -109,9 +109,9 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         console.error('Erro ao buscar vendas:', vendasResponse.error);
         throw vendasResponse.error;
       }
-      if (academiasResponse.error) {
-        console.error('Erro ao buscar academias:', academiasResponse.error);
-        throw academiasResponse.error;
+      if (negociosResponse.error) {
+        console.error('Erro ao buscar negócios:', negociosResponse.error);
+        throw negociosResponse.error;
       }
 
       // Map the database data to our interface types, handling missing columns
@@ -127,15 +127,15 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         data_fechamento: venda.data_fechamento || undefined
       })) as Venda[];
 
-      const mappedAcademias = (academiasResponse.data || []).map((a: any) => ({
-        id: a.id,
-        nome: a.nome,
-        unidade: a.unidade || null,
-      })) as AcademiaRef[];
+      const mappedNegocios = (negociosResponse.data || []).map((n: any) => ({
+        id: n.id,
+        nome: n.nome,
+        unidade: n.unidade || null,
+      })) as NegocioRef[];
 
       setLeads(mappedLeads);
       setVendas(mappedVendas);
-      setAcademiasDb(mappedAcademias);
+      setNegociosDb(mappedNegocios);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
       toast({
@@ -202,11 +202,11 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
     setIsEditLeadModalOpen(true);
   };
 
-  const getAcademiaNome = (academiaId: string) => {
-    const aDb = academiasDb.find(a => a.id === academiaId);
-    if (aDb) return `${aDb.nome}${aDb.unidade ? ' - ' + aDb.unidade : ''}`;
-    const aCtx = academias.find(a => a.id === academiaId);
-    return aCtx ? `${aCtx.nome}${aCtx.unidade ? ' - ' + aCtx.unidade : ''}` : 'Academia';
+  const getNegocioNome = (negocioId: string) => {
+    const nDb = negociosDb.find(n => n.id === negocioId);
+    if (nDb) return `${nDb.nome}${nDb.unidade ? ' - ' + nDb.unidade : ''}`;
+    const nCtx = negocios.find(n => n.id === negocioId);
+    return nCtx ? `${nCtx.nome}${nCtx.unidade ? ' - ' + nCtx.unidade : ''}` : 'Negócio';
   };
 
   const getStatusColor = (status: string) => {
@@ -391,7 +391,7 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {getAcademiaNome(lead.academia_id)} • {lead.origem}
+                      {getNegocioNome(lead.negocio_id)} • {lead.origem}
                     </p>
                     {lead.observacoes && (
                       <p className="text-sm text-blue-600 font-medium">
