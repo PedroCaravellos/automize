@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ActionBlockModal from "./ActionBlockModal";
+import NovoLeadModal from "./NovoLeadModal";
 
 interface Lead {
   id: string;
@@ -48,6 +49,7 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
   const [academiasDb, setAcademiasDb] = useState<AcademiaRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const { academias, hasAccess } = useAuth();
 
   useEffect(() => {
@@ -129,11 +131,7 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
       setIsBlockModalOpen(true);
       return;
     }
-    // TODO: Implement manual lead creation modal
-    toast({
-      title: "Em desenvolvimento",
-      description: "A criação manual de leads será implementada em breve.",
-    });
+    setIsLeadModalOpen(true);
   };
 
   const handleDeleteLead = async (leadId: string) => {
@@ -411,6 +409,12 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
           window.history.replaceState({}, '', url.toString());
         }}
         action="gerenciar leads"
+      />
+
+      <NovoLeadModal
+        open={isLeadModalOpen}
+        onOpenChange={setIsLeadModalOpen}
+        onLeadCriado={fetchData}
       />
     </div>
   );
