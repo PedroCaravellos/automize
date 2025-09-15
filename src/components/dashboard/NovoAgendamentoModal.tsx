@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface Academia {
+  id: string;
+  nome: string;
+  unidade: string;
+}
+
 interface NovoAgendamentoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,8 +31,9 @@ export default function NovoAgendamentoModal({
   onOpenChange,
   onAgendamentoCriado
 }: NovoAgendamentoModalProps) {
-  const { academias } = useAuth();
+  const [academias, setAcademias] = useState<Academia[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingAcademias, setLoadingAcademias] = useState(false);
   const [formData, setFormData] = useState({
     cliente_nome: "",
     cliente_telefone: "",
@@ -38,6 +45,37 @@ export default function NovoAgendamentoModal({
     status: "agendado" as const,
     observacoes: ""
   });
+
+  // Fetch academias from database when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchAcademias();
+    }
+  }, [open]);
+
+  const fetchAcademias = async () => {
+    setLoadingAcademias(true);
+    try {
+      const { data, error } = await supabase
+        .from('academias')
+        .select('id, nome, unidade');
+
+      if (error) {
+        throw error;
+      }
+
+      setAcademias(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar academias:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as academias.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingAcademias(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -159,9 +197,10 @@ export default function NovoAgendamentoModal({
             <Select 
               value={formData.academia_id} 
               onValueChange={(value) => setFormData(prev => ({ ...prev, academia_id: value }))}
+              disabled={loadingAcademias}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione uma academia" />
+                <SelectValue placeholder={loadingAcademias ? "Carregando..." : "Selecione uma academia"} />
               </SelectTrigger>
               <SelectContent>
                 {academias.map((academia) => (
