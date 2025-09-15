@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Plus, Users, TrendingUp, Target } from "lucide-react";
+import { DollarSign, Plus, Users, TrendingUp, Target, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -120,6 +120,39 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
       title: "Em desenvolvimento",
       description: "A criação manual de leads será implementada em breve.",
     });
+  };
+
+  const handleDeleteLead = async (leadId: string) => {
+    if (!hasAccess()) {
+      setIsBlockModalOpen(true);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', leadId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Remove o lead da lista local
+      setLeads(prev => prev.filter(lead => lead.id !== leadId));
+      
+      toast({
+        title: "Lead deletado",
+        description: "O lead foi removido com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao deletar lead:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível deletar o lead.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getAcademiaNome = (academiaId: string) => {
@@ -318,15 +351,26 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
                       <p className="text-sm text-muted-foreground">📞 {lead.telefone}</p>
                     )}
                   </div>
-                  <div className="text-right">
-                    {lead.valor_estimado && (
-                      <p className="font-medium text-green-600">
-                        {formatCurrency(lead.valor_estimado)}
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      {lead.valor_estimado && (
+                        <p className="font-medium text-green-600">
+                          {formatCurrency(lead.valor_estimado)}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(lead.created_at).toLocaleDateString('pt-BR')}
                       </p>
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(lead.created_at).toLocaleDateString('pt-BR')}
-                    </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteLead(lead.id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      disabled={!hasAccess()}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
