@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Plus, Users, TrendingUp, Target, Trash2 } from "lucide-react";
+import { DollarSign, Plus, Users, TrendingUp, Target, Trash2, Edit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ActionBlockModal from "./ActionBlockModal";
 import NovoLeadModal from "./NovoLeadModal";
+import EditLeadModal from "./EditLeadModal";
 
 interface Lead {
   id: string;
@@ -50,6 +51,8 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
   const [loading, setLoading] = useState(true);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+  const [isEditLeadModalOpen, setIsEditLeadModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const { academias, hasAccess } = useAuth();
 
   useEffect(() => {
@@ -159,6 +162,10 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
       return;
     }
 
+    if (!confirm('Tem certeza que deseja excluir este lead?')) {
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('leads')
@@ -184,6 +191,15 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditLead = (lead: Lead) => {
+    if (!hasAccess()) {
+      setIsBlockModalOpen(true);
+      return;
+    }
+    setEditingLead(lead);
+    setIsEditLeadModalOpen(true);
   };
 
   const getAcademiaNome = (academiaId: string) => {
@@ -405,6 +421,15 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => handleEditLead(lead)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      disabled={!hasAccess()}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleDeleteLead(lead.id)}
                       className="text-red-500 hover:text-red-700 hover:bg-red-50"
                       disabled={!hasAccess()}
@@ -434,6 +459,13 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         open={isLeadModalOpen}
         onOpenChange={setIsLeadModalOpen}
         onLeadCriado={fetchData}
+      />
+
+      <EditLeadModal
+        open={isEditLeadModalOpen}
+        onOpenChange={setIsEditLeadModalOpen}
+        lead={editingLead}
+        onLeadUpdated={fetchData}
       />
     </div>
   );
