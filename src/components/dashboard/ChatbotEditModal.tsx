@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Plus, Trash2 } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
 
 interface ChatbotEditModalProps {
@@ -32,10 +33,14 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
     encerramento: ""
   });
 
-  const [errors, setErrors] = useState({
+  const [errors, setErrors] = useState<{
+    boasVindas: string;
+    encerramento: string;
+    faqs: string[];
+  }>({
     boasVindas: "",
     encerramento: "",
-    faqs: ["", "", ""]
+    faqs: []
   });
 
   useEffect(() => {
@@ -44,16 +49,40 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
       setErrors({
         boasVindas: "",
         encerramento: "",
-        faqs: ["", "", ""]
+        faqs: new Array(chatbot.mensagens.faqs.length).fill("")
       });
     }
   }, [chatbot, open]);
+
+  const addFaq = () => {
+    setMensagens(prev => ({
+      ...prev,
+      faqs: [...prev.faqs, { pergunta: "", resposta: "" }]
+    }));
+    setErrors(prev => ({
+      ...prev,
+      faqs: [...prev.faqs, ""]
+    }));
+  };
+
+  const removeFaq = (index: number) => {
+    if (mensagens.faqs.length > 1) {
+      setMensagens(prev => ({
+        ...prev,
+        faqs: prev.faqs.filter((_, i) => i !== index)
+      }));
+      setErrors(prev => ({
+        ...prev,
+        faqs: prev.faqs.filter((_, i) => i !== index)
+      }));
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {
       boasVindas: "",
       encerramento: "",
-      faqs: ["", "", ""]
+      faqs: new Array(mensagens.faqs.length).fill("")
     };
 
     if (!mensagens.boasVindas.trim()) {
@@ -77,7 +106,9 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
     });
 
     if (!hasValidFaq) {
-      newErrors.faqs[0] = "Pelo menos uma pergunta e resposta devem ser preenchidas";
+      if (newErrors.faqs.length > 0) {
+        newErrors.faqs[0] = "Pelo menos uma pergunta e resposta devem ser preenchidas";
+      }
     }
 
     setErrors(newErrors);
@@ -149,7 +180,19 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
           </div>
 
           <div>
-            <Label>Perguntas Frequentes</Label>
+            <div className="flex items-center justify-between">
+              <Label>Perguntas Frequentes</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addFaq}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                Adicionar Pergunta
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground mb-2">
               Configure respostas para as perguntas mais comuns. O chatbot inteligente também usará essas informações como base de conhecimento.
             </p>
@@ -157,10 +200,23 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
               {mensagens.faqs.map((faq, index) => (
                 <Card key={index} className="p-4">
                   <div className="space-y-2">
-                    <div>
-                      <Label htmlFor={`pergunta-${index}`} className="text-xs">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor={`pergunta-${index}`} className="text-xs font-medium">
                         Pergunta {index + 1}
                       </Label>
+                      {mensagens.faqs.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFaq(index)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    <div>
                       <Input
                         id={`pergunta-${index}`}
                         placeholder="Ex: Qual o horário de funcionamento?"
@@ -188,6 +244,11 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
                   </div>
                 </Card>
               ))}
+            </div>
+            
+            <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg mt-3">
+              💡 <strong>Dica:</strong> Mantenha as respostas claras e específicas. Quanto mais informações úteis você adicionar, 
+              melhor será o atendimento automático do seu chatbot!
             </div>
           </div>
 
