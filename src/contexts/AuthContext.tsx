@@ -37,6 +37,23 @@ interface ChatbotItem {
   mensagens: ChatbotMessageSet;
   createdAt: string;
 }
+interface AcademiaItem {
+  id: string;
+  nome: string;
+  unidade: string;
+  segmento: 'Academia' | 'Estúdio' | 'Box' | 'Clínica' | 'Barbearia' | 'Restaurante' | 'Escola' | 'Oficina' | 'Loja' | 'Consultoria' | 'Outros';
+  statusChatbot: 'Nenhum' | 'Em configuração' | 'Ativo';
+  createdAt: string;
+  endereco?: string;
+  telefone?: string;
+  whatsapp?: string;
+  horarios?: string;
+  modalidades?: string;
+  valores?: string;
+  promocoes?: string;
+  diferenciais?: string;
+}
+
 interface NegocioItem {
   id: string;
   nome: string;
@@ -85,6 +102,7 @@ interface AuthContextType {
   trialDaysRemaining: () => number;
   setIntendedRoute: (route: string | null) => void;
   // Global app state
+  academias: AcademiaItem[];
   negocios: NegocioItem[];
   chatbots: ChatbotItem[];
   agendamentosDemo: AgendamentoDemo[];
@@ -133,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isHydrating, setIsHydrating] = useState(true);
   const [intendedRoute, setIntendedRoute] = useState<string | null>(null);
+  const [academias, setAcademias] = useState<AcademiaItem[]>([]);
   const [negocios, setNegocios] = useState<NegocioItem[]>([]);
   const [chatbots, setChatbots] = useState<ChatbotItem[]>([]);
   const [agendamentosDemo, setAgendamentosDemo] = useState<AgendamentoDemo[]>([]);
@@ -215,7 +234,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             fetchProfile(session.user.id);
             // Hydrate user data from localStorage
             const data = getUserData(session.user.id);
-            setNegocios(data.negocios || []);
+            setAcademias(data.academias || []);
+            setNegocios((data as any).negocios || []);
             setChatbots(data.chatbots || []);
             setAgendamentosDemo(data.agendamentosDemo || []);
             setActivity(data.activity || []);
@@ -236,6 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }, 0);
         } else {
           setProfile(null);
+          setAcademias([]);
           setNegocios([]);
           setChatbots([]);
           setActivity([]);
@@ -271,7 +292,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (finalSession?.user) {
           fetchProfile(finalSession.user.id);
           const data = getUserData(finalSession.user.id);
-          setNegocios(data.negocios || []);
+          setAcademias(data.academias || []);
+          setNegocios((data as any).negocios || []);
           setChatbots(data.chatbots || []);
           setAgendamentosDemo(data.agendamentosDemo || []);
           setActivity(data.activity || []);
@@ -639,6 +661,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     addActivity('WhatsApp Business desconectado (simulado)');
   };
 
+  // Negócio actions
+  const addNegocio = (data: Omit<NegocioItem, 'id' | 'createdAt' | 'statusChatbot'>): NegocioItem => {
+    const novo: NegocioItem = {
+      id: generateId('neg'),
+      ...data,
+      statusChatbot: 'Nenhum',
+      createdAt: new Date().toISOString(),
+    };
+    setNegocios(prev => [...prev, novo]);
+    addActivity(`Negócio cadastrado – ${data.nome}`);
+    return novo;
+  };
+
+  const updateNegocio = (id: string, updates: Partial<Omit<NegocioItem, 'id' | 'createdAt'>>) => {
+    setNegocios(prev => prev.map(n => (n.id === id ? { ...n, ...updates } : n)));
+    if (updates.nome) addActivity(`Negócio atualizado – ${updates.nome}`);
+  };
+
+  const removeNegocio = (id: string) => {
+    const negocio = negocios.find(n => n.id === id);
+    setNegocios(prev => prev.filter(n => n.id !== id));
+    if (negocio) addActivity(`Negócio removido – ${negocio.nome}`);
+  };
+
+  const setNegocioStatus = (id: string, status: NegocioItem['statusChatbot']) => {
+    setNegocios(prev => prev.map(n => (n.id === id ? { ...n, statusChatbot: status } : n)));
+  };
+
   // Academia actions
   const addAcademia = (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>): AcademiaItem => {
     const nova: AcademiaItem = {
@@ -777,6 +827,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     trialDaysRemaining,
     setIntendedRoute,
     academias,
+    negocios,
     chatbots,
     agendamentosDemo,
     activity,
@@ -794,6 +845,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     simulateStartTrial,
     addInvoice,
     formatBRL,
+    addNegocio,
+    updateNegocio,
+    removeNegocio,
+    setNegocioStatus,
     addAcademia,
     updateAcademia,
     removeAcademia,

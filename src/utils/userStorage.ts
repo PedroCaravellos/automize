@@ -2,7 +2,7 @@ export interface StoredAcademia {
   id: string;
   nome: string;
   unidade: string;
-  segmento: "Academia" | "Estúdio" | "Box";
+  segmento: string; // broadened to support all business types
   statusChatbot: "Nenhum" | "Em configuração" | "Ativo";
   createdAt: string;
 }

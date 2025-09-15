@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface Lead {
   id: string;
-  academia_id: string;
+  negocio_id: string;
   nome: string;
   telefone?: string;
   email?: string;
