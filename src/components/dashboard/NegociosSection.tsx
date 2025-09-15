@@ -27,7 +27,7 @@ export interface Negocio {
 }
 
 const NegociosSection = () => {
-  const { user, profile } = useAuth();
+  const { user, hasAccess } = useAuth();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
@@ -94,14 +94,9 @@ const NegociosSection = () => {
   }, [user]);
 
   const handleAddNegocio = () => {
-    if (!profile?.plano || profile.plano === 'trial') {
-      const trialEndDate = profile?.trial_end_date ? new Date(profile.trial_end_date) : null;
-      const isTrialExpired = trialEndDate && trialEndDate < new Date();
-      
-      if (isTrialExpired || negociosDb.length >= 1) {
-        setIsBlockModalOpen(true);
-        return;
-      }
+    if (!hasAccess()) {
+      setIsBlockModalOpen(true);
+      return;
     }
 
     setEditingNegocio(undefined);
