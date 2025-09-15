@@ -56,13 +56,32 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
     fetchData();
   }, []);
 
-  // Listen for refresh requests
+  // Listen for refresh requests and lead updates
   useEffect(() => {
     if (onRefreshRequest) {
       window.addEventListener('refreshDashboardData', fetchData);
       return () => window.removeEventListener('refreshDashboardData', fetchData);
     }
   }, [onRefreshRequest]);
+
+  // Auto-refresh when component becomes visible (to catch leads from chatbot)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Also refresh every 30 seconds to catch new leads from chatbot
+    const interval = setInterval(fetchData, 30000);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const fetchData = async () => {
     try {

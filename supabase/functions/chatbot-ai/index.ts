@@ -467,7 +467,7 @@ serve(async (req) => {
         return {
           success: true,
           lead: data,
-          message: `Perfeito! Se precisar de mais alguma informação, é só me chamar. 💪`,
+          message: `Perfeito! Registrei seu interesse e nossa equipe poderá entrar em contato. Se precisar de mais alguma informação, é só me chamar! 💪`,
         };
       } catch (error) {
         console.error('Error in upsertLead:', error);
@@ -541,18 +541,19 @@ INSTRUÇÕES IMPORTANTES:
 9. Se o cliente quiser encerrar, use a mensagem: "${chatbot.mensagemEncerramento}"
 10. NUNCA invente informações que não foram fornecidas - seja sempre preciso
 
-REGRAS PARA COLETA DE CONTATOS:
+REGRAS PARA COLETA DE CONTATOS E LEADS:
 - OBRIGATÓRIO: Para QUALQUER tipo de interação (perguntas sobre modalidades, preços, agendamentos, etc.), sempre colete nome e contato
 - Seja natural: após dar informações, pergunte "Para que eu possa te ajudar melhor, qual seu nome?" e depois "Posso anotar seu telefone também?"
 - Se conseguir nome e telefone, use a função upsert_lead silenciosamente
-- NUNCA mencione que está "registrando" ou "salvando" informações
+- NUNCA mencione que está "registrando" ou "salvando" informações - apenas diga que pode ajudar melhor
 - Seja sutil e natural na coleta
+- SEMPRE capture o INTERESSE ESPECÍFICO do cliente nas observações do lead
 - EXEMPLOS de quando usar upsert_lead (SEMPRE):
-  * Cliente pergunta sobre valores/planos → Responde + pede nome/contato + executa upsert_lead
-  * Cliente quer saber modalidades → Responde + pede nome/contato + executa upsert_lead  
-  * Cliente demonstra qualquer interesse → Responde + pede nome/contato + executa upsert_lead
-  * Cliente quer agendar algo → DURANTE o agendamento pede os dados + automaticamente cria lead
-  * Cliente faz QUALQUER pergunta → Após responder, pede nome/contato + executa upsert_lead
+  * Cliente pergunta sobre valores/planos → Responde + pede nome/contato + executa upsert_lead (observações: "Interessado em planos e valores")
+  * Cliente quer saber modalidades → Responde + pede nome/contato + executa upsert_lead (observações: "Interessado em modalidades: X, Y, Z")
+  * Cliente demonstra qualquer interesse → Responde + pede nome/contato + executa upsert_lead (observações: interesse específico)
+  * Cliente quer agendar algo → DURANTE o agendamento pede os dados + automaticamente cria lead com detalhes do agendamento
+  * Cliente faz QUALQUER pergunta → Após responder, pede nome/contato + executa upsert_lead com contexto da pergunta
 
 FUNCIONALIDADES ESPECIAIS:
 - Você pode criar agendamentos usando a função create_agendamento quando o cliente solicitar
@@ -636,9 +637,13 @@ Você tem acesso completo às informações desta academia específica. Use esse
                 type: "string",
                 description: "Origem do lead (sempre 'chatbot')"
               },
+              valor_estimado: {
+                type: "number",
+                description: "Valor estimado do interesse (opcional, em reais)"
+              },
               observacoes: {
-                type: "string",
-                description: "Observações detalhadas sobre o interesse específico do cliente"
+                type: "string", 
+                description: "Observações detalhadas sobre o interesse específico do cliente, modalidades desejadas, etc."
               }
             },
             required: ["nome"]
@@ -867,7 +872,8 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
               nome: functionArgs.cliente_nome,
               telefone: functionArgs.cliente_telefone || null,
               email: functionArgs.cliente_email || null,
-              observacoes: `Agendamento criado: ${functionArgs.servico} em ${functionArgs.data_hora}. ${functionArgs.observacoes || ''}`
+              observacoes: `Interessado em: ${functionArgs.servico}. Agendamento marcado para ${functionArgs.data_hora}. ${functionArgs.observacoes || ''}`.trim(),
+              valor_estimado: null // Pode ser preenchido manualmente depois
             });
             
             if (leadFromAgendamento?.success) {
