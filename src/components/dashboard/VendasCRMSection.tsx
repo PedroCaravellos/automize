@@ -36,6 +36,7 @@ interface Venda {
   observacoes?: string;
   created_at: string;
 }
+interface AcademiaRef { id: string; nome: string; unidade: string | null; }
 
 interface VendasCRMSectionProps {
   onRefreshRequest?: () => void;
@@ -44,6 +45,7 @@ interface VendasCRMSectionProps {
 export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionProps = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [vendas, setVendas] = useState<Venda[]>([]);
+  const [academiasDb, setAcademiasDb] = useState<AcademiaRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const { academias, hasAccess } = useAuth();
@@ -69,9 +71,10 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         return;
       }
 
-      const [leadsResponse, vendasResponse] = await Promise.all([
+      const [leadsResponse, vendasResponse, academiasResponse] = await Promise.all([
         supabase.from('leads').select('*').order('created_at', { ascending: false }),
-        supabase.from('vendas').select('*').order('created_at', { ascending: false })
+        supabase.from('vendas').select('*').order('created_at', { ascending: false }),
+        supabase.from('academias').select('id, nome, unidade')
       ]);
 
       if (leadsResponse.error) {
@@ -81,6 +84,10 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
       if (vendasResponse.error) {
         console.error('Erro ao buscar vendas:', vendasResponse.error);
         throw vendasResponse.error;
+      }
+      if (academiasResponse.error) {
+        console.error('Erro ao buscar academias:', academiasResponse.error);
+        throw academiasResponse.error;
       }
 
       // Map the database data to our interface types, handling missing columns
@@ -96,8 +103,15 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         data_fechamento: venda.data_fechamento || undefined
       })) as Venda[];
 
+      const mappedAcademias = (academiasResponse.data || []).map((a: any) => ({
+        id: a.id,
+        nome: a.nome,
+        unidade: a.unidade || null,
+      })) as AcademiaRef[];
+
       setLeads(mappedLeads);
       setVendas(mappedVendas);
+      setAcademiasDb(mappedAcademias);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
       toast({
@@ -156,8 +170,10 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
   };
 
   const getAcademiaNome = (academiaId: string) => {
-    const academia = academias.find(a => a.id === academiaId);
-    return academia ? `${academia.nome} - ${academia.unidade}` : 'Academia não encontrada';
+    const aDb = academiasDb.find(a => a.id === academiaId);
+    if (aDb) return `${aDb.nome}${aDb.unidade ? ' - ' + aDb.unidade : ''}`;
+    const aCtx = academias.find(a => a.id === academiaId);
+    return aCtx ? `${aCtx.nome}${aCtx.unidade ? ' - ' + aCtx.unidade : ''}` : 'Academia';
   };
 
   const getStatusColor = (status: string) => {
