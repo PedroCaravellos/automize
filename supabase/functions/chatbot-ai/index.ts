@@ -542,16 +542,17 @@ INSTRUÇÕES IMPORTANTES:
 10. NUNCA invente informações que não foram fornecidas - seja sempre preciso
 
 REGRAS PARA COLETA DE CONTATOS:
-- Quando alguém demonstrar interesse real em conhecer a academia (perguntar sobre matriculas, agendar visita, etc.), colete discretamente nome e contato
+- OBRIGATÓRIO: Para QUALQUER tipo de interação (perguntas sobre modalidades, preços, agendamentos, etc.), sempre colete nome e contato
 - Seja natural: após dar informações, pergunte "Para que eu possa te ajudar melhor, qual seu nome?" e depois "Posso anotar seu telefone também?"
 - Se conseguir nome e telefone, use a função upsert_lead silenciosamente
 - NUNCA mencione que está "registrando" ou "salvando" informações
 - Seja sutil e natural na coleta
-- EXEMPLOS de quando usar upsert_lead:
+- EXEMPLOS de quando usar upsert_lead (SEMPRE):
   * Cliente pergunta sobre valores/planos → Responde + pede nome/contato + executa upsert_lead
   * Cliente quer saber modalidades → Responde + pede nome/contato + executa upsert_lead  
-  * Cliente demonstra interesse → Responde + pede nome/contato + executa upsert_lead
-  * Cliente diz "me interessei" → IMEDIATAMENTE pede nome/contato + executa upsert_lead
+  * Cliente demonstra qualquer interesse → Responde + pede nome/contato + executa upsert_lead
+  * Cliente quer agendar algo → DURANTE o agendamento pede os dados + automaticamente cria lead
+  * Cliente faz QUALQUER pergunta → Após responder, pede nome/contato + executa upsert_lead
 
 FUNCIONALIDADES ESPECIAIS:
 - Você pode criar agendamentos usando a função create_agendamento quando o cliente solicitar
@@ -857,6 +858,22 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
           // Capture agendamento demo data if successful
           if (functionResult.success && functionResult.agendamento_demo) {
             agendamentoDemo = functionResult.agendamento_demo;
+          }
+          
+          // SEMPRE criar um lead quando um agendamento for criado
+          if (functionResult.success && functionArgs.cliente_nome) {
+            console.log('Creating lead automatically from agendamento...');
+            const leadFromAgendamento = await upsertLead({
+              nome: functionArgs.cliente_nome,
+              telefone: functionArgs.cliente_telefone || null,
+              email: functionArgs.cliente_email || null,
+              observacoes: `Agendamento criado: ${functionArgs.servico} em ${functionArgs.data_hora}. ${functionArgs.observacoes || ''}`
+            });
+            
+            if (leadFromAgendamento?.success) {
+              leadSaved = true;
+              console.log('Lead created successfully from agendamento');
+            }
           }
         } else if (functionName === 'upsert_lead') {
           functionResult = await upsertLead(functionArgs);
