@@ -5,6 +5,7 @@ import { Calendar, Plus, Clock, User, Phone, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import NovoAgendamentoModal from "./NovoAgendamentoModal";
 
 interface Agendamento {
   id: string;
@@ -22,6 +23,7 @@ interface Agendamento {
 export default function AgendamentosSection() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
   const { academias, hasAccess, agendamentosDemo, removeAgendamentoDemo } = useAuth();
 
   useEffect(() => {
@@ -148,7 +150,10 @@ export default function AgendamentosSection() {
           <h2 className="text-2xl font-bold">Agendamentos</h2>
           <p className="text-muted-foreground">Gerencie agendamentos e consultas</p>
         </div>
-        <Button disabled={!hasAccess()}>
+        <Button 
+          disabled={!hasAccess()} 
+          onClick={() => setModalOpen(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Novo Agendamento
         </Button>
@@ -278,6 +283,12 @@ export default function AgendamentosSection() {
           )}
         </CardContent>
       </Card>
+
+      <NovoAgendamentoModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onAgendamentoCriado={fetchAgendamentos}
+      />
     </div>
   );
 }
