@@ -31,6 +31,7 @@ export default function NovoAgendamentoModal({
   onOpenChange,
   onAgendamentoCriado
 }: NovoAgendamentoModalProps) {
+  const { academias: academiasLocal } = useAuth();
   const [academias, setAcademias] = useState<Academia[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingAcademias, setLoadingAcademias] = useState(false);
@@ -64,7 +65,18 @@ export default function NovoAgendamentoModal({
         throw error;
       }
 
-      setAcademias(data || []);
+      // If there are academias in local UI state (legacy), filter DB list to avoid showing deleted ones
+      let result = (data || []) as Academia[];
+      try {
+        if (academiasLocal && academiasLocal.length > 0) {
+          const nameKey = new Set(academiasLocal.map(a => `${a.nome}__${a.unidade}`));
+          const filtered = result.filter(a => nameKey.has(`${a.nome}__${a.unidade}`));
+          // Only apply filter if it would not hide everything unexpectedly
+          if (filtered.length > 0) result = filtered;
+        }
+      } catch {}
+
+      setAcademias(result);
     } catch (error) {
       console.error('Erro ao buscar academias:', error);
       toast({

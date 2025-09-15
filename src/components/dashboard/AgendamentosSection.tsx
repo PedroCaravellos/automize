@@ -24,10 +24,12 @@ export default function AgendamentosSection() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [academiasDb, setAcademiasDb] = useState<AcademiaShort[]>([]);
   const { academias, hasAccess, agendamentosDemo, removeAgendamentoDemo } = useAuth();
 
   useEffect(() => {
     fetchAgendamentos();
+    fetchAcademias();
   }, []);
 
   const fetchAgendamentos = async () => {
@@ -61,9 +63,23 @@ export default function AgendamentosSection() {
     }
   };
 
+  const fetchAcademias = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('academias')
+        .select('id, nome, unidade');
+      if (error) throw error;
+      setAcademiasDb((data as AcademiaShort[]) || []);
+    } catch (error) {
+      console.error('Erro ao buscar academias:', error);
+    }
+  };
+
   const getAcademiaNome = (academiaId: string) => {
-    const academia = academias.find(a => a.id === academiaId);
-    return academia ? `${academia.nome} - ${academia.unidade}` : 'Academia não encontrada';
+    const aDb = academiasDb.find(a => a.id === academiaId);
+    if (aDb) return `${aDb.nome} - ${aDb.unidade}`;
+    const aLocal = academias.find(a => a.id === academiaId);
+    return aLocal ? `${aLocal.nome} - ${aLocal.unidade}` : 'Academia não encontrada';
   };
 
   const formatDate = (dateString: string) => {
@@ -125,7 +141,12 @@ export default function AgendamentosSection() {
     }
   };
 
-  
+interface AcademiaShort {
+  id: string;
+  nome: string;
+  unidade: string;
+}
+
   // Combine real agendamentos with demo ones
   const todosAgendamentos = [
     ...agendamentos,
