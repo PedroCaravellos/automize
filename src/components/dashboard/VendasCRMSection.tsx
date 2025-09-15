@@ -344,12 +344,19 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
                     <p className="text-sm text-muted-foreground">
                       {getAcademiaNome(lead.academia_id)} • {lead.origem}
                     </p>
-                    {lead.interesse && (
-                      <p className="text-sm text-muted-foreground">Interesse: {lead.interesse}</p>
+                    {lead.observacoes && (
+                      <p className="text-sm text-blue-600 font-medium">
+                        💬 {lead.observacoes}
+                      </p>
                     )}
-                    {lead.telefone && (
-                      <p className="text-sm text-muted-foreground">📞 {lead.telefone}</p>
-                    )}
+                    <div className="flex items-center gap-4 mt-1">
+                      {lead.telefone && (
+                        <p className="text-sm text-muted-foreground">📞 {lead.telefone}</p>
+                      )}
+                      {lead.email && (
+                        <p className="text-sm text-muted-foreground">📧 {lead.email}</p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
