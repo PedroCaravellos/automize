@@ -6,9 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, EyeOff, Copy, MessageSquare, Instagram, Globe, Users, Zap, Clock, Info, CheckCircle, Circle, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Copy, MessageSquare, Zap, Clock, Info, CheckCircle, Circle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,13 +17,12 @@ export default function IntegrationsSection() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   
-  // Estado local dos campos do formulário - sempre editável
+  // Estado local dos campos do formulário - apenas campos essenciais
   const [localFormData, setLocalFormData] = useState({
     provider: '',
     apiKey: '',
     wabaId: '',
-    phoneId: '',
-    verifyToken: ''
+    phoneId: ''
   });
 
   const whatsappIntegration = subscription.integrations?.whatsapp ?? { connected: false };
@@ -37,8 +35,7 @@ export default function IntegrationsSection() {
         provider: whatsappIntegration.provider || '',
         apiKey: whatsappIntegration.apiKey || '',
         wabaId: whatsappIntegration.wabaId || '',
-        phoneId: whatsappIntegration.phoneId || '',
-        verifyToken: whatsappIntegration.verifyToken || ''
+        phoneId: whatsappIntegration.phoneId || ''
       });
     }
   }, []); // Empty dependency array - load only once on mount
@@ -92,8 +89,7 @@ export default function IntegrationsSection() {
       provider: '',
       apiKey: '',
       wabaId: '',
-      phoneId: '',
-      verifyToken: ''
+      phoneId: ''
     });
     toast({
       title: "Campos limpos",
@@ -311,27 +307,6 @@ export default function IntegrationsSection() {
                 </Button>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Verify Token</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm z-50">
-                      <p>Token secreto que você define para validar a conexão junto ao provedor.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Input
-                value={localFormData.verifyToken}
-                onChange={(e) => setLocalFormData(prev => ({...prev, verifyToken: e.target.value}))}
-                placeholder="meu_token_secreto"
-              />
-            </div>
           </div>
 
           {/* Botões de ação */}
@@ -352,56 +327,6 @@ export default function IntegrationsSection() {
                 Desconectar WhatsApp
               </Button>
             )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Other Integrations Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Outras integrações (futuro)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            {[
-              { name: "Instagram", icon: Instagram, description: "Integração com Instagram Direct" },
-              { name: "Site/Widget", icon: Globe, description: "Widget de chat para seu site" },
-              { name: "CRM HubSpot", icon: Users, description: "Sincronização com HubSpot" },
-              { name: "CRM Pipedrive", icon: Users, description: "Sincronização com Pipedrive" }
-            ].map((integration) => {
-              const Icon = integration.icon;
-              return (
-                <Card key={integration.name} className="border-muted">
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-5 w-5 text-muted-foreground" />
-                        <h4 className="font-medium">{integration.name}</h4>
-                      </div>
-                      <Badge variant="outline" className="text-muted-foreground">Em breve</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">{integration.description}</p>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full">Em breve</Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2">
-                            <Icon className="h-5 w-5" />
-                            {integration.name}
-                          </DialogTitle>
-                          <DialogDescription>{integration.description}</DialogDescription>
-                        </DialogHeader>
-                        <p className="text-sm text-muted-foreground">
-                          Esta integração estará disponível em futuras atualizações do Automiza.
-                        </p>
-                      </DialogContent>
-                    </Dialog>
-                  </CardContent>
-                </Card>
-              );
-            })}
           </div>
         </CardContent>
       </Card>
