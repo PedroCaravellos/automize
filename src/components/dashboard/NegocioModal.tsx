@@ -395,12 +395,12 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
             
             {/* Planos/Mensalidades */}
             <div className="space-y-3">
-              <Label className="text-xs font-medium">Planos de Assinatura (Mensalidades, Anuidades, etc.)</Label>
+              <Label className="text-sm font-medium">Planos de Assinatura (Mensalidades, Anuidades, etc.)</Label>
               {(formData.valores?.planos || []).map((plano, index) => (
-                <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-4">
+                <div key={index} className="flex gap-3 items-center bg-muted/30 p-3 rounded-lg">
+                  <div className="flex-1">
                     <Input
-                      placeholder="Nome do plano"
+                      placeholder="Ex: Plano Mensal, Semestral..."
                       value={plano.nome}
                       onChange={(e) => {
                         const novosPlanos = [...(formData.valores?.planos || [])];
@@ -409,19 +409,23 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                       }}
                     />
                   </div>
-                  <div className="col-span-3">
-                    <Input
-                      type="number"
-                      placeholder="Preço"
-                      value={plano.preco}
-                      onChange={(e) => {
-                        const novosPlanos = [...(formData.valores?.planos || [])];
-                        novosPlanos[index] = { ...plano, preco: parseFloat(e.target.value) || 0 };
-                        handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
-                      }}
-                    />
+                  <div className="w-32">
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        placeholder="0,00"
+                        className="pl-8"
+                        value={plano.preco}
+                        onChange={(e) => {
+                          const novosPlanos = [...(formData.valores?.planos || [])];
+                          novosPlanos[index] = { ...plano, preco: parseFloat(e.target.value) || 0 };
+                          handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="col-span-3">
+                  <div className="w-28">
                     <Select
                       value={plano.periodo}
                       onValueChange={(value) => {
@@ -442,20 +446,18 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const novosPlanos = (formData.valores?.planos || []).filter((_, i) => i !== index);
-                        handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
-                      }}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remover
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const novosPlanos = (formData.valores?.planos || []).filter((_, i) => i !== index);
+                      handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
+                    }}
+                    className="text-destructive hover:text-destructive/80"
+                  >
+                    ×
+                  </Button>
                 </div>
               ))}
               <Button
@@ -466,19 +468,20 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                   const novosPlanos = [...(formData.valores?.planos || []), { nome: "", preco: 0, periodo: "mensal" }];
                   handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
                 }}
+                className="w-full"
               >
                 + Adicionar Plano
               </Button>
             </div>
 
             {/* Serviços Avulsos */}
-            <div className="space-y-3 mt-4">
-              <Label className="text-xs font-medium">Serviços Avulsos (Consultas, Aulas Avulsas, etc.)</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Serviços Avulsos (Consultas, Aulas Avulsas, etc.)</Label>
               {(formData.valores?.servicosAvulsos || []).map((servico, index) => (
-                <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-6">
+                <div key={index} className="flex gap-3 items-center bg-muted/30 p-3 rounded-lg">
+                  <div className="flex-1">
                     <Input
-                      placeholder="Nome do serviço"
+                      placeholder="Ex: Consulta, Aula avulsa..."
                       value={servico.nome}
                       onChange={(e) => {
                         const novosServicos = [...(formData.valores?.servicosAvulsos || [])];
@@ -487,32 +490,34 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                       }}
                     />
                   </div>
-                  <div className="col-span-4">
-                    <Input
-                      type="number"
-                      placeholder="Preço"
-                      value={servico.preco}
-                      onChange={(e) => {
-                        const novosServicos = [...(formData.valores?.servicosAvulsos || [])];
-                        novosServicos[index] = { ...servico, preco: parseFloat(e.target.value) || 0 };
-                        handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
-                      }}
-                    />
+                  <div className="w-32">
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        placeholder="0,00"
+                        className="pl-8"
+                        value={servico.preco}
+                        onChange={(e) => {
+                          const novosServicos = [...(formData.valores?.servicosAvulsos || [])];
+                          novosServicos[index] = { ...servico, preco: parseFloat(e.target.value) || 0 };
+                          handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="col-span-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const novosServicos = (formData.valores?.servicosAvulsos || []).filter((_, i) => i !== index);
-                        handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
-                      }}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remover
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const novosServicos = (formData.valores?.servicosAvulsos || []).filter((_, i) => i !== index);
+                      handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
+                    }}
+                    className="text-destructive hover:text-destructive/80"
+                  >
+                    ×
+                  </Button>
                 </div>
               ))}
               <Button
@@ -523,14 +528,15 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                   const novosServicos = [...(formData.valores?.servicosAvulsos || []), { nome: "", preco: 0 }];
                   handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
                 }}
+                className="w-full"
               >
                 + Adicionar Serviço
               </Button>
             </div>
 
             {/* Observações sobre Preços */}
-            <div className="mt-4">
-              <Label htmlFor="observacoes-precos" className="text-xs font-medium">
+            <div>
+              <Label htmlFor="observacoes-precos" className="text-sm font-medium">
                 Observações sobre Preços
               </Label>
               <Textarea
