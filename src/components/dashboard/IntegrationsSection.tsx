@@ -7,10 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, EyeOff, Copy, MessageSquare, Zap, Clock, Info, CheckCircle, Circle, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, EyeOff, Copy, MessageSquare, Zap, Clock, Info, CheckCircle, Circle, AlertCircle, Settings, BookOpen } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import WhatsAppWizard from "./WhatsAppWizard";
+import ConnectionValidator from "./ConnectionValidator";
 
 interface WhatsAppIntegration {
   id: string;
@@ -31,6 +34,7 @@ export default function IntegrationsSection() {
   const [isActivating, setIsActivating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [whatsappIntegration, setWhatsappIntegration] = useState<WhatsAppIntegration | null>(null);
+  const [activeTab, setActiveTab] = useState("wizard");
   
   // Estado local dos campos do formulário
   const [localFormData, setLocalFormData] = useState({
@@ -256,200 +260,255 @@ export default function IntegrationsSection() {
   const StatusIcon = statusInfo.icon;
   const isConnected = whatsappIntegration?.is_active || false;
 
-  // Conteúdo da seção de integrações (inline para evitar remount e perda de foco)
+  // Conteúdo da seção de integrações
   const integrationsContent = (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              <CardTitle>WhatsApp Business (360Dialog)</CardTitle>
-            </div>
-            <Badge variant="outline" className={`${statusInfo.color} ${statusInfo.border} ${statusInfo.bg}`}>
-              <StatusIcon className="h-3 w-3 mr-1" />
-              {statusInfo.text}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Status Card */}
-          <Card className={`${statusInfo.border} ${statusInfo.bg}`}>
-            <CardContent className="pt-4">
-              <p className={`${statusInfo.color.replace('text-', 'text-')} text-sm`}>
-                {isConnected
-                  ? `WhatsApp Business conectado com sucesso! ${whatsappIntegration?.created_at ? `Conectado em ${new Date(whatsappIntegration.created_at).toLocaleString('pt-BR')}.` : ''}`
-                  : (localFormData.provider || localFormData.apiKey || localFormData.wabaId)
-                  ? "Preencha os dados e clique em 'Conectar WhatsApp' para ativar a integração."
-                  : "Configure sua conta 360Dialog para conectar seu próprio WhatsApp Business."
-                }
-              </p>
-              {isConnected && whatsappIntegration && (
-                <div className="mt-3 space-y-1 text-sm">
-                  <p><strong>Provedor:</strong> {whatsappIntegration.provider}</p>
-                  <p><strong>WABA ID:</strong> {whatsappIntegration.waba_id}</p>
-                  <p><strong>Phone ID:</strong> {whatsappIntegration.phone_number_id}</p>
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Integração WhatsApp Business</h2>
+          <p className="text-muted-foreground">
+            Conecte seu WhatsApp Business via 360Dialog para automação de mensagens
+          </p>
+        </div>
+
+        {isConnected ? (
+          // Connected state - show status and management
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  <CardTitle>WhatsApp Conectado</CardTitle>
                 </div>
-              )}
+                <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Ativo
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800 text-sm">
+                  WhatsApp Business conectado com sucesso! {whatsappIntegration?.created_at ? `Conectado em ${new Date(whatsappIntegration.created_at).toLocaleString('pt-BR')}.` : ''}
+                </p>
+                {whatsappIntegration && (
+                  <div className="mt-3 space-y-1 text-sm">
+                    <p><strong>Provedor:</strong> {whatsappIntegration.provider}</p>
+                    <p><strong>WABA ID:</strong> {whatsappIntegration.waba_id}</p>
+                    <p><strong>Phone ID:</strong> {whatsappIntegration.phone_number_id}</p>
+                  </div>
+                )}
+              </div>
+
+              <Tabs defaultValue="manage" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="manage">Gerenciar</TabsTrigger>
+                  <TabsTrigger value="validate">Validar</TabsTrigger>
+                </TabsList>
+                <TabsContent value="manage" className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>API Key 360Dialog</Label>
+                      <div className="relative">
+                        <Input
+                          type={showApiKey ? "text" : "password"}
+                          value={localFormData.apiKey}
+                          onChange={(e) => setLocalFormData(prev => ({...prev, apiKey: e.target.value}))}
+                          placeholder="Sua API Key da 360Dialog"
+                          disabled={loading}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1 h-7 w-7 p-0"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          disabled={loading}
+                        >
+                          {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>WABA ID</Label>
+                      <Input
+                        value={localFormData.wabaId}
+                        onChange={(e) => setLocalFormData(prev => ({...prev, wabaId: e.target.value}))}
+                        placeholder="123456789012345"
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Phone Number ID</Label>
+                      <Input
+                        value={localFormData.phoneId}
+                        onChange={(e) => setLocalFormData(prev => ({...prev, phoneId: e.target.value}))}
+                        placeholder="987654321098765"
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Webhook URL</Label>
+                      <div className="flex gap-2">
+                        <Input value={webhookUrl} readOnly className="bg-muted" />
+                        <Button variant="outline" size="sm" onClick={copyWebhookUrl} disabled={loading}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 flex-wrap">
+                    <Button 
+                      onClick={handleSaveData} 
+                      disabled={loading || !localFormData.apiKey || !localFormData.wabaId}
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      {loading ? "Atualizando..." : "Atualizar Configuração"}
+                    </Button>
+                    <Button variant="destructive" onClick={handleDisconnectWhatsApp} disabled={loading}>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      {loading ? "Desconectando..." : "Desconectar WhatsApp"}
+                    </Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="validate">
+                  <ConnectionValidator 
+                    integration={{
+                      api_key: localFormData.apiKey,
+                      waba_id: localFormData.wabaId,
+                      phone_number_id: localFormData.phoneId
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
-
-          {/* Formulário sempre visível */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Provedor</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm z-50">
-                      <p>Usamos a 360Dialog como provedor oficial do WhatsApp Business.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Select 
-                value={localFormData.provider} 
-                onValueChange={(value) => setLocalFormData(prev => ({...prev, provider: value}))}
-                disabled={loading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um provedor" />
-                </SelectTrigger>
-                <SelectContent className="z-50 bg-popover">
-                  <SelectItem value="360dialog">360Dialog</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>API Key 360Dialog</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm z-50">
-                      <p>Sua API Key pessoal gerada na plataforma 360Dialog.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="relative">
-                <Input
-                  type={showApiKey ? "text" : "password"}
-                  value={localFormData.apiKey}
-                  onChange={(e) => setLocalFormData(prev => ({...prev, apiKey: e.target.value}))}
-                  placeholder="Sua API Key da 360Dialog"
-                  disabled={loading}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1 h-7 w-7 p-0"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  disabled={loading}
-                >
-                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>WABA ID</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm z-50">
-                      <p>WhatsApp Business Account ID fornecido pela 360Dialog.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Input
-                value={localFormData.wabaId}
-                onChange={(e) => setLocalFormData(prev => ({...prev, wabaId: e.target.value}))}
-                placeholder="123456789012345"
-                disabled={loading}
+        ) : (
+          // Not connected state - show wizard or manual config
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="wizard">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Assistente (Recomendado)
+              </TabsTrigger>
+              <TabsTrigger value="manual">
+                <Settings className="h-4 w-4 mr-2" />
+                Configuração Manual
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="wizard">
+              <WhatsAppWizard
+                formData={localFormData}
+                onFormDataChange={setLocalFormData}
+                onSave={handleSaveData}
+                loading={loading}
+                webhookUrl={webhookUrl}
               />
-            </div>
+            </TabsContent>
+            
+            <TabsContent value="manual" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configuração Manual</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Para usuários experientes que já possuem uma conta 360Dialog configurada
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Provedor</Label>
+                      <Select 
+                        value={localFormData.provider} 
+                        onValueChange={(value) => setLocalFormData(prev => ({...prev, provider: value}))}
+                        disabled={loading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um provedor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="360dialog">360Dialog</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Phone Number ID</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm z-50">
-                      <p>ID do seu número de telefone no WhatsApp Business.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Input
-                value={localFormData.phoneId}
-                onChange={(e) => setLocalFormData(prev => ({...prev, phoneId: e.target.value}))}
-                placeholder="987654321098765"
-                disabled={loading}
-              />
-            </div>
+                    <div className="space-y-2">
+                      <Label>API Key 360Dialog</Label>
+                      <div className="relative">
+                        <Input
+                          type={showApiKey ? "text" : "password"}
+                          value={localFormData.apiKey}
+                          onChange={(e) => setLocalFormData(prev => ({...prev, apiKey: e.target.value}))}
+                          placeholder="Sua API Key da 360Dialog"
+                          disabled={loading}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1 h-7 w-7 p-0"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          disabled={loading}
+                        >
+                          {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <div className="flex items-center gap-2">
-                <Label>Webhook URL</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-sm z-50">
-                      <p>Configure esta URL na sua conta 360Dialog para receber mensagens.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex gap-2">
-                <Input value={webhookUrl} readOnly className="bg-muted" />
-                <Button variant="outline" size="sm" onClick={copyWebhookUrl} disabled={loading}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
+                    <div className="space-y-2">
+                      <Label>WABA ID</Label>
+                      <Input
+                        value={localFormData.wabaId}
+                        onChange={(e) => setLocalFormData(prev => ({...prev, wabaId: e.target.value}))}
+                        placeholder="123456789012345"
+                        disabled={loading}
+                      />
+                    </div>
 
-          {/* Botões de ação */}
-          <div className="flex gap-3 flex-wrap">
-            {!isConnected ? (
-              <>
-                <Button 
-                  onClick={handleSaveData} 
-                  disabled={loading || !localFormData.apiKey || !localFormData.wabaId}
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  {loading ? "Conectando..." : "Conectar WhatsApp"}
-                </Button>
-                <Button variant="outline" onClick={handleClearFields} disabled={loading}>
-                  Limpar campos
-                </Button>
-              </>
-            ) : (
-              <Button variant="destructive" onClick={handleDisconnectWhatsApp} disabled={loading}>
-                <MessageSquare className="mr-2 h-4 w-4" />
-                {loading ? "Desconectando..." : "Desconectar WhatsApp"}
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                    <div className="space-y-2">
+                      <Label>Phone Number ID</Label>
+                      <Input
+                        value={localFormData.phoneId}
+                        onChange={(e) => setLocalFormData(prev => ({...prev, phoneId: e.target.value}))}
+                        placeholder="987654321098765"
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>Webhook URL</Label>
+                      <div className="flex gap-2">
+                        <Input value={webhookUrl} readOnly className="bg-muted" />
+                        <Button variant="outline" size="sm" onClick={copyWebhookUrl} disabled={loading}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 flex-wrap">
+                    <Button 
+                      onClick={handleSaveData} 
+                      disabled={loading || !localFormData.apiKey || !localFormData.wabaId}
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      {loading ? "Conectando..." : "Conectar WhatsApp"}
+                    </Button>
+                    <Button variant="outline" onClick={handleClearFields} disabled={loading}>
+                      Limpar campos
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
+      </div>
     </>
   );
 
