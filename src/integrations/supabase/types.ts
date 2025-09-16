@@ -355,6 +355,45 @@ export type Database = {
           },
         ]
       }
+      whatsapp_integrations: {
+        Row: {
+          api_key: string
+          created_at: string
+          id: string
+          is_active: boolean
+          phone_number_id: string
+          provider: string
+          updated_at: string
+          user_id: string
+          waba_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          phone_number_id: string
+          provider?: string
+          updated_at?: string
+          user_id: string
+          waba_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          phone_number_id?: string
+          provider?: string
+          updated_at?: string
+          user_id?: string
+          waba_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
