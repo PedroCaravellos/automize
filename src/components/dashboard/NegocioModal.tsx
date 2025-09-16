@@ -194,7 +194,7 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {negocio ? "Editar Negócio" : "Novo Negócio"}
@@ -204,136 +204,117 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="nome" className="text-right">
-              Nome *
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="nome"
-                value={formData.nome || ""}
-                onChange={(e) => handleInputChange("nome", e.target.value)}
-                placeholder="Nome do seu negócio"
-                className={errors.nome ? "border-red-500" : ""}
-              />
-              {errors.nome && (
-                <p className="text-sm text-red-500 mt-1">{errors.nome}</p>
-              )}
-            </div>
+        <div className="space-y-4 py-4">
+          {/* Nome */}
+          <div>
+            <Label htmlFor="nome">Nome *</Label>
+            <Input
+              id="nome"
+              value={formData.nome || ""}
+              onChange={(e) => handleInputChange("nome", e.target.value)}
+              placeholder="Nome do seu negócio"
+              className={errors.nome ? "border-red-500" : ""}
+            />
+            {errors.nome && (
+              <p className="text-sm text-red-500 mt-1">{errors.nome}</p>
+            )}
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="tipoNegocio" className="text-right">
-              Tipo *
-            </Label>
-            <div className="col-span-3">
-              <Select
-                value={formData.tipoNegocio || "outros"}
-                onValueChange={handleTipoNegocioChange}
-              >
-                <SelectTrigger className={errors.tipoNegocio ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Selecione o tipo de negócio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposNegocio.map((tipo) => (
-                    <SelectItem key={tipo.value} value={tipo.value}>
-                      {tipo.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.tipoNegocio && (
-                <p className="text-sm text-red-500 mt-1">{errors.tipoNegocio}</p>
-              )}
-            </div>
+          {/* Tipo */}
+          <div>
+            <Label htmlFor="tipoNegocio">Tipo *</Label>
+            <Select
+              value={formData.tipoNegocio || "outros"}
+              onValueChange={handleTipoNegocioChange}
+            >
+              <SelectTrigger className={errors.tipoNegocio ? "border-red-500" : ""}>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {tiposNegocio.map((tipo) => (
+                  <SelectItem key={tipo.value} value={tipo.value}>
+                    {tipo.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.tipoNegocio && (
+              <p className="text-sm text-red-500 mt-1">{errors.tipoNegocio}</p>
+            )}
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="segmento" className="text-right">
-              Segmento *
-            </Label>
-            <div className="col-span-3">
-              <Select
-                value={formData.segmento || ""}
-                onValueChange={(value) => handleInputChange("segmento", value)}
-              >
-                <SelectTrigger className={errors.segmento ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Selecione o segmento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getSegmentosDisponiveis().map((segmento) => (
-                    <SelectItem key={segmento} value={segmento}>
-                      {segmento}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.segmento && (
-                <p className="text-sm text-red-500 mt-1">{errors.segmento}</p>
-              )}
-            </div>
+          {/* Segmento */}
+          <div>
+            <Label htmlFor="segmento">Segmento *</Label>
+            <Select
+              value={formData.segmento || ""}
+              onValueChange={(value) => handleInputChange("segmento", value)}
+            >
+              <SelectTrigger className={errors.segmento ? "border-red-500" : ""}>
+                <SelectValue placeholder="Selecione o segmento" />
+              </SelectTrigger>
+              <SelectContent>
+                {getSegmentosDisponiveis().map((segmento) => (
+                  <SelectItem key={segmento} value={segmento}>
+                    {segmento}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.segmento && (
+              <p className="text-sm text-red-500 mt-1">{errors.segmento}</p>
+            )}
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="unidade" className="text-right">
-              Unidade/Local
-            </Label>
+          {/* Unidade/Local */}
+          <div>
+            <Label htmlFor="unidade">Unidade/Local</Label>
             <Input
               id="unidade"
-              className="col-span-3"
               value={formData.unidade || ""}
               onChange={(e) => handleInputChange("unidade", e.target.value)}
               placeholder="Centro, Filial Norte, etc."
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="endereco" className="text-right">
-              Endereço
-            </Label>
+          {/* Endereço */}
+          <div>
+            <Label htmlFor="endereco">Endereço</Label>
             <Input
               id="endereco"
-              className="col-span-3"
               value={formData.endereco || ""}
               onChange={(e) => handleInputChange("endereco", e.target.value)}
               placeholder="Rua, número, bairro, cidade"
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="telefone" className="text-right">
-              Telefone
-            </Label>
+          {/* Telefone */}
+          <div>
+            <Label htmlFor="telefone">Telefone</Label>
             <Input
               id="telefone"
-              className="col-span-3"
               value={formData.telefone || ""}
               onChange={(e) => handleInputChange("telefone", e.target.value)}
               placeholder="(11) 9999-9999"
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="whatsapp" className="text-right">
-              WhatsApp
-            </Label>
+          {/* WhatsApp */}
+          <div>
+            <Label htmlFor="whatsapp">WhatsApp</Label>
             <Input
               id="whatsapp"
-              className="col-span-3"
               value={formData.whatsapp || ""}
               onChange={(e) => handleInputChange("whatsapp", e.target.value)}
               placeholder="(11) 99999-9999"
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="horario" className="text-right">
-              Horário
-            </Label>
+          {/* Horário */}
+          <div>
+            <Label htmlFor="horario">Horário</Label>
             <Textarea
               id="horario"
-              className="col-span-3"
               value={formData.horario_funcionamento || ""}
               onChange={(e) => handleInputChange("horario_funcionamento", e.target.value)}
               placeholder={getPlaceholderByTipo('horario')}
@@ -341,13 +322,11 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="servicos" className="text-right">
-              Serviços
-            </Label>
+          {/* Serviços */}
+          <div>
+            <Label htmlFor="servicos">Serviços</Label>
             <Textarea
               id="servicos"
-              className="col-span-3"
               value={Array.isArray(formData.servicos_oferecidos) 
                 ? formData.servicos_oferecidos.join(', ') 
                 : formData.servicos_oferecidos || ""}
@@ -361,13 +340,11 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="promocoes" className="text-right">
-              Promoções
-            </Label>
+          {/* Promoções */}
+          <div>
+            <Label htmlFor="promocoes">Promoções</Label>
             <Textarea
               id="promocoes"
-              className="col-span-3"
               value={formData.promocoes || ""}
               onChange={(e) => handleInputChange("promocoes", e.target.value)}
               placeholder={getPlaceholderByTipo('promocoes')}
@@ -375,13 +352,11 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
             />
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="diferenciais" className="text-right">
-              Diferenciais
-            </Label>
+          {/* Diferenciais */}
+          <div>
+            <Label htmlFor="diferenciais">Diferenciais</Label>
             <Textarea
               id="diferenciais"
-              className="col-span-3"
               value={formData.diferenciais || ""}
               onChange={(e) => handleInputChange("diferenciais", e.target.value)}
               placeholder={getPlaceholderByTipo('diferenciais')}
@@ -390,32 +365,31 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
           </div>
 
           {/* Seção de Preços */}
-          <div className="col-span-4 border-t pt-4">
-            <h4 className="font-medium text-sm mb-3">Preços e Valores</h4>
+          <div className="border-t pt-4 space-y-4">
+            <h4 className="font-semibold text-base">Preços e Valores</h4>
             
             {/* Planos/Mensalidades */}
-            <div className="space-y-3">
+            <div>
               <Label className="text-sm font-medium">Planos de Assinatura (Mensalidades, Anuidades, etc.)</Label>
-              {(formData.valores?.planos || []).map((plano, index) => (
-                <div key={index} className="flex gap-3 items-center bg-muted/30 p-3 rounded-lg">
-                  <div className="flex-1">
+              <div className="space-y-2 mt-2">
+                {(formData.valores?.planos || []).map((plano, index) => (
+                  <div key={index} className="flex gap-2 items-center p-2 border rounded-lg">
                     <Input
-                      placeholder="Ex: Plano Mensal, Semestral..."
+                      placeholder="Ex: Plano Mensal"
                       value={plano.nome}
                       onChange={(e) => {
                         const novosPlanos = [...(formData.valores?.planos || [])];
                         novosPlanos[index] = { ...plano, nome: e.target.value };
                         handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
                       }}
+                      className="flex-1"
                     />
-                  </div>
-                  <div className="w-32">
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-muted-foreground">R$</span>
+                    <div className="relative w-24">
+                      <span className="absolute left-2 top-2.5 text-xs text-muted-foreground">R$</span>
                       <Input
                         type="number"
-                        placeholder="0,00"
-                        className="pl-8"
+                        placeholder="0"
+                        className="pl-6 text-sm"
                         value={plano.preco}
                         onChange={(e) => {
                           const novosPlanos = [...(formData.valores?.planos || [])];
@@ -424,8 +398,6 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                         }}
                       />
                     </div>
-                  </div>
-                  <div className="w-28">
                     <Select
                       value={plano.periodo}
                       onValueChange={(value) => {
@@ -434,8 +406,8 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                         handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
                       }}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Período" />
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="mensal">Mensal</SelectItem>
@@ -445,58 +417,57 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                         <SelectItem value="unico">Único</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const novosPlanos = (formData.valores?.planos || []).filter((_, i) => i !== index);
+                        handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
+                      }}
+                      className="text-destructive hover:text-destructive/80 px-2"
+                    >
+                      ×
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const novosPlanos = (formData.valores?.planos || []).filter((_, i) => i !== index);
-                      handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
-                    }}
-                    className="text-destructive hover:text-destructive/80"
-                  >
-                    ×
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const novosPlanos = [...(formData.valores?.planos || []), { nome: "", preco: 0, periodo: "mensal" }];
-                  handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
-                }}
-                className="w-full"
-              >
-                + Adicionar Plano
-              </Button>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const novosPlanos = [...(formData.valores?.planos || []), { nome: "", preco: 0, periodo: "mensal" }];
+                    handleInputChange("valores", { ...formData.valores, planos: novosPlanos });
+                  }}
+                  className="w-full"
+                >
+                  + Adicionar Plano
+                </Button>
+              </div>
             </div>
 
             {/* Serviços Avulsos */}
-            <div className="space-y-3">
+            <div>
               <Label className="text-sm font-medium">Serviços Avulsos (Consultas, Aulas Avulsas, etc.)</Label>
-              {(formData.valores?.servicosAvulsos || []).map((servico, index) => (
-                <div key={index} className="flex gap-3 items-center bg-muted/30 p-3 rounded-lg">
-                  <div className="flex-1">
+              <div className="space-y-2 mt-2">
+                {(formData.valores?.servicosAvulsos || []).map((servico, index) => (
+                  <div key={index} className="flex gap-2 items-center p-2 border rounded-lg">
                     <Input
-                      placeholder="Ex: Consulta, Aula avulsa..."
+                      placeholder="Ex: Consulta"
                       value={servico.nome}
                       onChange={(e) => {
                         const novosServicos = [...(formData.valores?.servicosAvulsos || [])];
                         novosServicos[index] = { ...servico, nome: e.target.value };
                         handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
                       }}
+                      className="flex-1"
                     />
-                  </div>
-                  <div className="w-32">
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-muted-foreground">R$</span>
+                    <div className="relative w-24">
+                      <span className="absolute left-2 top-2.5 text-xs text-muted-foreground">R$</span>
                       <Input
                         type="number"
-                        placeholder="0,00"
-                        className="pl-8"
+                        placeholder="0"
+                        className="pl-6 text-sm"
                         value={servico.preco}
                         onChange={(e) => {
                           const novosServicos = [...(formData.valores?.servicosAvulsos || [])];
@@ -505,40 +476,38 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
                         }}
                       />
                     </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const novosServicos = (formData.valores?.servicosAvulsos || []).filter((_, i) => i !== index);
+                        handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
+                      }}
+                      className="text-destructive hover:text-destructive/80 px-2"
+                    >
+                      ×
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const novosServicos = (formData.valores?.servicosAvulsos || []).filter((_, i) => i !== index);
-                      handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
-                    }}
-                    className="text-destructive hover:text-destructive/80"
-                  >
-                    ×
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const novosServicos = [...(formData.valores?.servicosAvulsos || []), { nome: "", preco: 0 }];
-                  handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
-                }}
-                className="w-full"
-              >
-                + Adicionar Serviço
-              </Button>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const novosServicos = [...(formData.valores?.servicosAvulsos || []), { nome: "", preco: 0 }];
+                    handleInputChange("valores", { ...formData.valores, servicosAvulsos: novosServicos });
+                  }}
+                  className="w-full"
+                >
+                  + Adicionar Serviço
+                </Button>
+              </div>
             </div>
 
             {/* Observações sobre Preços */}
             <div>
-              <Label htmlFor="observacoes-precos" className="text-sm font-medium">
-                Observações sobre Preços
-              </Label>
+              <Label htmlFor="observacoes-precos">Observações sobre Preços</Label>
               <Textarea
                 id="observacoes-precos"
                 value={formData.valores?.observacoes || ""}
