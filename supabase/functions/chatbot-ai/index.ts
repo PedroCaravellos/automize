@@ -438,7 +438,7 @@ serve(async (req) => {
             const { data: inserted, error: insertErr } = await supabase
               .from('leads')
               .insert({
-                academia_id: targetAcademiaId,
+                negocio_id: targetAcademiaId,
                 nome: params.nome,
                 telefone: params.telefone || null,
                 email: params.email || null,
@@ -506,7 +506,38 @@ serve(async (req) => {
     }
 
     if (academia.valores) {
-      academiaContext += `\n\nPLANOS E VALORES:\n${academia.valores}`;
+      let valoresText = '\n\nPLANOS E VALORES:';
+      
+      if (typeof academia.valores === 'string') {
+        valoresText += `\n${academia.valores}`;
+      } else if (typeof academia.valores === 'object') {
+        // Handle structured pricing data
+        if (academia.valores.planos && academia.valores.planos.length > 0) {
+          valoresText += '\n\nPlanos de Assinatura:';
+          academia.valores.planos.forEach(plano => {
+            valoresText += `\n- ${plano.nome}: R$ ${plano.preco?.toFixed(2)} (${plano.periodo})`;
+            if (plano.descricao) {
+              valoresText += ` - ${plano.descricao}`;
+            }
+          });
+        }
+        
+        if (academia.valores.servicosAvulsos && academia.valores.servicosAvulsos.length > 0) {
+          valoresText += '\n\nServiços Avulsos:';
+          academia.valores.servicosAvulsos.forEach(servico => {
+            valoresText += `\n- ${servico.nome}: R$ ${servico.preco?.toFixed(2)}`;
+            if (servico.descricao) {
+              valoresText += ` - ${servico.descricao}`;
+            }
+          });
+        }
+        
+        if (academia.valores.observacoes) {
+          valoresText += `\n\nObservações: ${academia.valores.observacoes}`;
+        }
+      }
+      
+      academiaContext += valoresText;
     }
 
     if (academia.promocoes) {

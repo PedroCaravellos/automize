@@ -20,7 +20,11 @@ export interface Negocio {
   whatsapp?: string;
   horario_funcionamento?: string;
   servicos_oferecidos?: string[];
-  valores?: any;
+  valores?: {
+    planos?: Array<{nome: string; preco: number; periodo: string; descricao?: string}>;
+    servicosAvulsos?: Array<{nome: string; preco: number; descricao?: string}>;
+    observacoes?: string;
+  };
   promocoes?: string;
   diferenciais?: string;
   statusChatbot: "Ativo" | "Em configuração" | "Nenhum";
@@ -124,7 +128,7 @@ const NegociosSection = () => {
 
         toast({
           title: "Sucesso",
-          description: "Negócio atualizado com sucesso!",
+          description: "Negócio atualizado com sucesso! Os preços serão utilizados pelo chatbot.",
         });
       } else {
         const { error } = await supabase
@@ -135,7 +139,7 @@ const NegociosSection = () => {
 
         toast({
           title: "Sucesso",
-          description: "Negócio cadastrado com sucesso!",
+          description: "Negócio cadastrado com sucesso! Os preços serão utilizados pelo chatbot.",
         });
       }
 
