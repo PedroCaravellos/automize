@@ -1,165 +1,106 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, EyeOff, Copy, MessageSquare, Zap, Clock, Info, CheckCircle, Circle, AlertCircle, Settings, BookOpen } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { 
+  MessageSquare, 
+  Plus, 
+  CheckCircle, 
+  Clock, 
+  AlertCircle,
+  Trash2,
+  Building
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import WhatsAppWizard from "./WhatsAppWizard";
-import ConnectionValidator from "./ConnectionValidator";
 
 interface WhatsAppIntegration {
   id: string;
-  provider: string;
-  api_key: string;
-  waba_id: string;
-  phone_number_id: string;
-  webhook_url: string | null;
+  nome_empresa: string;
+  documento: string;
+  numero_whatsapp: string;
+  business_manager_id?: string;
+  status: string;
   is_active: boolean;
   created_at: string;
-  updated_at: string;
+  observacoes?: string;
+  phone_number_id?: string;
 }
 
 export default function IntegrationsSection() {
-  const { user, hasAccess, activateTrial, isHydrating } = useAuth();
-  const { toast } = useToast();
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [isActivating, setIsActivating] = useState(false);
+  const [integrations, setIntegrations] = useState<WhatsAppIntegration[]>([]);
   const [loading, setLoading] = useState(false);
-  const [whatsappIntegration, setWhatsappIntegration] = useState<WhatsAppIntegration | null>(null);
-  const [activeTab, setActiveTab] = useState("wizard");
-  
-  // Estado local dos campos do formulário
-  const [localFormData, setLocalFormData] = useState({
-    provider: '360dialog',
-    apiKey: '',
-    wabaId: '',
-    phoneId: ''
+  const [showWizard, setShowWizard] = useState(false);
+  const { toast } = useToast();
+
+  const [formData, setFormData] = useState({
+    nomeEmpresa: "",
+    documento: "",
+    numeroWhatsapp: "",
+    businessManagerId: ""
   });
 
-  const webhookUrl = `https://ahcttlbvgjbdzhholyei.supabase.co/functions/v1/whatsapp-webhook`;
-
-  // Carregar dados da integração WhatsApp
   useEffect(() => {
-    if (user && hasAccess()) {
-      loadWhatsAppIntegration();
-    }
-  }, [user, hasAccess]);
+    fetchIntegrations();
+  }, []);
 
-  const loadWhatsAppIntegration = async () => {
-    if (!user) return;
-    
+  const fetchIntegrations = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('whatsapp_integrations')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error loading WhatsApp integration:', error);
-        return;
-      }
-
-      if (data) {
-        setWhatsappIntegration(data);
-        setLocalFormData({
-          provider: data.provider,
-          apiKey: data.api_key,
-          wabaId: data.waba_id,
-          phoneId: data.phone_number_id
-        });
-      }
+      if (error) throw error;
+      setIntegrations(data || []);
     } catch (error) {
-      console.error('Error loading WhatsApp integration:', error);
+      console.error('Error fetching integrations:', error);
     }
   };
 
-  const handleActivateTrial = async () => {
-    setIsActivating(true);
-    try {
-      await activateTrial();
-      toast({
-        title: "Trial ativado!",
-        description: "Você tem 7 dias para explorar todas as funcionalidades.",
-      });
-    } catch (error) {
-      setIsActivating(false);
-    }
-  };
-
-  const handleGoToPlans = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', 'plan');
-    window.history.replaceState({}, '', url.toString());
-  };
-
-  const handleSaveData = async () => {
-    if (!user) return;
-    
-    if (!localFormData.provider || !localFormData.apiKey || !localFormData.wabaId) {
-      toast({
-        title: "Dados incompletos",
-        description: "Preencha pelo menos o provedor, API key e WABA ID.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+  const handleSave = async () => {
     setLoading(true);
     try {
-      if (whatsappIntegration) {
-        // Update existing integration
-        const { error } = await supabase
-          .from('whatsapp_integrations')
-          .update({
-            provider: localFormData.provider,
-            api_key: localFormData.apiKey,
-            waba_id: localFormData.wabaId,
-            phone_number_id: localFormData.phoneId,
-            webhook_url: webhookUrl,
-            is_active: true
-          })
-          .eq('id', whatsappIntegration.id);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
 
-        if (error) throw error;
-      } else {
-        // Create new integration
-        const { data, error } = await supabase
-          .from('whatsapp_integrations')
-          .insert({
-            user_id: user.id,
-            provider: localFormData.provider,
-            api_key: localFormData.apiKey,
-            waba_id: localFormData.wabaId,
-            phone_number_id: localFormData.phoneId,
-            webhook_url: webhookUrl,
-            is_active: true
-          })
-          .select()
-          .single();
+      const { error } = await supabase
+        .from('whatsapp_integrations')
+        .insert({
+          user_id: user.id,
+          nome_empresa: formData.nomeEmpresa,
+          documento: formData.documento,
+          numero_whatsapp: formData.numeroWhatsapp,
+          business_manager_id: formData.businessManagerId || null,
+          status: 'pendente'
+        });
 
-        if (error) throw error;
-        setWhatsappIntegration(data);
-      }
-      
-      await loadWhatsAppIntegration();
+      if (error) throw error;
+
       toast({
-        title: "WhatsApp conectado!",
-        description: "Integração com WhatsApp Business ativada com sucesso.",
+        title: "Solicitação enviada!",
+        description: "Sua solicitação de integração WhatsApp foi enviada com sucesso.",
       });
+
+      setFormData({
+        nomeEmpresa: "",
+        documento: "",
+        numeroWhatsapp: "",
+        businessManagerId: ""
+      });
+      setShowWizard(false);
+      fetchIntegrations();
     } catch (error) {
-      console.error('Error saving WhatsApp integration:', error);
+      console.error('Error saving integration:', error);
       toast({
         title: "Erro",
-        description: "Erro ao conectar WhatsApp Business. Tente novamente.",
+        description: "Erro ao salvar a integração. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -167,405 +108,187 @@ export default function IntegrationsSection() {
     }
   };
 
-  const handleDisconnectWhatsApp = async () => {
-    if (!whatsappIntegration) return;
-    
-    setLoading(true);
+  const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
         .from('whatsapp_integrations')
         .delete()
-        .eq('id', whatsappIntegration.id);
+        .eq('id', id);
 
       if (error) throw error;
 
-      setWhatsappIntegration(null);
-      setLocalFormData({
-        provider: '360dialog',
-        apiKey: '',
-        wabaId: '',
-        phoneId: ''
-      });
-      
       toast({
-        title: "WhatsApp desconectado",
-        description: "Integração com WhatsApp Business desativada.",
+        title: "Integração removida",
+        description: "A integração WhatsApp foi removida com sucesso.",
       });
+
+      fetchIntegrations();
     } catch (error) {
-      console.error('Error disconnecting WhatsApp:', error);
+      console.error('Error deleting integration:', error);
       toast({
         title: "Erro",
-        description: "Erro ao desconectar WhatsApp Business. Tente novamente.",
+        description: "Erro ao remover a integração.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleClearFields = () => {
-    setLocalFormData({
-      provider: '360dialog',
-      apiKey: '',
-      wabaId: '',
-      phoneId: ''
-    });
-    toast({
-      title: "Campos limpos",
-      description: "Formulário foi resetado.",
-    });
-  };
-
-  const copyWebhookUrl = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    toast({
-      title: "URL copiada",
-      description: "URL do webhook copiada para a área de transferência.",
-    });
-  };
-
-  // Determinar status baseado no estado e dados preenchidos
-  const getStatusInfo = () => {
-    if (whatsappIntegration?.is_active) {
-      return { 
-        icon: CheckCircle, 
-        color: 'text-green-600', 
-        bg: 'bg-green-50', 
-        border: 'border-green-200', 
-        text: 'Conectado' 
-      };
+  const getStatusBadge = (status: string, isActive: boolean) => {
+    if (isActive) {
+      return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
     }
-    
-    const hasAnyData = localFormData.provider || localFormData.apiKey || localFormData.wabaId;
-    if (hasAnyData) {
-      return { 
-        icon: AlertCircle, 
-        color: 'text-yellow-600', 
-        bg: 'bg-yellow-50', 
-        border: 'border-yellow-200', 
-        text: 'Em configuração' 
-      };
+
+    switch (status) {
+      case 'pendente':
+        return <Badge variant="outline" className="border-yellow-400 text-yellow-700"><Clock className="h-3 w-3 mr-1" />Pendente</Badge>;
+      case 'aprovado':
+        return <Badge variant="outline" className="border-blue-400 text-blue-700"><CheckCircle className="h-3 w-3 mr-1" />Aprovado</Badge>;
+      case 'rejeitado':
+        return <Badge variant="destructive"><AlertCircle className="h-3 w-3 mr-1" />Rejeitado</Badge>;
+      default:
+        return <Badge variant="outline">Desconhecido</Badge>;
     }
-    
-    return { 
-      icon: Circle, 
-      color: 'text-red-600', 
-      bg: 'bg-red-50', 
-      border: 'border-red-200', 
-      text: 'Não conectado' 
-    };
   };
 
-  const statusInfo = getStatusInfo();
-  const StatusIcon = statusInfo.icon;
-  const isConnected = whatsappIntegration?.is_active || false;
-
-  // Conteúdo da seção de integrações
-  const integrationsContent = (
-    <>
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Integração WhatsApp Business</h2>
-          <p className="text-muted-foreground">
-            Conecte seu WhatsApp Business via 360Dialog para automação de mensagens
-          </p>
-        </div>
-
-        {isConnected ? (
-          // Connected state - show status and management
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  <CardTitle>WhatsApp Conectado</CardTitle>
-                </div>
-                <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Ativo
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-green-800 text-sm">
-                  WhatsApp Business conectado com sucesso! {whatsappIntegration?.created_at ? `Conectado em ${new Date(whatsappIntegration.created_at).toLocaleString('pt-BR')}.` : ''}
-                </p>
-                {whatsappIntegration && (
-                  <div className="mt-3 space-y-1 text-sm">
-                    <p><strong>Provedor:</strong> {whatsappIntegration.provider}</p>
-                    <p><strong>WABA ID:</strong> {whatsappIntegration.waba_id}</p>
-                    <p><strong>Phone ID:</strong> {whatsappIntegration.phone_number_id}</p>
-                  </div>
-                )}
-              </div>
-
-              <Tabs defaultValue="manage" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="manage">Gerenciar</TabsTrigger>
-                  <TabsTrigger value="validate">Validar</TabsTrigger>
-                </TabsList>
-                <TabsContent value="manage" className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>API Key 360Dialog</Label>
-                      <div className="relative">
-                        <Input
-                          type={showApiKey ? "text" : "password"}
-                          value={localFormData.apiKey}
-                          onChange={(e) => setLocalFormData(prev => ({...prev, apiKey: e.target.value}))}
-                          placeholder="Sua API Key da 360Dialog"
-                          disabled={loading}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-1 top-1 h-7 w-7 p-0"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          disabled={loading}
-                        >
-                          {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>WABA ID</Label>
-                      <Input
-                        value={localFormData.wabaId}
-                        onChange={(e) => setLocalFormData(prev => ({...prev, wabaId: e.target.value}))}
-                        placeholder="123456789012345"
-                        disabled={loading}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Phone Number ID</Label>
-                      <Input
-                        value={localFormData.phoneId}
-                        onChange={(e) => setLocalFormData(prev => ({...prev, phoneId: e.target.value}))}
-                        placeholder="987654321098765"
-                        disabled={loading}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Webhook URL</Label>
-                      <div className="flex gap-2">
-                        <Input value={webhookUrl} readOnly className="bg-muted" />
-                        <Button variant="outline" size="sm" onClick={copyWebhookUrl} disabled={loading}>
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 flex-wrap">
-                    <Button 
-                      onClick={handleSaveData} 
-                      disabled={loading || !localFormData.apiKey || !localFormData.wabaId}
-                    >
-                      <Settings className="mr-2 h-4 w-4" />
-                      {loading ? "Atualizando..." : "Atualizar Configuração"}
-                    </Button>
-                    <Button variant="destructive" onClick={handleDisconnectWhatsApp} disabled={loading}>
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      {loading ? "Desconectando..." : "Desconectar WhatsApp"}
-                    </Button>
-                  </div>
-                </TabsContent>
-                <TabsContent value="validate">
-                  <ConnectionValidator 
-                    integration={{
-                      api_key: localFormData.apiKey,
-                      waba_id: localFormData.wabaId,
-                      phone_number_id: localFormData.phoneId
-                    }}
-                  />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        ) : (
-          // Not connected state - show wizard or manual config
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="wizard">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Assistente (Recomendado)
-              </TabsTrigger>
-              <TabsTrigger value="manual">
-                <Settings className="h-4 w-4 mr-2" />
-                Configuração Manual
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="wizard">
-              <WhatsAppWizard
-                formData={localFormData}
-                onFormDataChange={setLocalFormData}
-                onSave={handleSaveData}
-                loading={loading}
-                webhookUrl={webhookUrl}
-              />
-            </TabsContent>
-            
-            <TabsContent value="manual" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configuração Manual</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Para usuários experientes que já possuem uma conta 360Dialog configurada
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Provedor</Label>
-                      <Select 
-                        value={localFormData.provider} 
-                        onValueChange={(value) => setLocalFormData(prev => ({...prev, provider: value}))}
-                        disabled={loading}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um provedor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="360dialog">360Dialog</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>API Key 360Dialog</Label>
-                      <div className="relative">
-                        <Input
-                          type={showApiKey ? "text" : "password"}
-                          value={localFormData.apiKey}
-                          onChange={(e) => setLocalFormData(prev => ({...prev, apiKey: e.target.value}))}
-                          placeholder="Sua API Key da 360Dialog"
-                          disabled={loading}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-1 top-1 h-7 w-7 p-0"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          disabled={loading}
-                        >
-                          {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>WABA ID</Label>
-                      <Input
-                        value={localFormData.wabaId}
-                        onChange={(e) => setLocalFormData(prev => ({...prev, wabaId: e.target.value}))}
-                        placeholder="123456789012345"
-                        disabled={loading}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Phone Number ID</Label>
-                      <Input
-                        value={localFormData.phoneId}
-                        onChange={(e) => setLocalFormData(prev => ({...prev, phoneId: e.target.value}))}
-                        placeholder="987654321098765"
-                        disabled={loading}
-                      />
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label>Webhook URL</Label>
-                      <div className="flex gap-2">
-                        <Input value={webhookUrl} readOnly className="bg-muted" />
-                        <Button variant="outline" size="sm" onClick={copyWebhookUrl} disabled={loading}>
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 flex-wrap">
-                    <Button 
-                      onClick={handleSaveData} 
-                      disabled={loading || !localFormData.apiKey || !localFormData.wabaId}
-                    >
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      {loading ? "Conectando..." : "Conectar WhatsApp"}
-                    </Button>
-                    <Button variant="outline" onClick={handleClearFields} disabled={loading}>
-                      Limpar campos
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
-      </div>
-    </>
-  );
-
-  if (isHydrating) {
+  if (showWizard) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-4 w-96 mx-auto" />
-        <Card>
-          <CardHeader><Skeleton className="h-6 w-64" /></CardHeader>
-          <CardContent><Skeleton className="h-32 w-full" /></CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!hasAccess()) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-2">
-            Conecte seu WhatsApp Business com integração real via 360Dialog.
-          </p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Integrações</h2>
+          <Button variant="outline" onClick={() => setShowWizard(false)}>
+            Voltar
+          </Button>
         </div>
-        <div className="relative">
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
-            <Card className="w-full max-w-md mx-4">
-              <CardHeader className="text-center">
-                <CardTitle>Ative seu trial ou plano para habilitar integrações</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button onClick={handleActivateTrial} disabled={isActivating} className="w-full" size="lg">
-                  <Clock className="mr-2 h-4 w-4" />
-                  {isActivating ? "Ativando..." : "Ativar trial"}
-                </Button>
-                <Button variant="outline" onClick={handleGoToPlans} className="w-full">
-                  <Zap className="mr-2 h-4 w-4" />
-                  Ver planos
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="opacity-50 pointer-events-none">
-            {integrationsContent}
-          </div>
-        </div>
+        
+        <WhatsAppWizard
+          formData={formData}
+          onFormDataChange={setFormData}
+          onSave={handleSave}
+          loading={loading}
+        />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <p className="text-muted-foreground mb-2">
-          Conecte seu WhatsApp Business com integração real via 360Dialog.
-        </p>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Integrações</h2>
+        <Button onClick={() => setShowWizard(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Integração WhatsApp
+        </Button>
       </div>
-      {integrationsContent}
+
+      {integrations.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground" />
+              <div>
+                <h3 className="text-lg font-semibold">Nenhuma integração configurada</h3>
+                <p className="text-muted-foreground">
+                  Conecte seu WhatsApp Business para começar a automatizar conversas
+                </p>
+              </div>
+              <Button onClick={() => setShowWizard(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Configurar WhatsApp
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {integrations.map((integration) => (
+            <Card key={integration.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="h-5 w-5" />
+                    {integration.nome_empresa}
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(integration.status, integration.is_active)}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(integration.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Documento</p>
+                    <p className="font-mono text-sm">{integration.documento}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">WhatsApp</p>
+                    <p className="font-mono text-sm">{integration.numero_whatsapp}</p>
+                  </div>
+                  
+                  {integration.business_manager_id && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Business Manager</p>
+                      <p className="font-mono text-sm">{integration.business_manager_id}</p>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Solicitado em</p>
+                    <p className="text-sm">{new Date(integration.created_at).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                </div>
+                
+                {integration.observacoes && (
+                  <>
+                    <Separator className="my-4" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Observações</p>
+                      <p className="text-sm">{integration.observacoes}</p>
+                    </div>
+                  </>
+                )}
+
+                {integration.status === 'pendente' && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+                    <div className="flex items-start gap-2">
+                      <Clock className="h-4 w-4 text-yellow-600 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium text-yellow-900">Aguardando processamento</p>
+                        <p className="text-yellow-700">
+                          Sua solicitação está sendo analisada pela nossa equipe.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {integration.is_active && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium text-green-900">WhatsApp ativo!</p>
+                        <p className="text-green-700">
+                          Sua integração está funcionando e você pode enviar mensagens.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

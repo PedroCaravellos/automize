@@ -1,37 +1,11 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface WebhookMessage {
-  from: string;
-  text?: {
-    body: string;
-  };
-  type: string;
-  timestamp: string;
-}
-
-interface WebhookEntry {
-  changes: Array<{
-    value: {
-      messaging_product: string;
-      metadata: {
-        display_phone_number: string;
-        phone_number_id: string;
-      };
-      messages?: WebhookMessage[];
-    };
-  }>;
-}
-
-interface WebhookPayload {
-  object: string;
-  entry: WebhookEntry[];
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -40,15 +14,10 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    console.log('WhatsApp webhook called:', req.method);
-
+    console.log('Webhook received:', req.method, req.url);
+    
     if (req.method === 'GET') {
-      // Handle webhook verification from 360Dialog
+      // Handle webhook verification
       const url = new URL(req.url);
       const mode = url.searchParams.get('hub.mode');
       const token = url.searchParams.get('hub.verify_token');
@@ -56,119 +25,141 @@ serve(async (req) => {
 
       console.log('Webhook verification:', { mode, token, challenge });
 
-      if (mode === 'subscribe' && token === "automiza_webhook_token") {
-        console.log('Webhook verification successful');
-        return new Response(challenge, { 
-          headers: { ...corsHeaders, 'Content-Type': 'text/plain' } 
-        });
+      // Verify the token (você pode definir um token específico)
+      const VERIFY_TOKEN = "automiza_webhook_token";
+      
+      if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+        console.log('Webhook verified successfully');
+        return new Response(challenge, { status: 200 });
+      } else {
+        console.log('Webhook verification failed');
+        return new Response('Forbidden', { status: 403 });
       }
-
-      return new Response('Forbidden', { 
-        status: 403, 
-        headers: corsHeaders 
-      });
     }
 
     if (req.method === 'POST') {
-      const payload: WebhookPayload = await req.json();
-      console.log('Received webhook payload:', JSON.stringify(payload, null, 2));
+      const body = await req.json();
+      console.log('Webhook payload:', JSON.stringify(body, null, 2));
 
-      // Process each entry in the webhook
-      for (const entry of payload.entry) {
-        for (const change of entry.changes) {
-          const messages = change.value.messages;
-          const phoneNumberId = change.value.metadata.phone_number_id;
+      // Initialize Supabase client
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
-          console.log('Processing messages for phone:', phoneNumberId);
-
-          if (messages) {
-            for (const message of messages) {
+      // Process incoming messages
+      if (body.entry && body.entry[0] && body.entry[0].changes) {
+        for (const change of body.entry[0].changes) {
+          if (change.field === 'messages' && change.value.messages) {
+            for (const message of change.value.messages) {
               console.log('Processing message:', message);
-
-              // Find the WhatsApp integration for this phone number
+              
+              const fromNumber = message.from;
+              const messageText = message.text?.body || '';
+              const messageId = message.id;
+              
+              // Find the integration based on the phone number
               const { data: integration, error: integrationError } = await supabase
                 .from('whatsapp_integrations')
                 .select('*')
-                .eq('phone_number_id', phoneNumberId)
+                .eq('numero_whatsapp', fromNumber) // Note: pode precisar ajustar a lógica de matching
                 .eq('is_active', true)
-                .single();
+                .maybeSingle();
 
-              if (integrationError || !integration) {
-                console.error('No active integration found for phone:', phoneNumberId, integrationError);
+              if (integrationError) {
+                console.error('Error finding integration:', integrationError);
+                continue;
+              }
+
+              if (!integration) {
+                console.log('No active integration found for number:', fromNumber);
                 continue;
               }
 
               console.log('Found integration for user:', integration.user_id);
 
-              // Process the message based on type
-              if (message.type === 'text' && message.text?.body) {
-                const messageText = message.text.body;
-                const fromNumber = message.from;
+              // Here you can add logic to:
+              // 1. Find the associated business/chatbot for this user
+              // 2. Process the message through your AI chatbot
+              // 3. Send automated responses
+              // 4. Store conversation history
+              // 5. Trigger automations
 
-                console.log('Processing text message:', messageText, 'from:', fromNumber);
+              // Example: Find related business and chatbot
+              const { data: negocios, error: negociosError } = await supabase
+                .from('negocios')
+                .select('id, nome')
+                .eq('user_id', integration.user_id)
+                .limit(1);
 
-                // Find or create lead for this contact
-                let { data: existingLead } = await supabase
-                  .from('leads')
+              if (!negociosError && negocios && negocios.length > 0) {
+                const negocio = negocios[0];
+                
+                // Find associated chatbot
+                const { data: chatbot, error: chatbotError } = await supabase
+                  .from('chatbots')
                   .select('*')
-                  .eq('telefone', fromNumber)
-                  .limit(1)
-                  .single();
+                  .eq('negocio_id', negocio.id)
+                  .eq('ativo', true)
+                  .maybeSingle();
 
-                if (!existingLead) {
-                  // Create new lead
-                  const { data: newLead, error: leadError } = await supabase
-                    .from('leads')
-                    .insert({
-                      nome: `WhatsApp ${fromNumber}`,
-                      telefone: fromNumber,
-                      origem: 'WhatsApp',
-                      status: 'novo',
-                      pipeline_stage: 'novo',
-                      negocio_id: null, // We'll need to improve this to find the right negocio
-                      observacoes: `Primeira mensagem: ${messageText}`
-                    })
-                    .select()
-                    .single();
+                if (!chatbotError && chatbot) {
+                  console.log('Found active chatbot:', chatbot.nome);
+                  
+                  // Here you would call your AI service to generate a response
+                  // For now, we'll just log the interaction
+                  
+                  // Example: Call the chatbot-ai function to generate a response
+                  try {
+                    const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chatbot-ai', {
+                      body: {
+                        message: messageText,
+                        chatbot: chatbot,
+                        negocio: negocio,
+                        fromNumber: fromNumber
+                      }
+                    });
 
-                  if (leadError) {
-                    console.error('Error creating lead:', leadError);
-                  } else {
-                    existingLead = newLead;
-                    console.log('Created new lead:', existingLead?.id);
+                    if (!aiError && aiResponse) {
+                      console.log('AI response generated:', aiResponse);
+                      
+                      // Send the response back via WhatsApp
+                      const { data: sendResult, error: sendError } = await supabase.functions.invoke('whatsapp-send', {
+                        body: {
+                          to: fromNumber,
+                          message: aiResponse.response,
+                          userId: integration.user_id
+                        }
+                      });
+
+                      if (sendError) {
+                        console.error('Error sending response:', sendError);
+                      } else {
+                        console.log('Response sent successfully:', sendResult);
+                      }
+                    }
+                  } catch (aiError) {
+                    console.error('Error calling AI function:', aiError);
                   }
                 }
-
-                // Here we would process the message with chatbot AI
-                // For now, we'll just log it
-                console.log('Message processed for lead:', existingLead?.id);
-
-                // TODO: Call chatbot AI function with the message
-                // const response = await supabase.functions.invoke('chatbot-ai', {
-                //   body: {
-                //     message: messageText,
-                //     leadId: existingLead?.id,
-                //     userId: integration.user_id
-                //   }
-                // });
               }
             }
           }
         }
       }
 
-      return new Response(JSON.stringify({ status: 'ok' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response('OK', { 
+        status: 200,
+        headers: corsHeaders 
       });
     }
 
     return new Response('Method not allowed', { 
-      status: 405, 
+      status: 405,
       headers: corsHeaders 
     });
 
   } catch (error) {
-    console.error('Error in whatsapp-webhook function:', error);
+    console.error('Webhook error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -357,6 +357,57 @@ export type Database = {
       }
       whatsapp_integrations: {
         Row: {
+          activated_at: string | null
+          approved_at: string | null
+          business_manager_id: string | null
+          created_at: string
+          documento: string
+          id: string
+          is_active: boolean
+          nome_empresa: string
+          numero_whatsapp: string
+          observacoes: string | null
+          phone_number_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          approved_at?: string | null
+          business_manager_id?: string | null
+          created_at?: string
+          documento: string
+          id?: string
+          is_active?: boolean
+          nome_empresa: string
+          numero_whatsapp: string
+          observacoes?: string | null
+          phone_number_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          approved_at?: string | null
+          business_manager_id?: string | null
+          created_at?: string
+          documento?: string
+          id?: string
+          is_active?: boolean
+          nome_empresa?: string
+          numero_whatsapp?: string
+          observacoes?: string | null
+          phone_number_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_integrations_backup: {
+        Row: {
           api_key: string
           created_at: string
           id: string
