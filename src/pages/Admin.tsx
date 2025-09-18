@@ -2,9 +2,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import AdminDashboard from "@/components/admin/AdminDashboard";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function Admin() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
+
+  const loading = authLoading || roleLoading;
 
   if (loading) {
     return (
@@ -18,9 +22,6 @@ export default function Admin() {
     return <Navigate to="/auth" replace />;
   }
 
-  // Verificar se é admin (por enquanto, usando email específico)
-  const isAdmin = user.email === "admin@chatbots.com" || user.email?.includes("@admin.") || user.email === "seu-email@exemplo.com";
-  
   if (!isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
