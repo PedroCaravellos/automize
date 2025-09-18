@@ -54,7 +54,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     >
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Automize</SidebarGroupLabel>
+          <SidebarGroupLabel>Automiza</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
