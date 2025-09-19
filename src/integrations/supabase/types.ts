@@ -214,6 +214,7 @@ export type Database = {
           id: string
           nome: string
           promocoes: string | null
+          segmento: string | null
           servicos_oferecidos: string[] | null
           telefone: string | null
           tipo_negocio: string | null
@@ -231,6 +232,7 @@ export type Database = {
           id?: string
           nome: string
           promocoes?: string | null
+          segmento?: string | null
           servicos_oferecidos?: string[] | null
           telefone?: string | null
           tipo_negocio?: string | null
@@ -248,6 +250,7 @@ export type Database = {
           id?: string
           nome?: string
           promocoes?: string | null
+          segmento?: string | null
           servicos_oferecidos?: string[] | null
           telefone?: string | null
           tipo_negocio?: string | null
