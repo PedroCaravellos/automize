@@ -93,7 +93,7 @@ const templates: ChatbotTemplate[] = [
 
 const ChatbotsSection = () => {
   const { 
-    user, hasAccess, academias, chatbots, addActivity,
+    user, hasAccess, academias, negocios, chatbots, addActivity,
     createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot 
   } = useAuth();
   const { toast } = useToast();
