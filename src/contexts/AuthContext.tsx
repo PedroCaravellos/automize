@@ -30,7 +30,7 @@ interface ChatbotMessageSet {
 interface ChatbotItem {
   id: string;
   nome: string;
-  academiaId: string;
+  negocioId: string;
   template: string;
   status: 'Em configuração' | 'Ativo';
   interacoes: number;
@@ -54,7 +54,7 @@ interface AcademiaItem {
   diferenciais?: string;
 }
 
-interface NegocioItem {
+export interface NegocioItem {
   id: string;
   nome: string;
   unidade: string;
@@ -64,9 +64,9 @@ interface NegocioItem {
   endereco?: string;
   telefone?: string;
   whatsapp?: string;
-  horarios?: string;
-  modalidades?: string;
-  valores?: string;
+  horarioFuncionamento?: string;
+  servicosOferecidos?: string[];
+  valores?: any;
   promocoes?: string;
   diferenciais?: string;
 }
@@ -135,7 +135,7 @@ interface AuthContextType {
   addAgendamentoDemo: (agendamento: Omit<AgendamentoDemo, 'id' | 'created_at'>) => AgendamentoDemo;
   removeAgendamentoDemo: (id: string) => void;
   // Chatbots
-  createChatbot: (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }) => ChatbotItem | null;
+  createChatbot: (data: { negocioId: string; template: string; mensagens: ChatbotMessageSet }) => ChatbotItem | null;
   updateChatbotMessages: (id: string, mensagens: ChatbotMessageSet) => ChatbotItem | null;
   
   toggleChatbotStatus: (id: string) => ChatbotItem | null;
@@ -736,13 +736,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Chatbot actions
-  const createChatbot = (data: { academiaId: string; template: string; mensagens: ChatbotMessageSet }): ChatbotItem | null => {
-    const academia = academias.find(a => a.id === data.academiaId);
-    if (!academia) return null;
+  const createChatbot = (data: { negocioId: string; template: string; mensagens: ChatbotMessageSet }): ChatbotItem | null => {
+    const negocio = negocios.find(n => n.id === data.negocioId);
+    if (!negocio) return null;
     const bot: ChatbotItem = {
       id: generateId('bot'),
-      nome: `Bot – ${academia.nome}`,
-      academiaId: data.academiaId,
+      nome: `Bot – ${negocio.nome}`,
+      negocioId: data.negocioId,
       template: data.template,
       status: 'Em configuração',
       interacoes: 0,
@@ -750,8 +750,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     setChatbots(prev => [...prev, bot]);
-    if (academia.statusChatbot === 'Nenhum') setAcademiaStatus(data.academiaId, 'Em configuração');
-    addActivity(`Chatbot criado – ${bot.nome} – ${academia.nome}`);
+    if (negocio.statusChatbot === 'Nenhum') setNegocioStatus(data.negocioId, 'Em configuração');
+    addActivity(`Chatbot criado – ${bot.nome} – ${negocio.nome}`);
     return bot;
   };
 
@@ -765,8 +765,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return b;
     }));
     if (updated) {
-      const academia = academias.find(a => a.id === updated!.academiaId);
-      addActivity(`Chatbot editado – ${updated.nome} – ${academia?.nome}`);
+      const negocio = negocios.find(n => n.id === updated!.negocioId);
+      addActivity(`Chatbot editado – ${updated.nome} – ${negocio?.nome}`);
     }
     return updated;
   };
@@ -782,16 +782,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return b;
     }));
     if (updated) {
-      const academiaId = updated.academiaId;
-      const academia = academias.find(a => a.id === academiaId);
+      const negocioId = updated.negocioId;
+      const negocio = negocios.find(n => n.id === negocioId);
       if (updated.status === 'Ativo') {
-        setAcademiaStatus(academiaId, 'Ativo');
-        addActivity(`Chatbot ativado – ${updated.nome} – ${academia?.nome}`);
+        setNegocioStatus(negocioId, 'Ativo');
+        addActivity(`Chatbot ativado – ${updated.nome} – ${negocio?.nome}`);
       } else {
-        // If no other active bot for this academia, set status to 'Em configuração'
-        const otherActive = chatbots.some(b => b.academiaId === academiaId && b.id !== updated!.id && b.status === 'Ativo');
-        if (!otherActive) setAcademiaStatus(academiaId, 'Em configuração');
-        addActivity(`Chatbot desativado – ${updated.nome} – ${academia?.nome}`);
+        // If no other active bot for this negocio, set status to 'Em configuração'
+        const otherActive = chatbots.some(b => b.negocioId === negocioId && b.id !== updated!.id && b.status === 'Ativo');
+        if (!otherActive) setNegocioStatus(negocioId, 'Em configuração');
+        addActivity(`Chatbot desativado – ${updated.nome} – ${negocio?.nome}`);
       }
     }
     return updated;
@@ -801,11 +801,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const bot = chatbots.find(b => b.id === id) || null;
     if (!bot) return null;
     setChatbots(prev => prev.filter(b => b.id !== id));
-    // After removal, if no active bot remains for that academia, set status to 'Nenhum'
-    const stillActive = chatbots.some(b => b.id !== id && b.academiaId === bot.academiaId && b.status === 'Ativo');
-    if (!stillActive) setAcademiaStatus(bot.academiaId, 'Nenhum');
-    const academia = academias.find(a => a.id === bot.academiaId);
-    addActivity(`Chatbot removido – ${bot.nome} – ${academia?.nome}`);
+    // After removal, if no active bot remains for that negocio, set status to 'Nenhum'
+    const stillActive = chatbots.some(b => b.id !== id && b.negocioId === bot.negocioId && b.status === 'Ativo');
+    if (!stillActive) setNegocioStatus(bot.negocioId, 'Nenhum');
+    const negocio = negocios.find(n => n.id === bot.negocioId);
+    addActivity(`Chatbot removido – ${bot.nome} – ${negocio?.nome}`);
     return bot;
   };
 

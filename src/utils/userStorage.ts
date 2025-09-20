@@ -10,7 +10,7 @@ export interface StoredAcademia {
 export interface StoredChatbot {
   id: string;
   nome: string;
-  academiaId: string;
+  negocioId: string;
   template: string;
   status: "Em configuração" | "Ativo";
   interacoes: number;

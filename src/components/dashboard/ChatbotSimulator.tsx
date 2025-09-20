@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, User, RotateCcw, Send, X, ExternalLink, Brain, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Chatbot } from "./ChatbotsSection";
-import { Academia } from "./AcademiasSection";
+import { NegocioItem } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import * as LZString from "lz-string";
@@ -32,11 +32,11 @@ interface ChatbotSimulatorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   chatbot: Chatbot | null;
-  academia: Academia | null;
+  negocio: NegocioItem | null;
   onConversationEnd?: () => void;
 }
 
-const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia, onConversationEnd }: ChatbotSimulatorProps) => {
+const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversationEnd }: ChatbotSimulatorProps) => {
   const { addActivity, updateOnboardingProgress, addAgendamentoDemo } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -56,12 +56,12 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, academia, onConversatio
   }, [messages]);
 
   const replaceVariables = (text: string): string => {
-    if (!chatbot || !academia) return text;
+    if (!chatbot || !negocio) return text;
     
     const today = new Date().toLocaleDateString('pt-BR');
     
     return text
-      .replace(/\{\{NOME_ACADEMIA\}\}/g, academia.nome)
+      .replace(/\{\{NOME_ACADEMIA\}\}/g, negocio.nome)
       .replace(/\{\{NOME_BOT\}\}/g, chatbot.nome)
       .replace(/\{\{HOJE\}\}/g, today);
   };

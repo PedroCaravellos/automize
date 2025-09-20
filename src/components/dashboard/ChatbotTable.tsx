@@ -21,26 +21,26 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Edit2, Trash2, Bot, Play, Pause, MessageSquare } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
-import { Academia } from "./AcademiasSection";
+import { NegocioItem } from "@/contexts/AuthContext";
 import ChatbotSimulator from "./ChatbotSimulator";
 
 interface ChatbotTableProps {
   chatbots: Chatbot[];
-  academias: Academia[];
+  negocios: NegocioItem[];
   onEdit: (chatbot: Chatbot) => void;
   onToggleStatus: (id: string) => void;
   onDelete: (id: string) => void;
   onTest: (chatbot: Chatbot) => void;
 }
 
-const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, onTest }: ChatbotTableProps) => {
+const ChatbotTable = ({ chatbots, negocios, onEdit, onToggleStatus, onDelete, onTest }: ChatbotTableProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null);
 
-  const getAcademiaNome = (academiaId: string) => {
-    const academia = academias.find(a => a.id === academiaId);
-    return academia ? `${academia.nome} - ${academia.unidade}` : "Academia não encontrada";
+  const getNegocioNome = (negocioId: string) => {
+    const negocio = negocios.find(n => n.id === negocioId);
+    return negocio ? `${negocio.nome}${negocio.unidade ? ` - ${negocio.unidade}` : ''}` : "Negócio não encontrado";
   };
 
   const getStatusBadge = (status: Chatbot["status"]) => {
@@ -71,9 +71,9 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
     setSimulatorOpen(true);
   };
 
-  const getSelectedAcademia = () => {
+  const getSelectedNegocio = () => {
     if (!selectedChatbot) return null;
-    return academias.find(a => a.id === selectedChatbot.academiaId) || null;
+    return negocios.find(n => n.id === selectedChatbot.negocioId) || null;
   };
 
 
@@ -83,7 +83,7 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
         <Bot className="h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">Nenhum chatbot criado</h3>
         <p className="text-muted-foreground mb-4">
-          Crie seu primeiro chatbot para automatizar o atendimento da sua academia.
+          Crie seu primeiro chatbot para automatizar o atendimento do seu negócio.
         </p>
       </div>
     );
@@ -96,7 +96,7 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
           <TableHeader>
             <TableRow>
               <TableHead>Nome do Bot</TableHead>
-              <TableHead>Academia</TableHead>
+              <TableHead>Negócio</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Interações</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -106,7 +106,7 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
             {chatbots.map((chatbot) => (
               <TableRow key={chatbot.id}>
                 <TableCell className="font-medium">{chatbot.nome}</TableCell>
-                <TableCell>{getAcademiaNome(chatbot.academiaId)}</TableCell>
+                <TableCell>{getNegocioNome(chatbot.negocioId)}</TableCell>
                 <TableCell>{getStatusBadge(chatbot.status)}</TableCell>
                 <TableCell>
                   <span className="text-muted-foreground">{chatbot.interacoes}</span>
@@ -195,7 +195,7 @@ const ChatbotTable = ({ chatbots, academias, onEdit, onToggleStatus, onDelete, o
         open={simulatorOpen}
         onOpenChange={setSimulatorOpen}
         chatbot={selectedChatbot}
-        academia={getSelectedAcademia()}
+        negocio={getSelectedNegocio()}
       />
 
     </>

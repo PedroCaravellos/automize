@@ -9,7 +9,7 @@ import ChatbotWizard from "./ChatbotWizard";
 import ChatbotTable from "./ChatbotTable";
 import ChatbotEditModal from "./ChatbotEditModal";
 import ActionBlockModal from "./ActionBlockModal";
-import { Academia } from "./AcademiasSection";
+import { NegocioItem } from "@/contexts/AuthContext";
 
 export interface ChatbotTemplate {
   id: string;
@@ -25,7 +25,7 @@ export interface ChatbotTemplate {
 export interface Chatbot {
   id: string;
   nome: string;
-  academiaId: string;
+  negocioId: string;
   template: string;
   status: "Em configuração" | "Ativo";
   interacoes: number;
@@ -127,7 +127,7 @@ const handleToggleStatus = (chatbotId: string) => {
 
     const updated = toggleChatbotStatus(chatbotId);
     if (!updated) return;
-    const academia = academias.find(a => a.id === updated.academiaId);
+    const negocio = negocios.find(n => n.id === updated.negocioId);
     if (updated.status === "Ativo") {
       toast({
         title: "Chatbot ativado",
@@ -160,7 +160,7 @@ const handleToggleStatus = (chatbotId: string) => {
 
 
 const handleSaveChatbot = (dadosChatbot: {
-    academiaId: string;
+    negocioId: string;
     template: string;
     mensagens: Chatbot["mensagens"];
   }) => {
@@ -210,7 +210,7 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
         <CardContent>
             <ChatbotTable
               chatbots={chatbots}
-              academias={academias}
+              negocios={negocios}
               onEdit={handleEditChatbot}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDeleteChatbot}
@@ -222,7 +222,7 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
       <ChatbotWizard
         open={isWizardOpen}
         onOpenChange={setIsWizardOpen}
-        academias={academias}
+        negocios={negocios}
         templates={templates}
         onSave={handleSaveChatbot}
       />

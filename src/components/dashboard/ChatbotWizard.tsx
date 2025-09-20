@@ -21,96 +21,96 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChevronLeft, ChevronRight, Building2, Plus, Trash2 } from "lucide-react";
-import { Academia } from "./AcademiasSection";
+import { NegocioItem } from "@/contexts/AuthContext";
 import { ChatbotTemplate, Chatbot } from "./ChatbotsSection";
 
 interface ChatbotWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  academias: Academia[];
+  negocios: NegocioItem[];
   templates: ChatbotTemplate[];
   onSave: (dados: {
-    academiaId: string;
+    negocioId: string;
     template: string;
     mensagens: Chatbot["mensagens"];
   }) => void;
 }
 
-// Templates inteligentes que se adaptam às informações da academia
-const generateSmartTemplate = (academia: Academia | undefined, templateType: string) => {
-  if (!academia) return null;
+// Templates inteligentes que se adaptam às informações do negócio
+const generateSmartTemplate = (negocio: NegocioItem | undefined, templateType: string) => {
+  if (!negocio) return null;
 
   const baseTemplates = {
     "boas-vindas-faq": {
       nome: "Boas-vindas + FAQ",
       descricao: "Atendimento básico com perguntas frequentes personalizadas",
       mensagens: {
-        boasVindas: `Olá! 👋 Bem-vindo(a) à ${academia.nome}${academia.unidade ? ` - ${academia.unidade}` : ''}! Como posso ajudá-lo hoje?`,
+        boasVindas: `Olá! 👋 Bem-vindo(a) à ${negocio.nome}${negocio.unidade ? ` - ${negocio.unidade}` : ''}! Como posso ajudá-lo hoje?`,
         faqs: [
           {
             pergunta: "Qual o horário de funcionamento?",
-            resposta: academia.horarios || "Funcionamos de segunda a sexta das 6h às 22h, e aos sábados das 8h às 18h."
+            resposta: negocio.horarioFuncionamento || "Funcionamos de segunda a sexta das 6h às 22h, e aos sábados das 8h às 18h."
           },
           {
-            pergunta: "Quais modalidades vocês oferecem?",
-            resposta: academia.modalidades 
-              ? `Oferecemos: ${academia.modalidades}. Venha conhecer nossa estrutura!` 
-              : "Oferecemos musculação, aulas funcionais, spinning, pilates e natação. Consulte nossa grade de horários!"
+            pergunta: "Quais serviços vocês oferecem?",
+            resposta: negocio.servicosOferecidos && negocio.servicosOferecidos.length > 0
+              ? `Oferecemos: ${negocio.servicosOferecidos.join(', ')}. Venha conhecer nossa estrutura!` 
+              : "Oferecemos diversos serviços de qualidade. Entre em contato para saber mais!"
           },
           {
             pergunta: "Onde vocês ficam localizados?",
-            resposta: academia.endereco 
-              ? `Estamos localizados em: ${academia.endereco}. ${academia.telefone ? `Nosso telefone: ${academia.telefone}` : ''}` 
+            resposta: negocio.endereco 
+              ? `Estamos localizados em: ${negocio.endereco}. ${negocio.telefone ? `Nosso telefone: ${negocio.telefone}` : ''}` 
               : "Estamos bem localizados na cidade. Entre em contato para saber mais sobre nossa localização!"
           }
         ],
-        encerramento: `Obrigado pelo contato! Se precisar de mais alguma coisa, estarei aqui para ajudar. 💪 ${academia.whatsapp ? `WhatsApp: ${academia.whatsapp}` : ''}`
+        encerramento: `Obrigado pelo contato! Se precisar de mais alguma coisa, estarei aqui para ajudar. 💪 ${negocio.whatsapp ? `WhatsApp: ${negocio.whatsapp}` : ''}`
       }
     },
     "agendamentos": {
       nome: "Agendamentos personalizados",
-      descricao: "Gestão de horários adaptada às suas modalidades",
+      descricao: "Gestão de horários adaptada aos seus serviços",
       mensagens: {
-        boasVindas: `Olá! 📅 Gostaria de agendar um horário na ${academia.nome} ou tirar dúvidas sobre nossas modalidades?`,
+        boasVindas: `Olá! 📅 Gostaria de agendar um horário na ${negocio.nome} ou tirar dúvidas sobre nossos serviços?`,
         faqs: [
           {
-            pergunta: "Como posso agendar uma aula?",
-            resposta: "Você pode agendar através deste chat, do nosso app ou presencialmente na recepção. As aulas têm limite de vagas."
+            pergunta: "Como posso agendar um serviço?",
+            resposta: "Você pode agendar através deste chat, do nosso telefone ou presencialmente. Temos horários limitados."
           },
           {
-            pergunta: "Quais modalidades posso agendar?",
-            resposta: academia.modalidades 
-              ? `Você pode agendar: ${academia.modalidades}. Me diga qual modalidade te interessa!` 
-              : "Temos várias modalidades disponíveis. Me conte o que você gostaria de praticar!"
+            pergunta: "Quais serviços posso agendar?",
+            resposta: negocio.servicosOferecidos && negocio.servicosOferecidos.length > 0
+              ? `Você pode agendar: ${negocio.servicosOferecidos.join(', ')}. Me diga qual serviço te interessa!` 
+              : "Temos vários serviços disponíveis. Me conte o que você gostaria!"
           },
           {
             pergunta: "Qual o horário de funcionamento?",
-            resposta: academia.horarios || "Funcionamos de segunda a sexta das 6h às 22h, e aos sábados das 8h às 18h."
+            resposta: negocio.horarioFuncionamento || "Funcionamos de segunda a sexta das 8h às 18h, e aos sábados das 8h às 12h."
           }
         ],
-        encerramento: `Seu agendamento é importante para nós! ${academia.telefone ? `Telefone: ${academia.telefone}` : ''} Qualquer dúvida, estarei aqui. 🏋️‍♀️`
+        encerramento: `Seu agendamento é importante para nós! ${negocio.telefone ? `Telefone: ${negocio.telefone}` : ''} Qualquer dúvida, estarei aqui. 🏋️‍♀️`
       }
     },
     "precos": {
       nome: "Informações e Preços",
       descricao: "Esclarecimentos sobre valores e planos personalizados",
       mensagens: {
-        boasVindas: `Olá! 💳 Precisa de informações sobre nossos planos e valores na ${academia.nome}? Estou aqui para ajudar!`,
+        boasVindas: `Olá! 💳 Precisa de informações sobre nossos planos e valores na ${negocio.nome}? Estou aqui para ajudar!`,
         faqs: [
           {
-            pergunta: "Quanto custa a mensalidade?",
-            resposta: academia.valores || "Temos vários planos que se adequam ao seu perfil. Que tal agendar uma visita para conhecer nossas opções?"
+            pergunta: "Quanto custam os serviços?",
+            resposta: negocio.valores ? JSON.stringify(negocio.valores).replace(/[{}"\[\]]/g, ' ').trim() || "Temos vários planos que se adequam ao seu perfil. Entre em contato para conhecer nossas opções!" : "Temos vários planos que se adequam ao seu perfil. Entre em contato para conhecer nossas opções!"
           },
           {
             pergunta: "Vocês têm promoções?",
-            resposta: academia.promocoes || "Sempre temos ofertas especiais! Entre em contato para saber das promoções vigentes."
+            resposta: negocio.promocoes || "Sempre temos ofertas especiais! Entre em contato para saber das promoções vigentes."
           },
           {
-            pergunta: "Quais são os diferenciais da academia?",
-            resposta: academia.diferenciais || "Nossa academia oferece excelente estrutura, profissionais qualificados e ambiente acolhedor."
+            pergunta: "Quais são os diferenciais do negócio?",
+            resposta: negocio.diferenciais || "Nosso negócio oferece excelente qualidade, profissionais qualificados e atendimento diferenciado."
           }
         ],
-        encerramento: `Espero ter esclarecido suas dúvidas! ${academia.whatsapp ? `WhatsApp: ${academia.whatsapp}` : ''} Conte conosco! 💙`
+        encerramento: `Espero ter esclarecido suas dúvidas! ${negocio.whatsapp ? `WhatsApp: ${negocio.whatsapp}` : ''} Conte conosco! 💙`
       }
     }
   };
@@ -118,9 +118,9 @@ const generateSmartTemplate = (academia: Academia | undefined, templateType: str
   return baseTemplates[templateType as keyof typeof baseTemplates] || null;
 };
 
-const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: ChatbotWizardProps) => {
+const ChatbotWizard = ({ open, onOpenChange, negocios, templates, onSave }: ChatbotWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedAcademia, setSelectedAcademia] = useState("");
+  const [selectedNegocio, setSelectedNegocio] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [mensagens, setMensagens] = useState<Chatbot["mensagens"]>({
     boasVindas: "",
@@ -132,20 +132,20 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
     encerramento: ""
   });
 
-  // Templates inteligentes baseados na academia selecionada
+  // Templates inteligentes baseados no negócio selecionado
   const smartTemplates = [
     { id: "boas-vindas-faq", type: "boas-vindas-faq" },
     { id: "agendamentos", type: "agendamentos" },
     { id: "precos", type: "precos" }
   ].map(template => {
-    const academia = academias.find(a => a.id === selectedAcademia);
-    const smartTemplate = generateSmartTemplate(academia, template.type);
+    const negocio = negocios.find(n => n.id === selectedNegocio);
+    const smartTemplate = generateSmartTemplate(negocio, template.type);
     return smartTemplate ? { id: template.id, ...smartTemplate } : null;
   }).filter(Boolean) as ChatbotTemplate[];
 
   const handleClose = () => {
     setCurrentStep(1);
-    setSelectedAcademia("");
+    setSelectedNegocio("");
     setSelectedTemplate("");
     setMensagens({
       boasVindas: "",
@@ -191,7 +191,7 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
 
   const handleSave = () => {
     onSave({
-      academiaId: selectedAcademia,
+      negocioId: selectedNegocio,
       template: selectedTemplate,
       mensagens
     });
@@ -201,7 +201,7 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return selectedAcademia !== "";
+        return selectedNegocio !== "";
       case 2:
         return selectedTemplate !== "";
       case 3:
@@ -216,19 +216,21 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
   const renderStep1 = () => (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="academia">Selecionar Academia *</Label>
-        <Select value={selectedAcademia} onValueChange={setSelectedAcademia}>
+        <Label htmlFor="negocio">Selecionar Negócio *</Label>
+        <Select value={selectedNegocio} onValueChange={setSelectedNegocio}>
           <SelectTrigger>
-            <SelectValue placeholder="Escolha uma academia" />
+            <SelectValue placeholder="Escolha um negócio" />
           </SelectTrigger>
           <SelectContent>
-            {academias.map((academia) => (
-              <SelectItem key={academia.id} value={academia.id}>
+            {negocios.map((negocio) => (
+              <SelectItem key={negocio.id} value={negocio.id}>
                 <div className="flex items-center gap-2">
-                  <span>{academia.nome}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {academia.unidade}
-                  </Badge>
+                  <span>{negocio.nome}</span>
+                  {negocio.unidade && (
+                    <Badge variant="outline" className="text-xs">
+                      {negocio.unidade}
+                    </Badge>
+                  )}
                 </div>
               </SelectItem>
             ))}
@@ -236,16 +238,16 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
         </Select>
       </div>
       
-      {academias.length === 0 && (
+      {negocios.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-6 text-center">
             <Building2 className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground mb-3">
-              Você precisa ter pelo menos uma academia cadastrada
+              Você precisa ter pelo menos um negócio cadastrado
             </p>
             <Button variant="outline" size="sm" onClick={() => {}}>
               <Plus className="mr-2 h-4 w-4" />
-              Adicionar academia
+              Adicionar negócio
             </Button>
           </CardContent>
         </Card>
@@ -254,19 +256,19 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
   );
 
   const renderStep2 = () => {
-    const academia = academias.find(a => a.id === selectedAcademia);
+    const negocio = negocios.find(n => n.id === selectedNegocio);
     
     return (
       <div className="space-y-4">
-        {academia && (
+        {negocio && (
           <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-4">
-              <h4 className="font-medium text-blue-900">Academia Selecionada</h4>
+              <h4 className="font-medium text-blue-900">Negócio Selecionado</h4>
               <p className="text-sm text-blue-700 mt-1">
-                {academia.nome} {academia.unidade && `- ${academia.unidade}`}
+                {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
               </p>
               <p className="text-xs text-blue-600 mt-2">
-                Os templates abaixo foram personalizados com as informações desta academia
+                Os templates abaixo foram personalizados com as informações deste negócio
               </p>
             </CardContent>
           </Card>
@@ -299,7 +301,7 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
                   </div>
                   <ul className="mt-3 space-y-1">
                     <li className="text-xs text-muted-foreground">• Mensagem personalizada de boas-vindas</li>
-                    <li className="text-xs text-muted-foreground">• {template.mensagens.faqs.length} perguntas adaptadas à sua academia</li>
+                    <li className="text-xs text-muted-foreground">• {template.mensagens.faqs.length} perguntas adaptadas ao seu negócio</li>
                     <li className="text-xs text-muted-foreground">• Mensagem de encerramento com seus contatos</li>
                     <li className="text-xs text-green-600">• ✨ Você poderá adicionar mais perguntas no próximo passo</li>
                   </ul>
@@ -395,7 +397,7 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
         </div>
         
         <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg">
-          💡 <strong>Dica:</strong> Adicione perguntas específicas sobre sua academia, modalidades, preços, 
+          💡 <strong>Dica:</strong> Adicione perguntas específicas sobre seu negócio, serviços, preços, 
           horários especiais, etc. Quanto mais personalizado, melhor será o atendimento!
         </div>
       </div>
@@ -416,7 +418,7 @@ const ChatbotWizard = ({ open, onOpenChange, academias, templates, onSave }: Cha
 
   const getStepTitle = () => {
     switch (currentStep) {
-      case 1: return "Vincular Academia";
+      case 1: return "Selecionar Negócio";
       case 2: return "Template Inteligente";
       case 3: return "Personalizar Mensagens";
       default: return "";
