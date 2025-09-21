@@ -142,7 +142,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
       if (useAI) {
         console.log('Sending to chatbot-ai:', { 
           message: currentInput, 
-          academia: academia?.nome, 
+          negocio: negocio?.nome, 
           chatbot: chatbot?.nome,
           faqCount: chatbot?.mensagens?.faqs?.length 
         });
@@ -157,18 +157,18 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
           body: {
             message: currentInput,
             academia: {
-              id: academia?.id,
-              nome: academia?.nome || '',
-              unidade: academia?.unidade || '',
-              segmento: academia?.segmento || 'Academia',
-              endereco: academia?.endereco || '',
-              telefone: academia?.telefone || '',
-              whatsapp: academia?.whatsapp || '',
-              horarios: academia?.horarios || '',
-              modalidades: academia?.modalidades || '',
-              valores: academia?.valores || '',
-              promocoes: academia?.promocoes || '',
-              diferenciais: academia?.diferenciais || ''
+              id: negocio?.id,
+              nome: negocio?.nome || '',
+              unidade: negocio?.unidade || '',
+              segmento: negocio?.segmento || 'Academia',
+              endereco: negocio?.endereco || '',
+              telefone: negocio?.telefone || '',
+              whatsapp: negocio?.whatsapp || '',
+              horarios: '',
+              modalidades: '',
+              valores: negocio?.valores || '',
+              promocoes: negocio?.promocoes || '',
+              diferenciais: negocio?.diferenciais || ''
             },
             chatbot: {
               mensagemBoasVindas: chatbot.mensagens.boasVindas,
@@ -310,14 +310,14 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
   };
 
   const generateDemoLink = (): string => {
-    if (!chatbot || !academia) return "";
+    if (!chatbot || !negocio) return "";
 
     // Limit FAQs to 5 items max
     const limitedFaqs = chatbot.mensagens.faqs.slice(0, 5);
     
     const demoData = {
       botName: chatbot.nome,
-      academyName: `${academia.nome} - ${academia.unidade}`,
+      academyName: `${negocio.nome} - ${negocio.unidade}`,
       template: chatbot.template,
       mensagens: {
         boasVindas: chatbot.mensagens.boasVindas,
@@ -332,7 +332,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
   };
 
   const handleShareDemo = () => {
-    if (!chatbot || !academia) return;
+    if (!chatbot || !negocio) return;
     
     // Check if FAQs exceed limit
     if (chatbot.mensagens.faqs.length > 5) {
@@ -347,15 +347,15 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
 
   // Initialize conversation when drawer opens
   useEffect(() => {
-    if (open && chatbot && academia) {
+    if (open && chatbot && negocio) {
       initializeConversation();
       updateOnboardingProgress({ simulatorOpened: true });
       // Add activity log
-      addActivity(`Teste de chatbot iniciado — ${chatbot.nome} (${academia.nome}) — ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
+      addActivity(`Teste de chatbot iniciado — ${chatbot.nome} (${negocio.nome}) — ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
     }
-  }, [open, chatbot, academia]);
+  }, [open, chatbot, negocio]);
 
-  if (!chatbot || !academia) return null;
+  if (!chatbot || !negocio) return null;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -368,7 +368,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
                 {chatbot.nome}
               </DrawerTitle>
               <DrawerDescription>
-                {academia.nome} - {academia.unidade} • {chatbot.status === "Ativo" ? (
+                {negocio.nome} - {negocio.unidade} • {chatbot.status === "Ativo" ? (
                   <Badge variant="default" className="bg-green-500 text-white ml-2">Ativo</Badge>
                 ) : (
                   <Badge variant="secondary" className="ml-2">Em configuração</Badge>
@@ -522,7 +522,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
         onOpenChange={setShareModalOpen}
         onGenerateLink={generateDemoLink}
         chatbot={chatbot}
-        academia={academia}
+        negocio={negocio}
       />
     </Drawer>
   );

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Copy, RotateCcw, ExternalLink } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
-import { Academia } from "./AcademiasSection";
+import { NegocioItem } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -20,7 +20,7 @@ interface SimulatorShareModalProps {
   onOpenChange: (open: boolean) => void;
   onGenerateLink: () => string;
   chatbot: Chatbot | null;
-  academia: Academia | null;
+  negocio: NegocioItem | null;
 }
 
 const SimulatorShareModal = ({ 
@@ -28,7 +28,7 @@ const SimulatorShareModal = ({
   onOpenChange, 
   onGenerateLink,
   chatbot,
-  academia
+  negocio
 }: SimulatorShareModalProps) => {
   const { toast } = useToast();
   const { updateOnboardingProgress } = useAuth();
@@ -70,7 +70,7 @@ const SimulatorShareModal = ({
     onOpenChange(open);
   };
 
-  if (!chatbot || !academia) return null;
+  if (!chatbot || !negocio) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -91,7 +91,7 @@ const SimulatorShareModal = ({
               Chatbot: {chatbot.nome}
             </label>
             <p className="text-xs text-muted-foreground mb-3">
-              Academia: {academia.nome} - {academia.unidade}
+              Negócio: {negocio.nome} - {negocio.unidade}
             </p>
             
             {currentLink ? (

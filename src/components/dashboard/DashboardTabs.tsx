@@ -25,7 +25,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
   const [preselectedPlan, setPreselectedPlan] = useState<string | null>(null);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const { activity, chatbots, academias, updateOnboardingProgress, intendedRoute, setIntendedRoute } = useAuth();
+  const { activity, chatbots, negocios, updateOnboardingProgress, intendedRoute, setIntendedRoute } = useAuth();
 
   // Function to refresh dashboard data
   const refreshDashboardData = () => {
@@ -86,13 +86,13 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
 
   const generateDemoLink = (): string => {
     const firstBot = chatbots[0];
-    const firstAcademia = academias.find(a => a.id === firstBot?.academiaId);
-    if (!firstBot || !firstAcademia) return "";
+    const firstNegocio = negocios.find(n => n.id === firstBot?.negocioId);
+    if (!firstBot || !firstNegocio) return "";
 
     // This is simplified - in real implementation this would use LZ-String compression
     const demoData = {
       botName: firstBot.nome,
-      academyName: `${firstAcademia.nome} - ${firstAcademia.unidade}`,
+      academyName: `${firstNegocio.nome} - ${firstNegocio.unidade}`,
       template: firstBot.template,
       mensagens: firstBot.mensagens,
       ts: Date.now()
@@ -295,7 +295,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
             open={simulatorOpen}
             onOpenChange={setSimulatorOpen}
             chatbot={chatbots[0]}
-            academia={academias.find(a => a.id === chatbots[0].academiaId) || null}
+            negocio={negocios.find(n => n.id === chatbots[0].negocioId) || null}
             onConversationEnd={refreshDashboardData}
           />
           <SimulatorShareModal
@@ -303,7 +303,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
             onOpenChange={setShareModalOpen}
             onGenerateLink={generateDemoLink}
             chatbot={chatbots[0]}
-            academia={academias.find(a => a.id === chatbots[0].academiaId) || null}
+            negocio={negocios.find(n => n.id === chatbots[0].negocioId) || null}
           />
         </>
       )}
