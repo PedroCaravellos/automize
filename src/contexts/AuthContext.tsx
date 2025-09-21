@@ -131,6 +131,7 @@ interface AuthContextType {
   updateNegocio: (id: string, updates: Partial<Omit<NegocioItem, 'id' | 'createdAt'>>) => void;
   removeNegocio: (id: string) => void;
   setNegocioStatus: (id: string, status: NegocioItem['statusChatbot']) => void;
+  syncNegociosFromDB: () => Promise<void>;
   // Agendamentos Demo
   addAgendamentoDemo: (agendamento: Omit<AgendamentoDemo, 'id' | 'created_at'>) => AgendamentoDemo;
   removeAgendamentoDemo: (id: string) => void;
@@ -245,6 +246,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setSubscription(normalizeSubscription(data.subscription));
             hydratedRef.current = true;
             setIsHydrating(false);
+            
+            // Sync negócios from database after hydration
+            syncNegociosFromDB();
             
             // Handle intended route navigation after successful login
             if (intendedRoute && event === 'SIGNED_IN') {
@@ -689,6 +693,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setNegocios(prev => prev.map(n => (n.id === id ? { ...n, statusChatbot: status } : n)));
   };
 
+  // Sync negocios from database
+  const syncNegociosFromDB = async (): Promise<void> => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('negocios')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao sincronizar negócios:', error);
+        return;
+      }
+
+      // Map database fields to our interface
+      const negociosFromDB = (data || []).map((item: any) => ({
+        id: item.id,
+        nome: item.nome,
+        unidade: item.unidade || '',
+        segmento: item.segmento || item.tipo_negocio || 'Outros',
+        statusChatbot: 'Nenhum' as const, // This will be calculated based on chatbots
+        createdAt: item.created_at,
+        endereco: item.endereco,
+        telefone: item.telefone,
+        whatsapp: item.whatsapp,
+        horarioFuncionamento: item.horario_funcionamento,
+        servicosOferecidos: item.servicos_oferecidos || [],
+        valores: item.valores,
+        promocoes: item.promocoes,
+        diferenciais: item.diferenciais,
+      }));
+
+      setNegocios(negociosFromDB);
+    } catch (error) {
+      console.error('Erro ao sincronizar negócios:', error);
+    }
+  };
+
   // Academia actions
   const addAcademia = (data: Omit<AcademiaItem, 'id' | 'createdAt' | 'statusChatbot'>): AcademiaItem => {
     const nova: AcademiaItem = {
@@ -849,6 +893,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateNegocio,
     removeNegocio,
     setNegocioStatus,
+    syncNegociosFromDB,
     addAcademia,
     updateAcademia,
     removeAcademia,

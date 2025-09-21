@@ -225,6 +225,11 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
         negocios={negocios}
         templates={templates}
         onSave={handleSaveChatbot}
+        onNavigateToNegocios={() => {
+          // Redirect to negocios tab
+          const event = new CustomEvent('navigate-to-tab', { detail: 'negocios' });
+          window.dispatchEvent(event);
+        }}
       />
 
       <ChatbotEditModal

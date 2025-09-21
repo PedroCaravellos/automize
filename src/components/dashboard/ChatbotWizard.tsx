@@ -34,6 +34,7 @@ interface ChatbotWizardProps {
     template: string;
     mensagens: Chatbot["mensagens"];
   }) => void;
+  onNavigateToNegocios?: () => void;
 }
 
 // Templates inteligentes que se adaptam às informações do negócio
@@ -118,7 +119,7 @@ const generateSmartTemplate = (negocio: NegocioItem | undefined, templateType: s
   return baseTemplates[templateType as keyof typeof baseTemplates] || null;
 };
 
-const ChatbotWizard = ({ open, onOpenChange, negocios, templates, onSave }: ChatbotWizardProps) => {
+const ChatbotWizard = ({ open, onOpenChange, negocios, templates, onSave, onNavigateToNegocios }: ChatbotWizardProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedNegocio, setSelectedNegocio] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -245,7 +246,14 @@ const ChatbotWizard = ({ open, onOpenChange, negocios, templates, onSave }: Chat
             <p className="text-sm text-muted-foreground mb-3">
               Você precisa ter pelo menos um negócio cadastrado
             </p>
-            <Button variant="outline" size="sm" onClick={() => {}}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                onNavigateToNegocios?.();
+                onOpenChange(false);
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Adicionar negócio
             </Button>

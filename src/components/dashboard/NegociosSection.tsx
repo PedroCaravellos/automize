@@ -31,7 +31,7 @@ export interface Negocio {
 }
 
 const NegociosSection = () => {
-  const { user, hasAccess } = useAuth();
+  const { user, hasAccess, syncNegociosFromDB } = useAuth();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
@@ -145,7 +145,8 @@ const NegociosSection = () => {
 
       setIsModalOpen(false);
       setEditingNegocio(undefined);
-      fetchNegocios();
+      await fetchNegocios();
+      await syncNegociosFromDB(); // Sync with global context
     } catch (error) {
       console.error('Erro ao salvar negócio:', error);
       toast({
@@ -170,7 +171,8 @@ const NegociosSection = () => {
         description: "Negócio removido com sucesso!",
       });
 
-      fetchNegocios();
+      await fetchNegocios();
+      await syncNegociosFromDB(); // Sync with global context
     } catch (error) {
       console.error('Erro ao deletar negócio:', error);
       toast({
