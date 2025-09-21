@@ -93,14 +93,33 @@ const templates: ChatbotTemplate[] = [
 
 const ChatbotsSection = () => {
   const { 
-    user, hasAccess, academias, negocios, chatbots, addActivity,
-    createChatbot, updateChatbotMessages, toggleChatbotStatus, deleteChatbot 
+    user, 
+    hasAccess, 
+    academias, 
+    negocios, 
+    chatbots, 
+    addActivity,
+    createChatbot, 
+    updateChatbotMessages, 
+    toggleChatbotStatus, 
+    deleteChatbot,
+    syncNegociosFromDB
   } = useAuth();
   const { toast } = useToast();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingChatbot, setEditingChatbot] = useState<Chatbot | null>(null);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+
+  // Sync negócios when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      console.log('Sincronizando negócios...');
+      syncNegociosFromDB();
+    }
+  }, [user, syncNegociosFromDB]);
+
+  console.log('ChatbotsSection - Negócios disponíveis:', negocios);
 
   const handleCreateChatbot = () => {
     if (!hasAccess()) {
@@ -226,6 +245,7 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
         templates={templates}
         onSave={handleSaveChatbot}
         onNavigateToNegocios={() => {
+          console.log('Navegando para negócios...');
           // Redirect to negocios tab
           const event = new CustomEvent('navigate-to-tab', { detail: 'negocios' });
           window.dispatchEvent(event);

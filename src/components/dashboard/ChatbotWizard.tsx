@@ -214,54 +214,58 @@ const ChatbotWizard = ({ open, onOpenChange, negocios, templates, onSave, onNavi
     }
   };
 
-  const renderStep1 = () => (
-    <div className="space-y-4">
-      <div>
-        <Label htmlFor="negocio">Selecionar Negócio *</Label>
-        <Select value={selectedNegocio} onValueChange={setSelectedNegocio}>
-          <SelectTrigger>
-            <SelectValue placeholder="Escolha um negócio" />
-          </SelectTrigger>
-          <SelectContent>
-            {negocios.map((negocio) => (
-              <SelectItem key={negocio.id} value={negocio.id}>
-                <div className="flex items-center gap-2">
-                  <span>{negocio.nome}</span>
-                  {negocio.unidade && (
-                    <Badge variant="outline" className="text-xs">
-                      {negocio.unidade}
-                    </Badge>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+  const renderStep1 = () => {
+    console.log('ChatbotWizard - Negócios recebidos:', negocios);
+    
+    return (
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="negocio">Selecionar Negócio *</Label>
+          <Select value={selectedNegocio} onValueChange={setSelectedNegocio}>
+            <SelectTrigger>
+              <SelectValue placeholder="Escolha um negócio" />
+            </SelectTrigger>
+            <SelectContent>
+              {negocios.map((negocio) => (
+                <SelectItem key={negocio.id} value={negocio.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{negocio.nome}</span>
+                    {negocio.unidade && (
+                      <Badge variant="outline" className="text-xs">
+                        {negocio.unidade}
+                      </Badge>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {negocios.length === 0 && (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-6 text-center">
+              <Building2 className="h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground mb-3">
+                Você precisa ter pelo menos um negócio cadastrado
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  onNavigateToNegocios?.();
+                  onOpenChange(false);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar negócio
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
-      
-      {negocios.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-6 text-center">
-            <Building2 className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground mb-3">
-              Você precisa ter pelo menos um negócio cadastrado
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => {
-                onNavigateToNegocios?.();
-                onOpenChange(false);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar negócio
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+    );
+  };
 
   const renderStep2 = () => {
     const negocio = negocios.find(n => n.id === selectedNegocio);
