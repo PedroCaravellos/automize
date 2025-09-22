@@ -168,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   const [subscription, setSubscription] = useState<Subscription>(defaultSub);
   const hydratedRef = useRef(false);
+  const syncingRef = useRef(false); // Prevent multiple simultaneous syncs
 
   const normalizeSubscription = (sub?: any): Subscription => {
     const base = sub || {};
@@ -697,6 +698,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const syncNegociosFromDB = async (): Promise<void> => {
     if (!user) return;
 
+    // Prevent multiple simultaneous syncs
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+
     try {
       const { data, error } = await supabase
         .from('negocios')
@@ -727,9 +732,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         diferenciais: item.diferenciais,
       }));
 
-      setNegocios(negociosFromDB);
+      // Only update if data has actually changed
+      const currentIds = negocios.map(n => n.id).sort().join(',');
+      const newIds = negociosFromDB.map(n => n.id).sort().join(',');
+      
+      if (currentIds !== newIds) {
+        setNegocios(negociosFromDB);
+        console.log('Negócios sincronizados:', negociosFromDB.length);
+      }
     } catch (error) {
       console.error('Erro ao sincronizar negócios:', error);
+    } finally {
+      syncingRef.current = false;
     }
   };
 

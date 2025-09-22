@@ -215,8 +215,6 @@ const ChatbotWizard = ({ open, onOpenChange, negocios, templates, onSave, onNavi
   };
 
   const renderStep1 = () => {
-    console.log('ChatbotWizard - Negócios recebidos:', negocios);
-    
     return (
       <div className="space-y-4">
         <div>
