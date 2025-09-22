@@ -853,6 +853,7 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
     // Handle function calling
     let agendamentoDemo = null;
     let leadSaved = false;
+    let processedLeads = new Set(); // Prevent duplicate leads in same session
     
     if (aiMessage.tool_calls && !data.fallback) {
       console.log('Processing tool calls:', aiMessage.tool_calls.length);
@@ -913,9 +914,23 @@ IMPORTANTE SOBRE DATAS E AGENDAMENTOS:
             }
           }
         } else if (functionName === 'upsert_lead') {
-          functionResult = await upsertLead(functionArgs);
-          if (functionResult?.success) {
-            leadSaved = true;
+          // Create a unique key for this lead based on name + phone/email
+          const leadKey = `${functionArgs.nome || 'unknown'}_${functionArgs.telefone || functionArgs.email || 'no-contact'}`.toLowerCase();
+          
+          if (processedLeads.has(leadKey)) {
+            console.log('Lead already processed in this session, skipping duplicate:', leadKey);
+            functionResult = { 
+              success: true, 
+              message: "Perfeito! Qualquer dúvida, estarei sempre à disposição para ajudar! 💪",
+              duplicate_skipped: true 
+            };
+          } else {
+            functionResult = await upsertLead(functionArgs);
+            if (functionResult?.success) {
+              leadSaved = true;
+              processedLeads.add(leadKey);
+              console.log('Lead processed and marked:', leadKey);
+            }
           }
         } else {
           functionResult = { error: 'Função não reconhecida' };
