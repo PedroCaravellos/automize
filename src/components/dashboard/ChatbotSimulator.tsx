@@ -67,6 +67,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
   };
 
   const initializeConversation = () => {
+    console.log('initializeConversation called');
     if (!chatbot) return;
     
     const welcomeMessage: Message = {
@@ -104,7 +105,11 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || !chatbot || conversationEnded || isTyping) return;
+    console.log('handleSendMessage called:', { inputValue, chatbot: !!chatbot, conversationEnded, isTyping });
+    if (!inputValue.trim() || !chatbot || conversationEnded || isTyping) {
+      console.log('Returning early from handleSendMessage');
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -345,15 +350,16 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
     setShareModalOpen(true);
   };
 
-  // Initialize conversation when drawer opens
+  // Initialize conversation when drawer opens  
   useEffect(() => {
     if (open && chatbot && negocio) {
+      console.log('useEffect triggered for initialization');
       initializeConversation();
       updateOnboardingProgress({ simulatorOpened: true });
       // Add activity log
       addActivity(`Teste de chatbot iniciado — ${chatbot.nome} (${negocio.nome}) — ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
     }
-  }, [open, chatbot, negocio]);
+  }, [open, chatbot?.id, negocio?.id]);
 
   if (!chatbot || !negocio) return null;
 

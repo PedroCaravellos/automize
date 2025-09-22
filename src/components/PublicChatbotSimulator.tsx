@@ -55,6 +55,7 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
   };
 
   const initializeConversation = () => {
+    console.log('initializeConversation called');
     const welcomeMessage: Message = {
       id: Date.now().toString(),
       text: replaceVariables(demoData.mensagens.boasVindas),
@@ -88,7 +89,11 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || conversationEnded || isTyping) return;
+    console.log('handleSendMessage called:', { inputValue, conversationEnded, isTyping });
+    if (!inputValue.trim() || conversationEnded || isTyping) {
+      console.log('Returning early from handleSendMessage');
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -221,8 +226,9 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
 
   // Initialize conversation on component mount
   useEffect(() => {
+    console.log('useEffect triggered for initialization');
     initializeConversation();
-  }, [demoData]);
+  }, [demoData.botName, demoData.academyName]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
