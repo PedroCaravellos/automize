@@ -1,0 +1,21 @@
+{
+  "name": "Automiza - Automatização de Chatbots",
+  "short_name": "Automiza",
+  "description": "Automatize o atendimento do seu negócio com chatbots inteligentes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/lovable-uploads/41313d2d-3aa6-4431-aa6d-a794e1901398.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/lovable-uploads/419fc9aa-9a41-4cc0-b8ce-190b4a7e6869.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
