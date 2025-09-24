@@ -191,7 +191,7 @@ const TemplatesSection = () => {
                 variant={selectedTemplate === template.id ? "default" : "outline"}
                 className="w-full mt-4"
                 size="sm"
-                onClick={scrollToPlans}
+                onClick={selectedTemplate === template.id ? scrollToPlans : () => setSelectedTemplate(template.id)}
               >
                 {selectedTemplate === template.id ? "Começar com este template" : "Ver detalhes"}
                 <ArrowRight className="h-4 w-4 ml-2" />
