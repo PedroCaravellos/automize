@@ -11,7 +11,7 @@ const AboutSection = () => {
           
           <p className="text-lg md:text-xl text-muted-foreground mb-12 max-w-3xl mx-auto font-body">
             Somos uma plataforma de automatização que cria chatbots inteligentes e personalizados 
-            para academias e pequenos negócios. Nossa IA cuida do atendimento, agendamentos e vendas 
+            para qualquer tipo de negócio. Nossa IA cuida do atendimento, agendamentos e vendas 
             enquanto você foca no que mais importa: fazer seu negócio crescer.
           </p>
 

@@ -43,8 +43,8 @@ const HeroSection = () => {
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto font-body font-light">
-            Automatize o atendimento da sua academia ou pequeno negócio com chatbots personalizados. 
-            Mais vendas, menos trabalho manual.
+            Automatize o atendimento do seu negócio com chatbots inteligentes que convertem visitantes em clientes. 
+            Mais vendas, menos trabalho manual, resultados comprovados.
           </p>
 
           {/* CTA Buttons */}
