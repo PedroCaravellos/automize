@@ -6,7 +6,6 @@ import BenefitsSection from "@/components/BenefitsSection";
 import TemplatesSection from "@/components/TemplatesSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import ROICalculator from "@/components/ROICalculator";
-import TestimonialsSection from "@/components/TestimonialsSection";
 import PricingSection from "@/components/PricingSection";
 import Footer from "@/components/Footer";
 
@@ -21,7 +20,6 @@ const Index = () => {
       <TemplatesSection />
       <HowItWorksSection />
       <ROICalculator />
-      <TestimonialsSection />
       <div id="planos">
         <PricingSection />
       </div>
