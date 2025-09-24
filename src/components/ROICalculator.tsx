@@ -15,6 +15,13 @@ const ROICalculator = () => {
     setShowResults(true);
   };
 
+  const scrollToPlans = () => {
+    const plansSection = document.getElementById('planos');
+    if (plansSection) {
+      plansSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   // Cálculos
   const vendaAtual = (leads * conversion / 100) * ticketMedio;
   const vendaComBot = (leads * (conversion * 1.6) / 100) * ticketMedio; // 60% mais conversões
@@ -166,7 +173,7 @@ const ROICalculator = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     * Baseado em médias de clientes reais
                   </p>
-                  <Button variant="hero" size="lg" className="w-full">
+                  <Button variant="hero" size="lg" className="w-full" onClick={scrollToPlans}>
                     Começar teste grátis
                   </Button>
                 </div>

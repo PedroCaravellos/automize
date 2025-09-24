@@ -17,6 +17,13 @@ import {
 
 const TemplatesSection = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  
+  const scrollToPlans = () => {
+    const plansSection = document.getElementById('planos');
+    if (plansSection) {
+      plansSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const templates = [
     {
@@ -184,6 +191,7 @@ const TemplatesSection = () => {
                 variant={selectedTemplate === template.id ? "default" : "outline"}
                 className="w-full mt-4"
                 size="sm"
+                onClick={scrollToPlans}
               >
                 {selectedTemplate === template.id ? "Começar com este template" : "Ver detalhes"}
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -201,7 +209,7 @@ const TemplatesSection = () => {
               Criamos chatbots personalizados para qualquer tipo de negócio. 
               Nossa IA se adapta ao seu modelo de atendimento.
             </p>
-            <Button variant="hero" size="lg">
+            <Button variant="hero" size="lg" onClick={scrollToPlans}>
               Criar chatbot personalizado
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>

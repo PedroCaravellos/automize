@@ -6,6 +6,13 @@ import AuthModal from "./auth/AuthModal";
 const HeroSection = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   
+  const scrollToPlans = () => {
+    const plansSection = document.getElementById('planos');
+    if (plansSection) {
+      plansSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+  
   return (
     <section id="topo" className="min-h-screen flex items-center justify-center bg-gradient-hero relative overflow-hidden pt-16">
       {/* Background Animation Elements */}
@@ -46,13 +53,13 @@ const HeroSection = () => {
               variant="hero" 
               size="lg" 
               className="shadow-button hover:shadow-hero transition-all"
-              onClick={() => setAuthModalOpen(true)}
+              onClick={scrollToPlans}
             >
-              Começar agora grátis
+              Começar teste grátis
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button variant="outline-hero" size="lg">
-              Ver demonstração
+            <Button variant="outline-hero" size="lg" onClick={scrollToPlans}>
+              Ver planos
             </Button>
           </div>
 

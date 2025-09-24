@@ -22,7 +22,9 @@ const Index = () => {
       <HowItWorksSection />
       <ROICalculator />
       <TestimonialsSection />
-      <PricingSection />
+      <div id="planos">
+        <PricingSection />
+      </div>
       <Footer />
     </main>
   );
