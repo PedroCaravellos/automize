@@ -33,6 +33,7 @@ export default function AnalyticsSection() {
     agendamentosPorBot: 0,
     leadsPorBot: 0,
     conversaoBot: 0,
+    totalNegocios: 0, // Adicionar contador de negócios
     // Novos dados para métricas avançadas
     metrics: {
       totalLeads: { value: 0, change: 0, trend: 'stable' as TrendType },
@@ -47,7 +48,7 @@ export default function AnalyticsSection() {
     }
   });
   const [loading, setLoading] = useState(true);
-  const { chatbots, academias } = useAuth();
+  const { chatbots, user } = useAuth();
 
   useEffect(() => {
     fetchAnalytics();
@@ -77,13 +78,20 @@ export default function AnalyticsSection() {
         .from('vendas')
         .select('valor, status, data_fechamento, created_at');
 
-      if (leadsError || agendamentosError || vendasError) {
-        throw leadsError || agendamentosError || vendasError;
+      // Buscar dados de negócios
+      const { data: negocios, error: negociosError } = await supabase
+        .from('negocios')
+        .select('id, nome, tipo_negocio, segmento')
+        .eq('user_id', session.user.id);
+
+      if (leadsError || agendamentosError || vendasError || negociosError) {
+        throw leadsError || agendamentosError || vendasError || negociosError;
       }
 
       // Calcular métricas atuais
       const totalLeads = leads?.length || 0;
       const totalAgendamentos = agendamentos?.length || 0;
+      const totalNegocios = negocios?.length || 0;
       const vendasFechadas = vendas?.filter(v => v.status === 'fechada') || [];
       const totalVendas = vendasFechadas.reduce((sum, v) => sum + (Number(v.valor) || 0), 0);
       const ticketMedio = vendasFechadas.length > 0 ? totalVendas / vendasFechadas.length : 0;
@@ -163,6 +171,7 @@ export default function AnalyticsSection() {
         agendamentosPorBot,
         leadsPorBot,
         conversaoBot,
+        totalNegocios, // Adicionar contador real de negócios
         metrics: {
           totalLeads: { 
             value: totalLeads, 
@@ -435,7 +444,7 @@ export default function AnalyticsSection() {
             <BarChart3 className="h-4 w-4 text-accent-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{academias.length}</div>
+            <div className="text-2xl font-bold">{analytics.totalNegocios}</div>
             <p className="text-xs text-muted-foreground">
               Negócios cadastrados
             </p>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building, Bot, Zap, HelpCircle, Plus, Activity } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import PlanManagement from "./PlanManagement";
 import IntegrationsSection from "./IntegrationsSection";
 import NegociosSection from "./NegociosSection";
@@ -25,7 +26,30 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
   const [preselectedPlan, setPreselectedPlan] = useState<string | null>(null);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const { activity, chatbots, negocios, updateOnboardingProgress, intendedRoute, setIntendedRoute } = useAuth();
+  const [negociosCount, setNegociosCount] = useState(0);
+  const { activity, chatbots, negocios, updateOnboardingProgress, intendedRoute, setIntendedRoute, user } = useAuth();
+
+  // Load negócios count directly from database
+  useEffect(() => {
+    if (user) {
+      const fetchNegociosCount = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('negocios')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id);
+
+          if (!error && data) {
+            setNegociosCount(data.length);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar contagem de negócios:', error);
+        }
+      };
+
+      fetchNegociosCount();
+    }
+  }, [user]);
 
   // Function to refresh dashboard data
   const refreshDashboardData = () => {
@@ -139,7 +163,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
                   <Building className="h-5 w-5 text-secondary" />
                 </CardHeader>
                 <CardContent className="relative">
-                  <div className="text-3xl font-bold">{negocios.length}</div>
+                  <div className="text-3xl font-bold">{negociosCount}</div>
                   <p className="text-xs text-muted-foreground">Negócios cadastrados</p>
                 </CardContent>
               </Card>

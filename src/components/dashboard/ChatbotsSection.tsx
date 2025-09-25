@@ -5,6 +5,7 @@ import { Bot, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserData } from "@/utils/userStorage";
+import { supabase } from "@/integrations/supabase/client";
 import ChatbotWizard from "./ChatbotWizard";
 import ChatbotTable from "./ChatbotTable";
 import ChatbotEditModal from "./ChatbotEditModal";
@@ -111,15 +112,41 @@ const ChatbotsSection = () => {
   const [editingChatbot, setEditingChatbot] = useState<Chatbot | null>(null);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
-  // Sync negócios when component mounts or user changes
+  const [negociosDb, setNegociosDb] = useState<any[]>([]);
+
+  // Load negócios directly from database for consistency
   useEffect(() => {
     if (user) {
-      console.log('Sincronizando negócios...');
-      syncNegociosFromDB();
-    }
-  }, [user, syncNegociosFromDB]);
+      console.log('Carregando negócios...');
+      const fetchNegocios = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('negocios')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
 
-  console.log('ChatbotsSection - Negócios disponíveis:', negocios);
+          if (error) throw error;
+          setNegociosDb(data || []);
+          console.log('ChatbotsSection - Negócios carregados:', data?.length || 0);
+        } catch (error) {
+          console.error('Erro ao buscar negócios:', error);
+        }
+      };
+      
+      fetchNegocios();
+    }
+  }, [user]);
+
+  // Map database data to expected format for compatibility
+  const negociosFormatted = negociosDb.map(n => ({
+    id: n.id,
+    nome: n.nome,
+    unidade: n.unidade || '',
+    segmento: n.segmento || n.tipo_negocio || 'Outros',
+    statusChatbot: 'Nenhum' as const,
+    createdAt: n.created_at || new Date().toISOString()
+  }));
 
   const handleCreateChatbot = () => {
     if (!hasAccess()) {
@@ -146,7 +173,7 @@ const handleToggleStatus = (chatbotId: string) => {
 
     const updated = toggleChatbotStatus(chatbotId);
     if (!updated) return;
-    const negocio = negocios.find(n => n.id === updated.negocioId);
+    const negocio = negociosFormatted.find(n => n.id === updated.negocioId);
     if (updated.status === "Ativo") {
       toast({
         title: "Chatbot ativado",
@@ -229,7 +256,7 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
         <CardContent>
             <ChatbotTable
               chatbots={chatbots}
-              negocios={negocios}
+              negocios={negociosFormatted}
               onEdit={handleEditChatbot}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDeleteChatbot}
@@ -241,7 +268,7 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
       <ChatbotWizard
         open={isWizardOpen}
         onOpenChange={setIsWizardOpen}
-        negocios={negocios}
+        negocios={negociosFormatted}
         templates={templates}
         onSave={handleSaveChatbot}
         onNavigateToNegocios={() => {
