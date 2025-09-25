@@ -1,8 +1,25 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Users, MessageSquare, Calendar, DollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BarChart3, TrendingUp, TrendingDown, Users, MessageSquare, Calendar, DollarSign, Target, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { AreaChart, Area, ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+
+interface MetricData {
+  value: number;
+  change: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+interface ChartDataPoint {
+  name: string;
+  value: number;
+  previousValue?: number;
+}
+
+type TrendType = 'up' | 'down' | 'stable';
 
 export default function AnalyticsSection() {
   const [analytics, setAnalytics] = useState({
@@ -16,6 +33,18 @@ export default function AnalyticsSection() {
     agendamentosPorBot: 0,
     leadsPorBot: 0,
     conversaoBot: 0,
+    // Novos dados para métricas avançadas
+    metrics: {
+      totalLeads: { value: 0, change: 0, trend: 'stable' as TrendType },
+      totalRevenue: { value: 0, change: 0, trend: 'stable' as TrendType },
+      conversionRate: { value: 0, change: 0, trend: 'stable' as TrendType },
+      avgTicket: { value: 0, change: 0, trend: 'stable' as TrendType },
+    },
+    chartData: {
+      revenue: [] as ChartDataPoint[],
+      leads: [] as ChartDataPoint[],
+      conversions: [] as ChartDataPoint[],
+    }
   });
   const [loading, setLoading] = useState(true);
   const { chatbots, academias } = useAuth();
@@ -52,7 +81,7 @@ export default function AnalyticsSection() {
         throw leadsError || agendamentosError || vendasError;
       }
 
-      // Calcular métricas
+      // Calcular métricas atuais
       const totalLeads = leads?.length || 0;
       const totalAgendamentos = agendamentos?.length || 0;
       const vendasFechadas = vendas?.filter(v => v.status === 'fechada') || [];
@@ -60,6 +89,18 @@ export default function AnalyticsSection() {
       const ticketMedio = vendasFechadas.length > 0 ? totalVendas / vendasFechadas.length : 0;
       const leadsConvertidos = leads?.filter(l => l.status === 'convertido').length || 0;
       const conversationRate = totalLeads > 0 ? (leadsConvertidos / totalLeads) * 100 : 0;
+
+      // Calcular dados do mês anterior para comparação
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      
+      const leadsLastMonth = leads?.filter(l => new Date(l.created_at) >= lastMonth && new Date(l.created_at) < new Date()).length || 0;
+      const vendasLastMonth = vendas?.filter(v => v.status === 'fechada' && new Date(v.created_at || '') >= lastMonth && new Date(v.created_at || '') < new Date()).reduce((sum, v) => sum + (Number(v.valor) || 0), 0) || 0;
+      
+      // Calcular tendências
+      const leadsChange = leadsLastMonth > 0 ? ((totalLeads - leadsLastMonth) / leadsLastMonth) * 100 : 0;
+      const revenueChange = vendasLastMonth > 0 ? ((totalVendas - vendasLastMonth) / vendasLastMonth) * 100 : 0;
+      const conversionChange = 0; // Simplificado para esta versão
 
       // Leads por origem
       const leadsPorOrigem = leads?.reduce((acc: any, lead) => {
@@ -75,6 +116,27 @@ export default function AnalyticsSection() {
         acc[mes] = (acc[mes] || 0) + (Number(venda.valor) || 0);
         return acc;
       }, {});
+
+      // Preparar dados para gráficos
+      const last6Months = Array.from({ length: 6 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        return date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+      }).reverse();
+
+      const revenueChartData: ChartDataPoint[] = last6Months.map(month => ({
+        name: month,
+        value: vendasPorMes[month] || 0
+      }));
+
+      const leadsChartData: ChartDataPoint[] = last6Months.map(month => {
+        const monthLeads = leads?.filter(l => {
+          const leadDate = new Date(l.created_at);
+          const leadMonth = leadDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+          return leadMonth === month;
+        }).length || 0;
+        return { name: month, value: monthLeads };
+      });
 
       // Métricas específicas do bot (últimos 7 dias)
       const sevenDaysAgo = new Date();
@@ -101,6 +163,33 @@ export default function AnalyticsSection() {
         agendamentosPorBot,
         leadsPorBot,
         conversaoBot,
+        metrics: {
+          totalLeads: { 
+            value: totalLeads, 
+            change: leadsChange, 
+            trend: leadsChange > 0 ? 'up' : leadsChange < 0 ? 'down' : 'stable' 
+          },
+          totalRevenue: { 
+            value: totalVendas, 
+            change: revenueChange, 
+            trend: revenueChange > 0 ? 'up' : revenueChange < 0 ? 'down' : 'stable' 
+          },
+          conversionRate: { 
+            value: conversationRate, 
+            change: conversionChange, 
+            trend: 'stable' 
+          },
+          avgTicket: { 
+            value: ticketMedio, 
+            change: 0, 
+            trend: 'stable' 
+          },
+        },
+        chartData: {
+          revenue: revenueChartData,
+          leads: leadsChartData,
+          conversions: [],
+        }
       });
     } catch (error) {
       console.error('Erro ao buscar analytics:', error);
@@ -116,6 +205,44 @@ export default function AnalyticsSection() {
     }).format(value);
   };
 
+  const formatPercentage = (value: number) => {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+  };
+
+  const MetricCard = ({ title, value, change, trend, icon: Icon, format = 'number' }: {
+    title: string;
+    value: number;
+    change: number;
+    trend: TrendType;
+    icon: any;
+    format?: 'number' | 'currency' | 'percentage';
+  }) => {
+    const TrendIcon = trend === 'up' ? ArrowUpRight : trend === 'down' ? ArrowDownRight : Activity;
+    const trendColor = trend === 'up' ? 'text-secondary' : trend === 'down' ? 'text-destructive' : 'text-muted-foreground';
+    
+    return (
+      <Card className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-card opacity-50" />
+        <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+          <Icon className="h-5 w-5 text-primary" />
+        </CardHeader>
+        <CardContent className="relative">
+          <div className="text-3xl font-bold text-foreground mb-2">
+            {format === 'currency' ? formatCurrency(value) : 
+             format === 'percentage' ? `${value.toFixed(1)}%` : 
+             value.toLocaleString('pt-BR')}
+          </div>
+          <div className={`flex items-center gap-1 text-sm ${trendColor}`}>
+            <TrendIcon className="h-4 w-4" />
+            <span>{formatPercentage(change)}</span>
+            <span className="text-muted-foreground text-xs">vs mês anterior</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -125,201 +252,312 @@ export default function AnalyticsSection() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Analytics</h2>
-        <p className="text-muted-foreground">Acompanhe o desempenho da sua operação</p>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard Analytics</h2>
+          <p className="text-muted-foreground mt-1">Visão completa do desempenho do seu negócio</p>
+        </div>
+        <div className="text-right">
+          <div className="text-sm text-muted-foreground">Última atualização</div>
+          <div className="text-sm font-medium">{new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
       </div>
 
-      {/* Métricas Principais */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Leads</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+      {/* KPIs Principais */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Total de Leads"
+          value={analytics.metrics.totalLeads.value}
+          change={analytics.metrics.totalLeads.change}
+          trend={analytics.metrics.totalLeads.trend}
+          icon={Users}
+        />
+        <MetricCard
+          title="Receita Total"
+          value={analytics.metrics.totalRevenue.value}
+          change={analytics.metrics.totalRevenue.change}
+          trend={analytics.metrics.totalRevenue.trend}
+          icon={DollarSign}
+          format="currency"
+        />
+        <MetricCard
+          title="Taxa de Conversão"
+          value={analytics.metrics.conversionRate.value}
+          change={analytics.metrics.conversionRate.change}
+          trend={analytics.metrics.conversionRate.trend}
+          icon={Target}
+          format="percentage"
+        />
+        <MetricCard
+          title="Ticket Médio"
+          value={analytics.metrics.avgTicket.value}
+          change={analytics.metrics.avgTicket.change}
+          trend={analytics.metrics.avgTicket.trend}
+          icon={TrendingUp}
+          format="currency"
+        />
+      </div>
+
+      {/* Gráficos */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Evolução da Receita
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalLeads}</div>
-            <p className="text-xs text-muted-foreground">
-              {Math.round(analytics.conversationRate)}% taxa de conversão
-            </p>
+            {analytics.chartData.revenue.length > 0 ? (
+              <ChartContainer
+                config={{
+                  value: {
+                    label: "Receita",
+                    color: "hsl(var(--primary))",
+                  },
+                }}
+                className="h-[200px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={analytics.chartData.revenue}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="hsl(var(--primary))"
+                      fillOpacity={1}
+                      fill="url(#colorRevenue)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Dados insuficientes para exibir gráfico</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Agendamentos</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-secondary" />
+              Leads Mensais
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalAgendamentos}</div>
-            <p className="text-xs text-muted-foreground">
-              Agendamentos criados
-            </p>
+            {analytics.chartData.leads.length > 0 ? (
+              <ChartContainer
+                config={{
+                  value: {
+                    label: "Leads",
+                    color: "hsl(var(--secondary))",
+                  },
+                }}
+                className="h-[200px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.chartData.leads}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar 
+                      dataKey="value" 
+                      fill="hsl(var(--secondary))" 
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Dados insuficientes para exibir gráfico</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
+      </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(analytics.totalVendas)}</div>
-            <p className="text-xs text-muted-foreground">
-              Ticket médio: {formatCurrency(analytics.ticketMedio)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
+      {/* Métricas Secundárias */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Chatbots Ativos</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {chatbots.filter(c => c.status === 'Ativo').length}
-            </div>
+            <div className="text-2xl font-bold">{chatbots.filter(c => c.status === 'Ativo').length}</div>
             <p className="text-xs text-muted-foreground">
               {chatbots.length} total criados
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-secondary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Academias</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Agendamentos</CardTitle>
+            <Calendar className="h-4 w-4 text-secondary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.totalAgendamentos}</div>
+            <p className="text-xs text-muted-foreground">
+              Total de agendamentos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-accent">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Negócios</CardTitle>
+            <BarChart3 className="h-4 w-4 text-accent-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{academias.length}</div>
             <p className="text-xs text-muted-foreground">
-              Academias cadastradas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Math.round(analytics.conversationRate)}%</div>
-            <p className="text-xs text-muted-foreground">
-              Leads para vendas
+              Negócios cadastrados
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Métricas do Bot (últimos 7 dias) */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Performance do Bot (últimos 7 dias)</h3>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Agendamentos via Bot</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics.agendamentosPorBot}</div>
-              <p className="text-xs text-muted-foreground">
-                Agendamentos criados pelo chatbot
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Leads via Bot</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics.leadsPorBot}</div>
-              <p className="text-xs text-muted-foreground">
-                Leads capturados pelo chatbot
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Conversão do Bot</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{Math.round(analytics.conversaoBot)}%</div>
-              <p className="text-xs text-muted-foreground">
-                Leads convertidos em agendamentos
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Leads por Origem */}
-      <Card>
+      {/* Performance do Bot */}
+      <Card className="shadow-card">
         <CardHeader>
-          <CardTitle>Leads por Origem</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            Performance do Chatbot
+            <Badge variant="secondary" className="ml-auto">Últimos 7 dias</Badge>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {Object.keys(analytics.leadsPorOrigem).length === 0 ? (
-            <div className="text-center py-8">
-              <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">
-                Nenhum dado disponível ainda
-              </p>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="bg-gradient-accent rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-muted-foreground">Leads Capturados</span>
+                <Users className="h-4 w-4 text-primary" />
+              </div>
+              <div className="text-2xl font-bold">{analytics.leadsPorBot}</div>
+              <div className="text-xs text-muted-foreground">via chatbot</div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {Object.entries(analytics.leadsPorOrigem).map(([origem, count]) => (
-                <div key={origem} className="flex items-center justify-between">
-                  <span className="capitalize">{origem}</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 bg-muted rounded-full h-2">
+            
+            <div className="bg-gradient-accent rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-muted-foreground">Agendamentos</span>
+                <Calendar className="h-4 w-4 text-secondary" />
+              </div>
+              <div className="text-2xl font-bold">{analytics.agendamentosPorBot}</div>
+              <div className="text-xs text-muted-foreground">criados pelo bot</div>
+            </div>
+            
+            <div className="bg-gradient-accent rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-muted-foreground">Taxa de Conversão</span>
+                <Target className="h-4 w-4 text-accent-foreground" />
+              </div>
+              <div className="text-2xl font-bold">{Math.round(analytics.conversaoBot)}%</div>
+              <div className="text-xs text-muted-foreground">lead → agendamento</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Análise Detalhada */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Leads por Origem
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Object.keys(analytics.leadsPorOrigem).length === 0 ? (
+              <div className="text-center py-12">
+                <BarChart3 className="mx-auto h-16 w-16 text-muted-foreground opacity-50" />
+                <p className="mt-4 text-muted-foreground">Nenhum lead registrado ainda</p>
+                <p className="text-sm text-muted-foreground">Dados aparecerão conforme os leads chegarem</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(analytics.leadsPorOrigem).map(([origem, count]) => (
+                  <div key={origem} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="capitalize font-medium">{origem}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{count as number}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({Math.round(((count as number) / analytics.totalLeads) * 100)}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
                       <div 
-                        className="bg-primary h-2 rounded-full" 
+                        className="bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full transition-all duration-500" 
                         style={{ 
                           width: `${((count as number) / analytics.totalLeads) * 100}%` 
                         }}
                       />
                     </div>
-                    <span className="text-sm font-medium">{count as number}</span>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Vendas por Mês */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Receita por Período</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {Object.keys(analytics.vendasPorMes).length === 0 ? (
-            <div className="text-center py-8">
-              <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">
-                Nenhuma venda registrada ainda
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {Object.entries(analytics.vendasPorMes).map(([mes, valor]) => (
-                <div key={mes} className="flex items-center justify-between">
-                  <span>{mes}</span>
-                  <span className="font-medium">{formatCurrency(valor as number)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-secondary" />
+              Receita por Período
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Object.keys(analytics.vendasPorMes).length === 0 ? (
+              <div className="text-center py-12">
+                <DollarSign className="mx-auto h-16 w-16 text-muted-foreground opacity-50" />
+                <p className="mt-4 text-muted-foreground">Nenhuma venda registrada</p>
+                <p className="text-sm text-muted-foreground">Receita será exibida após as primeiras vendas</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(analytics.vendasPorMes)
+                  .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+                  .map(([mes, valor]) => (
+                  <div key={mes} className="flex items-center justify-between p-3 rounded-lg bg-gradient-accent">
+                    <div>
+                      <div className="font-medium">{mes}</div>
+                      <div className="text-sm text-muted-foreground">Receita mensal</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg">{formatCurrency(valor as number)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
