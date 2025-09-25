@@ -310,38 +310,40 @@ export default function AnalyticsSection() {
           </CardHeader>
           <CardContent>
             {analytics.chartData.revenue.length > 0 ? (
-              <ChartContainer
-                config={{
-                  value: {
-                    label: "Receita",
-                    color: "hsl(var(--primary))",
-                  },
-                }}
-                className="h-[200px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analytics.chartData.revenue}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                    <YAxis axisLine={false} tickLine={false} />
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="hsl(var(--primary))"
-                      fillOpacity={1}
-                      fill="url(#colorRevenue)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+              <div className="h-[200px] w-full">
+                <ChartContainer
+                  config={{
+                    value: {
+                      label: "Receita",
+                      color: "hsl(var(--primary))",
+                    },
+                  }}
+                  className="h-full w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={analytics.chartData.revenue}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                      <YAxis axisLine={false} tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Area
+                        type="monotone"
+                        dataKey="value"
+                        stroke="hsl(var(--primary))"
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
@@ -362,29 +364,31 @@ export default function AnalyticsSection() {
           </CardHeader>
           <CardContent>
             {analytics.chartData.leads.length > 0 ? (
-              <ChartContainer
-                config={{
-                  value: {
-                    label: "Leads",
-                    color: "hsl(var(--secondary))",
-                  },
-                }}
-                className="h-[200px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analytics.chartData.leads}>
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                    <YAxis axisLine={false} tickLine={false} />
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar 
-                      dataKey="value" 
-                      fill="hsl(var(--secondary))" 
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+              <div className="h-[200px] w-full">
+                <ChartContainer
+                  config={{
+                    value: {
+                      label: "Leads",
+                      color: "hsl(var(--secondary))",
+                    },
+                  }}
+                  className="h-full w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics.chartData.leads}>
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                      <YAxis axisLine={false} tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar 
+                        dataKey="value" 
+                        fill="hsl(var(--secondary))" 
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
@@ -445,7 +449,11 @@ export default function AnalyticsSection() {
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
             Performance do Chatbot
-            <Badge variant="secondary" className="ml-auto">Últimos 7 dias</Badge>
+            <div className="ml-auto">
+              <span className="inline-flex items-center rounded-full border border-secondary bg-secondary/10 px-2.5 py-0.5 text-xs font-semibold text-secondary">
+                Últimos 7 dias
+              </span>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
