@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import PublicChatbotSimulator from "@/components/PublicChatbotSimulator";
 import { decompressFromEncodedURIComponent } from "lz-string";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DemoData {
   botName: string;
@@ -94,8 +93,6 @@ const DemoPage = () => {
       </div>
     );
   }
-
-  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen bg-[#0a1014] flex items-center justify-center p-4">

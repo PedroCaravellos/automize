@@ -230,7 +230,8 @@ const PublicChatbotSimulator = ({ demoData, isMobilePreview = false }: PublicCha
   useEffect(() => {
     console.log('useEffect triggered for initialization');
     initializeConversation();
-  }, [demoData.botName, demoData.academyName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Mobile WhatsApp Preview
   if (isMobilePreview) {
