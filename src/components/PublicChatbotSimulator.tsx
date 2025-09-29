@@ -237,79 +237,81 @@ const PublicChatbotSimulator = ({ demoData, isMobilePreview = false }: PublicCha
   if (isMobilePreview) {
     return (
       <div className="flex flex-col h-full">
-        {/* Chat Messages */}
-        <ScrollArea className="flex-1 p-4" style={{ 
+        {/* Chat Messages - Fixed height with internal scroll */}
+        <div className="flex-1 overflow-hidden relative" style={{ 
           backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%230b141a\'/%3E%3Cpath d=\'M20 10h60v2H20zm0 20h45v2H20zm0 20h55v2H20zm0 20h40v2H20z\' fill=\'%23ffffff\' opacity=\'0.03\'/%3E%3C/svg%3E")',
         }}>
-          <div className="space-y-3">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-              >
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-3">
+              {messages.map((message) => (
                 <div
-                  className={`flex gap-2 max-w-[85%] ${
-                    message.sender === "user" ? "flex-row-reverse" : "flex-row"
-                  }`}
+                  key={message.id}
+                  className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  {message.sender === "bot" && (
-                    <Avatar className="h-8 w-8 mt-1">
+                  <div
+                    className={`flex gap-2 max-w-[85%] ${
+                      message.sender === "user" ? "flex-row-reverse" : "flex-row"
+                    }`}
+                  >
+                    {message.sender === "bot" && (
+                      <Avatar className="h-8 w-8 mt-1 shrink-0">
+                        <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${demoData.botName}`} />
+                        <AvatarFallback className="bg-[#00a884] text-white">
+                          <Bot className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div
+                      className={`px-3 py-2 rounded-lg shadow-md ${
+                        message.sender === "user"
+                          ? "bg-[#005c4b] text-white rounded-tr-none"
+                          : "bg-[#1f2c33] text-white rounded-tl-none"
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.text}</p>
+                      <div className="flex items-center gap-1 justify-end mt-1">
+                        <p className="text-[10px] opacity-60">
+                          {message.timestamp.toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </p>
+                        {message.sender === "user" && (
+                          <Check className="h-3 w-3 opacity-60" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="flex gap-2 max-w-[85%]">
+                    <Avatar className="h-8 w-8 mt-1 shrink-0">
                       <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${demoData.botName}`} />
                       <AvatarFallback className="bg-[#00a884] text-white">
                         <Bot className="h-4 w-4" />
                       </AvatarFallback>
                     </Avatar>
-                  )}
-                  <div
-                    className={`px-3 py-2 rounded-lg shadow-md ${
-                      message.sender === "user"
-                        ? "bg-[#005c4b] text-white rounded-tr-none"
-                        : "bg-[#1f2c33] text-white rounded-tl-none"
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.text}</p>
-                    <div className="flex items-center gap-1 justify-end mt-1">
-                      <p className="text-[10px] opacity-60">
-                        {message.timestamp.toLocaleTimeString('pt-BR', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </p>
-                      {message.sender === "user" && (
-                        <Check className="h-3 w-3 opacity-60" />
-                      )}
+                    <div className="px-4 py-3 rounded-lg bg-[#1f2c33] text-white rounded-tl-none shadow-md">
+                      <div className="flex space-x-1.5">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDuration: '1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '1s' }}></div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="flex gap-2 max-w-[85%]">
-                  <Avatar className="h-8 w-8 mt-1">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${demoData.botName}`} />
-                    <AvatarFallback className="bg-[#00a884] text-white">
-                      <Bot className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="px-4 py-3 rounded-lg bg-[#1f2c33] text-white rounded-tl-none shadow-md">
-                    <div className="flex space-x-1.5">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDuration: '1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '1s' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+        </div>
 
-        {/* Input Area */}
-        <div className="bg-[#1e2a30] p-2 border-t border-[#2a3942]">
+        {/* Input Area - Fixed at bottom */}
+        <div className="bg-[#1e2a30] p-2 border-t border-[#2a3942] shrink-0">
           <div className="flex gap-2 items-center">
             <Input
               value={inputValue}

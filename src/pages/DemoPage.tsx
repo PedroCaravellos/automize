@@ -98,10 +98,10 @@ const DemoPage = () => {
     <div className="min-h-screen bg-[#0a1014] flex items-center justify-center p-4">
       {/* Mobile WhatsApp-style Container */}
       <div className="w-full max-w-md mx-auto">
-        {/* Device Frame */}
-        <div className="bg-background rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-gray-800">
+        {/* Device Frame with Fixed Height */}
+        <div className="bg-background rounded-[2.5rem] shadow-2xl overflow-hidden border-8 border-gray-800 h-[700px] flex flex-col">
           {/* WhatsApp Header */}
-          <div className="bg-[#008069] text-white px-4 py-3">
+          <div className="bg-[#008069] text-white px-4 py-3 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1">
                 <Link to="/">
@@ -152,8 +152,8 @@ const DemoPage = () => {
             </div>
           </div>
 
-          {/* Chat Area */}
-          <div className="bg-[#0b141a] min-h-[600px]">
+          {/* Chat Area - Flex 1 to fill remaining space */}
+          <div className="bg-[#0b141a] flex-1 overflow-hidden">
             <PublicChatbotSimulator demoData={demoData} isMobilePreview={true} />
           </div>
         </div>
