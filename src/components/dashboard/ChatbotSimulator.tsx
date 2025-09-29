@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Drawer,
   DrawerContent,
@@ -422,17 +423,23 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
                       message.sender === "user" ? "flex-row-reverse" : "flex-row"
                     }`}
                   >
-                    <div className="flex-shrink-0">
+                    <Avatar className="h-8 w-8 mt-1">
                       {message.sender === "user" ? (
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                          <User className="h-4 w-4 text-primary-foreground" />
-                        </div>
+                        <>
+                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=user`} />
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            <User className="h-4 w-4" />
+                          </AvatarFallback>
+                        </>
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                          <Bot className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        <>
+                          <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${chatbot?.nome}`} />
+                          <AvatarFallback className="bg-muted">
+                            <Bot className="h-4 w-4 text-muted-foreground" />
+                          </AvatarFallback>
+                        </>
                       )}
-                    </div>
+                    </Avatar>
                     <div
                       className={`px-3 py-2 rounded-lg ${
                         message.sender === "user"
@@ -455,16 +462,17 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
                 {isTyping && (
                   <div className="flex justify-start">
                     <div className="flex gap-2 max-w-[80%]">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <Avatar className="h-8 w-8 mt-1">
+                        <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${chatbot?.nome}`} />
+                        <AvatarFallback className="bg-muted">
                           <Bot className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </div>
-                      <div className="px-3 py-2 rounded-lg bg-muted text-foreground">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="px-4 py-3 rounded-lg bg-muted text-foreground">
+                        <div className="flex space-x-1.5">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDuration: '1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '1s' }}></div>
                         </div>
                       </div>
                     </div>

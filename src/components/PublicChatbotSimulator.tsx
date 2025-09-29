@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, RotateCcw, Send, Brain, MessageSquare } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bot, User, RotateCcw, Send, Brain, MessageSquare, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
@@ -27,9 +28,10 @@ interface DemoData {
 
 interface PublicChatbotSimulatorProps {
   demoData: DemoData;
+  isMobilePreview?: boolean;
 }
 
-const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
+const PublicChatbotSimulator = ({ demoData, isMobilePreview = false }: PublicChatbotSimulatorProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [conversationEnded, setConversationEnded] = useState(false);
@@ -230,6 +232,125 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
     initializeConversation();
   }, [demoData.botName, demoData.academyName]);
 
+  // Mobile WhatsApp Preview
+  if (isMobilePreview) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Chat Messages */}
+        <ScrollArea className="flex-1 p-4" style={{ 
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%230b141a\'/%3E%3Cpath d=\'M20 10h60v2H20zm0 20h45v2H20zm0 20h55v2H20zm0 20h40v2H20z\' fill=\'%23ffffff\' opacity=\'0.03\'/%3E%3C/svg%3E")',
+        }}>
+          <div className="space-y-3">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`flex gap-2 max-w-[85%] ${
+                    message.sender === "user" ? "flex-row-reverse" : "flex-row"
+                  }`}
+                >
+                  {message.sender === "bot" && (
+                    <Avatar className="h-8 w-8 mt-1">
+                      <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${demoData.botName}`} />
+                      <AvatarFallback className="bg-[#00a884] text-white">
+                        <Bot className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div
+                    className={`px-3 py-2 rounded-lg shadow-md ${
+                      message.sender === "user"
+                        ? "bg-[#005c4b] text-white rounded-tr-none"
+                        : "bg-[#1f2c33] text-white rounded-tl-none"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.text}</p>
+                    <div className="flex items-center gap-1 justify-end mt-1">
+                      <p className="text-[10px] opacity-60">
+                        {message.timestamp.toLocaleTimeString('pt-BR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </p>
+                      {message.sender === "user" && (
+                        <Check className="h-3 w-3 opacity-60" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="flex gap-2 max-w-[85%]">
+                  <Avatar className="h-8 w-8 mt-1">
+                    <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${demoData.botName}`} />
+                    <AvatarFallback className="bg-[#00a884] text-white">
+                      <Bot className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="px-4 py-3 rounded-lg bg-[#1f2c33] text-white rounded-tl-none shadow-md">
+                    <div className="flex space-x-1.5">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDuration: '1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '1s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Input Area */}
+        <div className="bg-[#1e2a30] p-2 border-t border-[#2a3942]">
+          <div className="flex gap-2 items-center">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={conversationEnded ? "Conversa encerrada" : "Mensagem"}
+              disabled={conversationEnded}
+              className="flex-1 bg-[#2a3942] border-0 text-white placeholder:text-gray-400 focus-visible:ring-0"
+            />
+            <Button 
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || conversationEnded || isTyping}
+              size="icon"
+              className="bg-[#00a884] hover:bg-[#00a884]/90 text-white rounded-full h-10 w-10 shrink-0"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center justify-between mt-2 px-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={initializeConversation}
+              disabled={!messages.length}
+              className="text-xs text-gray-400 hover:text-white h-auto py-1"
+            >
+              <RotateCcw className="h-3 w-3 mr-1" />
+              Resetar
+            </Button>
+            <div className="flex items-center gap-1">
+              <div className={`h-2 w-2 rounded-full ${useAI ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
+              <span className="text-[10px] text-gray-400">
+                {useAI ? "IA Ativa" : "FAQ"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop/Regular View
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* FAQ Reference Panel */}
@@ -259,7 +380,12 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5" />
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${demoData.botName}`} />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
                 {demoData.botName} - Demonstração
               </CardTitle>
               <Button
@@ -287,17 +413,23 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
                         message.sender === "user" ? "flex-row-reverse" : "flex-row"
                       }`}
                     >
-                      <div className="flex-shrink-0">
+                      <Avatar className="h-8 w-8 mt-1">
                         {message.sender === "user" ? (
-                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                            <User className="h-4 w-4 text-primary-foreground" />
-                          </div>
+                          <>
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=user`} />
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              <User className="h-4 w-4" />
+                            </AvatarFallback>
+                          </>
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                            <Bot className="h-4 w-4 text-muted-foreground" />
-                          </div>
+                          <>
+                            <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${demoData.botName}`} />
+                            <AvatarFallback className="bg-muted">
+                              <Bot className="h-4 w-4 text-muted-foreground" />
+                            </AvatarFallback>
+                          </>
                         )}
-                      </div>
+                      </Avatar>
                       <div
                         className={`px-3 py-2 rounded-lg ${
                           message.sender === "user"
@@ -320,16 +452,17 @@ const PublicChatbotSimulator = ({ demoData }: PublicChatbotSimulatorProps) => {
                 {isTyping && (
                   <div className="flex justify-start">
                     <div className="flex gap-2 max-w-[80%]">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <Avatar className="h-8 w-8 mt-1">
+                        <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${demoData.botName}`} />
+                        <AvatarFallback className="bg-muted">
                           <Bot className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </div>
-                      <div className="px-3 py-2 rounded-lg bg-muted text-foreground">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="px-4 py-3 rounded-lg bg-muted text-foreground">
+                        <div className="flex space-x-1.5">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDuration: '1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '1s' }}></div>
                         </div>
                       </div>
                     </div>
