@@ -3,19 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users, Edit, Trash2 } from "lucide-react";
+import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import AutomationModal from "./AutomationModal";
-import AutomationExecutionsTable from "./AutomationExecutionsTable";
 
 interface Automacao {
   id: string;
   negocio_id: string;
   nome: string;
   descricao?: string;
-  trigger_type: string;
+  trigger_type: 'novo_lead' | 'agendamento' | 'follow_up' | 'tempo_decorrido';
   trigger_config: any;
   actions: any;
   ativo: boolean;
@@ -25,9 +23,7 @@ interface Automacao {
 export default function AutomacoesSection() {
   const [automacoes, setAutomacoes] = useState<Automacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingAutomacao, setEditingAutomacao] = useState<Automacao | undefined>();
-  const { negocios, hasAccess, user } = useAuth();
+  const { negocios, hasAccess } = useAuth();
 
   useEffect(() => {
     fetchAutomacoes();
@@ -127,103 +123,6 @@ export default function AutomacoesSection() {
     return labels[trigger as keyof typeof labels] || trigger;
   };
 
-  const handleCreateAutomacao = () => {
-    if (!hasAccess()) {
-      toast({
-        title: "Acesso Restrito",
-        description: "Faça upgrade do seu plano para criar automações.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (negocios.length === 0) {
-      toast({
-        title: "Nenhum Negócio",
-        description: "Crie um negócio primeiro para usar automações.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setEditingAutomacao(undefined);
-    setModalOpen(true);
-  };
-
-  const handleEditAutomacao = (automacao: Automacao) => {
-    setEditingAutomacao(automacao);
-    setModalOpen(true);
-  };
-
-  const handleSaveAutomacao = async (automacao: Automacao) => {
-    try {
-      const automacaoData = {
-        ...automacao,
-        user_id: user?.id,
-      };
-
-      if (editingAutomacao) {
-        // Atualizar
-        const { error } = await supabase
-          .from('automacoes')
-          .update(automacaoData)
-          .eq('id', editingAutomacao.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Automação Atualizada",
-          description: "Automação atualizada com sucesso!",
-        });
-      } else {
-        // Criar
-        const { error } = await supabase
-          .from('automacoes')
-          .insert([automacaoData]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Automação Criada",
-          description: "Automação criada com sucesso!",
-        });
-      }
-
-      await fetchAutomacoes();
-    } catch (error) {
-      console.error('Erro ao salvar automação:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar a automação.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteAutomacao = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('automacoes')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      await fetchAutomacoes();
-      toast({
-        title: "Automação Excluída",
-        description: "Automação excluída com sucesso!",
-      });
-    } catch (error) {
-      console.error('Erro ao excluir automação:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível excluir a automação.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const criarAutomacaoExemplo = async () => {
     if (!hasAccess()) {
       toast({
@@ -245,7 +144,6 @@ export default function AutomacoesSection() {
 
     try {
       const exemploAutomacao = {
-        user_id: user?.id,
         negocio_id: negocios[0].id,
         nome: "Welcome Follow-up",
         descricao: "Enviar mensagem de boas-vindas 1 hora após o primeiro contato",
@@ -304,7 +202,7 @@ export default function AutomacoesSection() {
             <Target className="mr-2 h-4 w-4" />
             Exemplo
           </Button>
-          <Button onClick={handleCreateAutomacao} disabled={!hasAccess()}>
+          <Button disabled={!hasAccess()}>
             <Plus className="mr-2 h-4 w-4" />
             Nova Automação
           </Button>
@@ -372,9 +270,9 @@ export default function AutomacoesSection() {
               <p className="mt-1 text-sm text-muted-foreground">
                 Crie sua primeira automação para melhorar o engajamento com leads.
               </p>
-                <Button 
+              <Button 
                 className="mt-4" 
-                onClick={handleCreateAutomacao}
+                onClick={criarAutomacaoExemplo}
                 disabled={!hasAccess()}
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -417,21 +315,8 @@ export default function AutomacoesSection() {
                         onCheckedChange={(checked) => toggleAutomacao(automacao.id, checked)}
                         disabled={!hasAccess()}
                       />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        disabled={!hasAccess()}
-                        onClick={() => handleEditAutomacao(automacao)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        disabled={!hasAccess()}
-                        onClick={() => handleDeleteAutomacao(automacao.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" disabled={!hasAccess()}>
+                        Editar
                       </Button>
                     </div>
                   </div>
@@ -477,18 +362,6 @@ export default function AutomacoesSection() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Tabela de Execuções */}
-      <AutomationExecutionsTable />
-
-      {/* Modal de Automação */}
-      <AutomationModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        automacao={editingAutomacao}
-        negocioId={negocios[0]?.id || ''}
-        onSave={handleSaveAutomacao}
-      />
     </div>
   );
 }

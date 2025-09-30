@@ -64,154 +64,9 @@ export type Database = {
           },
         ]
       }
-      automacao_etapas: {
-        Row: {
-          automacao_id: string
-          configuracao: Json
-          created_at: string
-          id: string
-          ordem: number
-          posicao_x: number | null
-          posicao_y: number | null
-          tipo: string
-        }
-        Insert: {
-          automacao_id: string
-          configuracao?: Json
-          created_at?: string
-          id?: string
-          ordem: number
-          posicao_x?: number | null
-          posicao_y?: number | null
-          tipo: string
-        }
-        Update: {
-          automacao_id?: string
-          configuracao?: Json
-          created_at?: string
-          id?: string
-          ordem?: number
-          posicao_x?: number | null
-          posicao_y?: number | null
-          tipo?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "automacao_etapas_automacao_id_fkey"
-            columns: ["automacao_id"]
-            isOneToOne: false
-            referencedRelation: "automacoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      automacao_execucoes: {
-        Row: {
-          automacao_id: string
-          concluida_em: string | null
-          created_at: string
-          dados_contexto: Json | null
-          etapa_atual_id: string | null
-          id: string
-          iniciada_em: string
-          lead_id: string | null
-          status: string
-        }
-        Insert: {
-          automacao_id: string
-          concluida_em?: string | null
-          created_at?: string
-          dados_contexto?: Json | null
-          etapa_atual_id?: string | null
-          id?: string
-          iniciada_em?: string
-          lead_id?: string | null
-          status?: string
-        }
-        Update: {
-          automacao_id?: string
-          concluida_em?: string | null
-          created_at?: string
-          dados_contexto?: Json | null
-          etapa_atual_id?: string | null
-          id?: string
-          iniciada_em?: string
-          lead_id?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "automacao_execucoes_automacao_id_fkey"
-            columns: ["automacao_id"]
-            isOneToOne: false
-            referencedRelation: "automacoes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "automacao_execucoes_etapa_atual_id_fkey"
-            columns: ["etapa_atual_id"]
-            isOneToOne: false
-            referencedRelation: "automacao_etapas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "automacao_execucoes_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      automacao_logs: {
-        Row: {
-          acao: string
-          created_at: string
-          detalhes: Json | null
-          etapa_id: string | null
-          execucao_id: string
-          id: string
-          resultado: string | null
-        }
-        Insert: {
-          acao: string
-          created_at?: string
-          detalhes?: Json | null
-          etapa_id?: string | null
-          execucao_id: string
-          id?: string
-          resultado?: string | null
-        }
-        Update: {
-          acao?: string
-          created_at?: string
-          detalhes?: Json | null
-          etapa_id?: string | null
-          execucao_id?: string
-          id?: string
-          resultado?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "automacao_logs_etapa_id_fkey"
-            columns: ["etapa_id"]
-            isOneToOne: false
-            referencedRelation: "automacao_etapas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "automacao_logs_execucao_id_fkey"
-            columns: ["execucao_id"]
-            isOneToOne: false
-            referencedRelation: "automacao_execucoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       automacoes: {
         Row: {
           actions: Json | null
-          ativa: boolean | null
           ativo: boolean | null
           created_at: string
           descricao: string | null
@@ -221,11 +76,9 @@ export type Database = {
           trigger_config: Json | null
           trigger_type: string
           updated_at: string
-          user_id: string | null
         }
         Insert: {
           actions?: Json | null
-          ativa?: boolean | null
           ativo?: boolean | null
           created_at?: string
           descricao?: string | null
@@ -235,11 +88,9 @@ export type Database = {
           trigger_config?: Json | null
           trigger_type: string
           updated_at?: string
-          user_id?: string | null
         }
         Update: {
           actions?: Json | null
-          ativa?: boolean | null
           ativo?: boolean | null
           created_at?: string
           descricao?: string | null
@@ -249,7 +100,6 @@ export type Database = {
           trigger_config?: Json | null
           trigger_type?: string
           updated_at?: string
-          user_id?: string | null
         }
         Relationships: [
           {
