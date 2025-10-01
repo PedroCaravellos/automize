@@ -67,15 +67,6 @@ export default function AutomacoesSection() {
   };
 
   const toggleAutomacao = async (id: string, ativo: boolean) => {
-    if (!hasAccess()) {
-      toast({
-        title: "Acesso Restrito",
-        description: "Faça upgrade do seu plano para usar automações.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('automacoes')
@@ -130,27 +121,25 @@ export default function AutomacoesSection() {
   };
 
   const criarAutomacaoExemplo = async () => {
-    if (!hasAccess()) {
-      toast({
-        title: "Acesso Restrito",
-        description: "Faça upgrade do seu plano para criar automações.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (negocios.length === 0) {
-      toast({
-        title: "Nenhum Negócio",
-        description: "Crie um negócio primeiro para usar automações.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
+      // Buscar primeiro negócio do usuário
+      const { data: negociosData } = await supabase
+        .from('negocios')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+
+      if (!negociosData) {
+        toast({
+          title: "Nenhum Negócio",
+          description: "Crie um negócio primeiro para poder criar automações funcionais.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const exemploAutomacao = {
-        negocio_id: negocios[0].id,
+        negocio_id: negociosData.id,
         nome: "Welcome Follow-up",
         descricao: "Enviar mensagem de boas-vindas 1 hora após o primeiro contato",
         trigger_type: 'novo_lead',
@@ -176,7 +165,7 @@ export default function AutomacoesSection() {
       await fetchAutomacoes();
       toast({
         title: "Automação Criada",
-        description: "Automação de exemplo criada com sucesso!",
+        description: "Automação de exemplo criada com sucesso! (Só funcionará após integração com WhatsApp)",
       });
     } catch (error) {
       console.error('Erro ao criar automação:', error);
@@ -235,20 +224,18 @@ export default function AutomacoesSection() {
     setModalOpen(true);
   };
 
-  const handleNovaAutomacao = () => {
-    if (!hasAccess()) {
-      toast({
-        title: "Acesso Restrito",
-        description: "Faça upgrade do seu plano para criar automações.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleNovaAutomacao = async () => {
+    // Verificar se existe pelo menos um negócio no banco
+    const { data: negociosData } = await supabase
+      .from('negocios')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
 
-    if (negocios.length === 0) {
+    if (!negociosData) {
       toast({
-        title: "Nenhum Negócio",
-        description: "Crie um negócio primeiro para usar automações.",
+        title: "Nenhum Negócio Cadastrado",
+        description: "Você precisa criar um negócio primeiro na aba 'Meus Negócios'.",
         variant: "destructive",
       });
       return;
@@ -274,9 +261,9 @@ export default function AutomacoesSection() {
           <p className="text-muted-foreground">Configure fluxos automáticos para leads e clientes</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={criarAutomacaoExemplo} disabled={!hasAccess()}>
+          <Button variant="outline" onClick={criarAutomacaoExemplo}>
             <Target className="mr-2 h-4 w-4" />
-            Exemplo
+            Criar Exemplo
           </Button>
           <Button onClick={handleNovaAutomacao}>
             <Plus className="mr-2 h-4 w-4" />
@@ -354,21 +341,23 @@ export default function AutomacoesSection() {
             </CardHeader>
             <CardContent>
           {automacoes.length === 0 ? (
-            <div className="text-center py-8">
-              <Workflow className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-2 text-sm font-semibold">Nenhuma automação configurada</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Crie sua primeira automação para melhorar o engajamento com leads.
-              </p>
-              <Button 
-                className="mt-4" 
-                onClick={criarAutomacaoExemplo}
-                disabled={!hasAccess()}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Primeira Automação
-              </Button>
-            </div>
+              <div className="text-center py-8">
+                <Workflow className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-2 text-sm font-semibold">Nenhuma automação configurada</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Crie sua primeira automação para testar o construtor visual de fluxos.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  (As automações só funcionarão após integração com WhatsApp Business)
+                </p>
+                <Button 
+                  className="mt-4" 
+                  onClick={criarAutomacaoExemplo}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Automação de Exemplo
+                </Button>
+              </div>
           ) : (
             <div className="space-y-4">
               {automacoes.map((automacao) => {
@@ -403,13 +392,11 @@ export default function AutomacoesSection() {
                       <Switch
                         checked={automacao.ativo}
                         onCheckedChange={(checked) => toggleAutomacao(automacao.id, checked)}
-                        disabled={!hasAccess()}
                       />
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => handleEditAutomacao(automacao)}
-                        disabled={!hasAccess()}
                       >
                         Editar
                       </Button>
@@ -437,8 +424,8 @@ export default function AutomacoesSection() {
               <p className="text-sm text-muted-foreground mb-3">
                 Envie mensagens automáticas para leads que não responderam
               </p>
-              <Button variant="outline" size="sm" disabled={!hasAccess()}>
-                Usar Template
+              <Button variant="outline" size="sm" disabled>
+                Em breve
               </Button>
             </div>
 
@@ -450,8 +437,8 @@ export default function AutomacoesSection() {
               <p className="text-sm text-muted-foreground mb-3">
                 Envie lembretes automáticos para agendamentos
               </p>
-              <Button variant="outline" size="sm" disabled={!hasAccess()}>
-                Usar Template
+              <Button variant="outline" size="sm" disabled>
+                Em breve
               </Button>
             </div>
           </div>
