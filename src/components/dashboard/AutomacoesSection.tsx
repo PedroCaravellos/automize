@@ -3,10 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users, Activity } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import AutomationModal from "./AutomationModal";
+import AutomationExecutionsTable from "./AutomationExecutionsTable";
 
 interface Automacao {
   id: string;
@@ -23,6 +26,9 @@ interface Automacao {
 export default function AutomacoesSection() {
   const [automacoes, setAutomacoes] = useState<Automacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedAutomacao, setSelectedAutomacao] = useState<Automacao | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState("automacoes");
   const { negocios, hasAccess } = useAuth();
 
   useEffect(() => {
@@ -182,6 +188,76 @@ export default function AutomacoesSection() {
     }
   };
 
+  const handleSaveAutomacao = async (data: any) => {
+    try {
+      if (selectedAutomacao) {
+        // Atualizar
+        const { error } = await supabase
+          .from('automacoes')
+          .update(data)
+          .eq('id', selectedAutomacao.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Automação Atualizada",
+          description: "Automação atualizada com sucesso!",
+        });
+      } else {
+        // Criar nova
+        const { error } = await supabase
+          .from('automacoes')
+          .insert([{ ...data, ativo: true }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Automação Criada",
+          description: "Automação criada com sucesso!",
+        });
+      }
+
+      await fetchAutomacoes();
+      setModalOpen(false);
+      setSelectedAutomacao(undefined);
+    } catch (error) {
+      console.error('Erro ao salvar automação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar a automação.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditAutomacao = (automacao: Automacao) => {
+    setSelectedAutomacao(automacao);
+    setModalOpen(true);
+  };
+
+  const handleNovaAutomacao = () => {
+    if (!hasAccess()) {
+      toast({
+        title: "Acesso Restrito",
+        description: "Faça upgrade do seu plano para criar automações.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (negocios.length === 0) {
+      toast({
+        title: "Nenhum Negócio",
+        description: "Crie um negócio primeiro para usar automações.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedAutomacao(undefined);
+    setModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -202,7 +278,7 @@ export default function AutomacoesSection() {
             <Target className="mr-2 h-4 w-4" />
             Exemplo
           </Button>
-          <Button disabled={!hasAccess()}>
+          <Button onClick={handleNovaAutomacao}>
             <Plus className="mr-2 h-4 w-4" />
             Nova Automação
           </Button>
@@ -257,12 +333,26 @@ export default function AutomacoesSection() {
         </Card>
       </div>
 
-      {/* Lista de Automações */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Suas Automações</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Tabs para Automações e Execuções */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="automacoes">
+            <Workflow className="mr-2 h-4 w-4" />
+            Automações
+          </TabsTrigger>
+          <TabsTrigger value="execucoes">
+            <Activity className="mr-2 h-4 w-4" />
+            Execuções
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="automacoes" className="space-y-6">
+          {/* Lista de Automações */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Suas Automações</CardTitle>
+            </CardHeader>
+            <CardContent>
           {automacoes.length === 0 ? (
             <div className="text-center py-8">
               <Workflow className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -315,7 +405,12 @@ export default function AutomacoesSection() {
                         onCheckedChange={(checked) => toggleAutomacao(automacao.id, checked)}
                         disabled={!hasAccess()}
                       />
-                      <Button variant="ghost" size="sm" disabled={!hasAccess()}>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleEditAutomacao(automacao)}
+                        disabled={!hasAccess()}
+                      >
                         Editar
                       </Button>
                     </div>
@@ -324,11 +419,11 @@ export default function AutomacoesSection() {
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Templates de Automação */}
-      <Card>
+          {/* Templates de Automação */}
+          <Card>
         <CardHeader>
           <CardTitle>Templates Disponíveis</CardTitle>
         </CardHeader>
@@ -360,8 +455,22 @@ export default function AutomacoesSection() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="execucoes">
+          <AutomationExecutionsTable />
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal de Criação/Edição */}
+      <AutomationModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        automacao={selectedAutomacao}
+        onSave={handleSaveAutomacao}
+      />
     </div>
   );
 }
