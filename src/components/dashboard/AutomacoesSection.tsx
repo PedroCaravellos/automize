@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users, Activity } from "lucide-react";
+import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users, Activity, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -245,6 +245,35 @@ export default function AutomacoesSection() {
     setModalOpen(true);
   };
 
+  const handleDeleteAutomacao = async (id: string, nome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a automação "${nome}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('automacoes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setAutomacoes(prev => prev.filter(auto => auto.id !== id));
+
+      toast({
+        title: "Automação Excluída",
+        description: "A automação foi excluída com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao excluir automação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a automação.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -399,6 +428,13 @@ export default function AutomacoesSection() {
                         onClick={() => handleEditAutomacao(automacao)}
                       >
                         Editar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDeleteAutomacao(automacao.id, automacao.nome)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </div>

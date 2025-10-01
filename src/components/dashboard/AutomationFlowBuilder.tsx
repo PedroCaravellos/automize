@@ -15,7 +15,7 @@ import 'reactflow/dist/style.css';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Clock, GitBranch, Webhook, UserPlus, Plus } from 'lucide-react';
+import { MessageSquare, Clock, GitBranch, Webhook, UserPlus, Plus, Trash2 } from 'lucide-react';
 
 interface AutomationFlowBuilderProps {
   automacao?: any;
@@ -71,6 +71,27 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
     setNodes((nds) => [...nds, newNode]);
   };
 
+  const deleteSelectedNodes = () => {
+    setNodes((nds) => nds.filter((node) => !node.selected));
+    setEdges((eds) => eds.filter((edge) => !edge.selected));
+  };
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        deleteSelectedNodes();
+      }
+    },
+    [nodes, edges]
+  );
+
+  React.useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
   const handleSave = () => {
     if (onSave) {
       onSave(nodes, edges);
@@ -81,7 +102,18 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
     <div className="space-y-4">
       {/* Toolbar de blocos */}
       <Card className="p-4">
-        <h3 className="text-sm font-semibold mb-3">Adicionar Bloco</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold">Adicionar Bloco</h3>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={deleteSelectedNodes}
+            className="flex items-center gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Remover Selecionados
+          </Button>
+        </div>
         <div className="flex flex-wrap gap-2">
           {nodeTypes.map((nodeType) => {
             const Icon = nodeType.icon;
@@ -130,6 +162,8 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
           <li>• Clique em "Adicionar Bloco" para criar novos passos</li>
           <li>• Arraste os blocos para organizar seu fluxo</li>
           <li>• Conecte os blocos clicando e arrastando das bolinhas</li>
+          <li>• Selecione blocos clicando neles e pressione Delete/Backspace para remover</li>
+          <li>• Ou use o botão "Remover Selecionados" para deletar múltiplos blocos</li>
           <li>• Use Zoom e Pan para navegar no canvas</li>
         </ul>
       </Card>
