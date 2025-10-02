@@ -49,11 +49,19 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
   );
 
   const addNode = (type: string) => {
+    // Validação: não criar bloco se tipo não existir
+    const nodeTypeInfo = nodeTypes.find((t) => t.type === type);
+    if (!nodeTypeInfo) {
+      console.error('Tipo de bloco inválido:', type);
+      return;
+    }
+
     const newNode: Node = {
-      id: `${nodes.length + 1}`,
+      id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: type === 'trigger' ? 'input' : type === 'condition' ? 'default' : 'default',
       data: {
-        label: nodeTypes.find((t) => t.type === type)?.label || type,
+        label: nodeTypeInfo.label,
+        nodeType: type, // Adicionar tipo explícito
       },
       position: {
         x: Math.random() * 400 + 100,
@@ -66,6 +74,13 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
                    'hsl(var(--primary))',
         color: 'white',
         padding: '10px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '8px',
+        minWidth: '150px',
+        minHeight: '50px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       },
     };
     setNodes((nds) => [...nds, newNode]);

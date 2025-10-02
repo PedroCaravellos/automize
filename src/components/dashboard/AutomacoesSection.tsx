@@ -53,7 +53,13 @@ export default function AutomacoesSection() {
         console.error('Erro ao buscar automações:', error);
         throw error;
       }
-      setAutomacoes((data as Automacao[]) || []);
+      
+      // Remover duplicatas com base no ID
+      const uniqueAutomacoes = Array.from(
+        new Map((data as Automacao[])?.map(item => [item.id, item]) || []).values()
+      );
+      
+      setAutomacoes(uniqueAutomacoes);
     } catch (error) {
       console.error('Erro ao buscar automações:', error);
       toast({
