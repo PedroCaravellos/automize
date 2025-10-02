@@ -35,9 +35,19 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
     {
       id: '1',
       type: 'input',
-      data: { label: 'Novo Lead' },
-      position: { x: 250, y: 5 },
-      style: { background: 'hsl(var(--primary))', color: 'white', padding: '10px' },
+      data: { label: 'Novo Lead', nodeType: 'trigger' },
+      position: { x: 250, y: 50 },
+      style: { 
+        background: '#6366f1', 
+        color: 'white', 
+        padding: '12px 20px',
+        border: '2px solid rgba(255, 255, 255, 0.3)',
+        borderRadius: '8px',
+        minWidth: '150px',
+        minHeight: '50px',
+        fontWeight: '600',
+        fontSize: '14px',
+      },
     },
   ]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -56,6 +66,22 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
       return;
     }
 
+    // Cores sólidas e visíveis para cada tipo de bloco
+    const getBlockColor = (blockType: string) => {
+      switch (blockType) {
+        case 'message':
+          return '#10b981'; // Verde sólido
+        case 'delay':
+          return '#f59e0b'; // Laranja sólido para "Aguardar"
+        case 'condition':
+          return '#3b82f6'; // Azul sólido para "Condição"
+        case 'webhook':
+          return '#8b5cf6'; // Roxo sólido
+        default:
+          return '#6366f1'; // Índigo sólido padrão
+      }
+    };
+
     const newNode: Node = {
       id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: type === 'trigger' ? 'input' : 'default',
@@ -64,24 +90,23 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
         nodeType: type,
       },
       position: {
-        x: Math.random() * 400 + 100,
-        y: Math.random() * 300 + 100,
+        // Posicionar no centro visível (200-400px do topo, centro horizontal)
+        x: 250 + (Math.random() * 100 - 50),
+        y: 200 + (nodes.length * 30),
       },
       style: {
-        // Usar apenas tokens válidos para evitar fundo transparente
-        background: type === 'message' ? 'hsl(var(--secondary))' :
-                   type === 'delay' ? 'hsl(var(--accent))' :
-                   type === 'condition' ? 'hsl(var(--primary))' :
-                   'hsl(var(--primary))',
+        background: getBlockColor(type),
         color: 'white',
-        padding: '10px',
-        border: '1px solid hsl(var(--primary) / 0.2)',
+        padding: '12px 20px',
+        border: '2px solid rgba(255, 255, 255, 0.3)',
         borderRadius: '8px',
         minWidth: '150px',
         minHeight: '50px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        fontWeight: '600',
+        fontSize: '14px',
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -171,9 +196,9 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           fitView
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         >
           <Controls />
-          <MiniMap />
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         </ReactFlow>
       </Card>
