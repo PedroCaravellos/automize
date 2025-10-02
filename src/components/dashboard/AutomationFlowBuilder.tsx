@@ -58,23 +58,24 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
 
     const newNode: Node = {
       id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type: type === 'trigger' ? 'input' : type === 'condition' ? 'default' : 'default',
+      type: type === 'trigger' ? 'input' : 'default',
       data: {
         label: nodeTypeInfo.label,
-        nodeType: type, // Adicionar tipo explícito
+        nodeType: type,
       },
       position: {
         x: Math.random() * 400 + 100,
         y: Math.random() * 300 + 100,
       },
       style: {
-        background: type === 'message' ? 'hsl(var(--secondary))' : 
+        // Usar apenas tokens válidos para evitar fundo transparente
+        background: type === 'message' ? 'hsl(var(--secondary))' :
                    type === 'delay' ? 'hsl(var(--accent))' :
-                   type === 'condition' ? 'hsl(var(--warning))' :
+                   type === 'condition' ? 'hsl(var(--primary))' :
                    'hsl(var(--primary))',
         color: 'white',
         padding: '10px',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
+        border: '1px solid hsl(var(--primary) / 0.2)',
         borderRadius: '8px',
         minWidth: '150px',
         minHeight: '50px',
@@ -106,6 +107,19 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleKeyDown]);
+
+  // Sanitização: remove blocos inválidos automaticamente
+  React.useEffect(() => {
+    setNodes((prev) => {
+      const filtered = prev.filter((n) => {
+        const data: any = n.data;
+        const hasLabel = !!(data && data.label && String(data.label).trim());
+        const hasType = !!(data && (data.nodeType || n.type));
+        return hasLabel && hasType;
+      });
+      return filtered.length !== prev.length ? filtered : prev;
+    });
+  }, [setNodes]);
 
   const handleSave = () => {
     if (onSave) {

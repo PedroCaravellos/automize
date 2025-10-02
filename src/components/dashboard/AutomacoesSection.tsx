@@ -128,6 +128,16 @@ export default function AutomacoesSection() {
 
   const criarAutomacaoExemplo = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Sessão inválida",
+          description: "Entre para criar automações.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Buscar primeiro negócio do usuário
       const { data: negociosData } = await supabase
         .from('negocios')
@@ -144,7 +154,24 @@ export default function AutomacoesSection() {
         return;
       }
 
+      // Evitar duplicatas do template por nome + negócio
+      const { data: existente } = await supabase
+        .from('automacoes')
+        .select('id')
+        .eq('negocio_id', negociosData.id)
+        .eq('nome', 'Welcome Follow-up')
+        .maybeSingle();
+
+      if (existente) {
+        toast({
+          title: "Já existe",
+          description: "O template de exemplo já existe para este negócio.",
+        });
+        return;
+      }
+
       const exemploAutomacao = {
+        user_id: session.user.id,
         negocio_id: negociosData.id,
         nome: "Welcome Follow-up",
         descricao: "Enviar mensagem de boas-vindas 1 hora após o primeiro contato",
@@ -164,7 +191,7 @@ export default function AutomacoesSection() {
 
       const { error } = await supabase
         .from('automacoes')
-        .insert([exemploAutomacao]);
+        .insert([exemploAutomacao as any]);
 
       if (error) throw error;
 
@@ -185,11 +212,21 @@ export default function AutomacoesSection() {
 
   const handleSaveAutomacao = async (data: any) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Sessão inválida",
+          description: "Entre para salvar automações.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (selectedAutomacao) {
         // Atualizar
         const { error } = await supabase
           .from('automacoes')
-          .update(data)
+          .update(data as any)
           .eq('id', selectedAutomacao.id);
 
         if (error) throw error;
@@ -202,7 +239,7 @@ export default function AutomacoesSection() {
         // Criar nova
         const { error } = await supabase
           .from('automacoes')
-          .insert([{ ...data, ativo: true }]);
+          .insert([{ ...data, ativo: true, user_id: session.user.id } as any]);
 
         if (error) throw error;
 
@@ -257,6 +294,16 @@ export default function AutomacoesSection() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Garantir ownership para passar na política de DELETE
+      if (session?.user?.id) {
+        await supabase
+          .from('automacoes')
+          .update({ user_id: session.user.id } as any)
+          .eq('id', id);
+      }
+
       const { error } = await supabase
         .from('automacoes')
         .delete()
