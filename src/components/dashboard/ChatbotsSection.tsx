@@ -113,6 +113,7 @@ const ChatbotsSection = () => {
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
   const [negociosDb, setNegociosDb] = useState<any[]>([]);
+  const [chatbotsDb, setChatbotsDb] = useState<any[]>([]);
 
   // Load negócios directly from database for consistency
   useEffect(() => {
@@ -138,6 +139,31 @@ const ChatbotsSection = () => {
     }
   }, [user]);
 
+  // Load chatbots from database
+  useEffect(() => {
+    if (user && negociosDb.length > 0) {
+      console.log('Carregando chatbots do banco...');
+      const fetchChatbots = async () => {
+        try {
+          const negocioIds = negociosDb.map(n => n.id);
+          const { data, error } = await supabase
+            .from('chatbots')
+            .select('*')
+            .in('negocio_id', negocioIds)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          setChatbotsDb(data || []);
+          console.log('ChatbotsSection - Chatbots carregados:', data?.length || 0);
+        } catch (error) {
+          console.error('Erro ao buscar chatbots:', error);
+        }
+      };
+      
+      fetchChatbots();
+    }
+  }, [user, negociosDb]);
+
   // Map database data to expected format for compatibility
   const negociosFormatted = negociosDb.map(n => ({
     id: n.id,
@@ -147,6 +173,29 @@ const ChatbotsSection = () => {
     statusChatbot: 'Nenhum' as const,
     createdAt: n.created_at || new Date().toISOString()
   }));
+
+  // Map chatbots from database to expected format, merged with localStorage chatbots
+  const chatbotsFromDb: Chatbot[] = chatbotsDb.map(c => ({
+    id: c.id,
+    nome: c.nome,
+    negocioId: c.negocio_id,
+    template: c.template || '',
+    status: c.status || 'Em configuração',
+    interacoes: c.interacoes || 0,
+    mensagens: c.mensagens || { boasVindas: '', faqs: [], encerramento: '' },
+    createdAt: c.created_at
+  }));
+
+  // Merge chatbots from DB with chatbots from context (removing duplicates by ID)
+  const allChatbots = [...chatbotsFromDb];
+  chatbots.forEach(chatbot => {
+    if (!allChatbots.find(c => c.id === chatbot.id)) {
+      allChatbots.push(chatbot);
+    }
+  });
+
+  // Use merged chatbots list
+  const chatbotsList = allChatbots;
 
   const handleCreateChatbot = () => {
     if (!hasAccess()) {
@@ -165,35 +214,96 @@ const ChatbotsSection = () => {
     setIsEditModalOpen(true);
   };
 
-const handleToggleStatus = (chatbotId: string) => {
+const handleToggleStatus = async (chatbotId: string) => {
     if (!hasAccess()) {
       setIsBlockModalOpen(true);
       return;
     }
 
-    const updated = toggleChatbotStatus(chatbotId);
-    if (!updated) return;
-    const negocio = negociosFormatted.find(n => n.id === updated.negocioId);
-    if (updated.status === "Ativo") {
-      toast({
-        title: "Chatbot ativado",
-        description: `O chatbot ${updated.nome} foi ativado com sucesso.`,
-      });
-    } else {
-      toast({
-        title: "Chatbot desativado",
-        description: `O chatbot ${updated.nome} foi desativado.`,
-      });
+    try {
+      // Buscar chatbot atual
+      const chatbot = chatbotsList.find(c => c.id === chatbotId);
+      if (!chatbot) return;
+
+      const novoStatus = chatbot.status === "Ativo" ? "Em configuração" : "Ativo";
+      
+      // Atualizar no banco
+      const { error } = await supabase
+        .from('chatbots')
+        .update({ 
+          status: novoStatus,
+          ativo: novoStatus === "Ativo"
+        })
+        .eq('id', chatbotId);
+
+      if (error) {
+        console.error('Erro ao atualizar status do chatbot:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível alterar o status do chatbot.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Atualizar estado local
+      const updated = toggleChatbotStatus(chatbotId);
+      if (!updated) return;
+      
+      const negocio = negociosFormatted.find(n => n.id === updated.negocioId);
+      if (updated.status === "Ativo") {
+        toast({
+          title: "Chatbot ativado",
+          description: `O chatbot ${updated.nome} foi ativado com sucesso.`,
+        });
+      } else {
+        toast({
+          title: "Chatbot desativado",
+          description: `O chatbot ${updated.nome} foi desativado.`,
+        });
+      }
+
+      // Recarregar chatbots
+      setChatbotsDb(prev => prev.map(c => 
+        c.id === chatbotId ? { ...c, status: novoStatus, ativo: novoStatus === "Ativo" } : c
+      ));
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
     }
   };
 
-  const handleDeleteChatbot = (chatbotId: string) => {
-    const removed = deleteChatbot(chatbotId);
-    if (!removed) return;
-    toast({
-      title: "Chatbot removido",
-      description: "O chatbot foi removido com sucesso.",
-    });
+  const handleDeleteChatbot = async (chatbotId: string) => {
+    try {
+      // Deletar do banco primeiro
+      const { error } = await supabase
+        .from('chatbots')
+        .delete()
+        .eq('id', chatbotId);
+
+      if (error) {
+        console.error('Erro ao deletar chatbot:', error);
+        toast({
+          title: "Erro ao deletar",
+          description: "Não foi possível deletar o chatbot.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Remover do estado local
+      const removed = deleteChatbot(chatbotId);
+      if (!removed) return;
+      
+      toast({
+        title: "Chatbot removido",
+        description: "O chatbot foi removido com sucesso.",
+      });
+
+      // Remover do estado local da página
+      setChatbotsDb(prev => prev.filter(c => c.id !== chatbotId));
+    } catch (error) {
+      console.error('Erro ao deletar chatbot:', error);
+    }
   };
 
   const handleTestChatbot = (chatbot: Chatbot) => {
@@ -205,31 +315,106 @@ const handleToggleStatus = (chatbotId: string) => {
   };
 
 
-const handleSaveChatbot = (dadosChatbot: {
+const handleSaveChatbot = async (dadosChatbot: {
     negocioId: string;
     template: string;
     mensagens: Chatbot["mensagens"];
   }) => {
-    const created = createChatbot(dadosChatbot);
-    if (!created) return;
-    toast({
-      title: "Chatbot criado",
-      description: "Chatbot criado em modo básico com sucesso.",
-    });
-    setIsWizardOpen(false);
-  };
+    if (!user) return;
 
-const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
-    if (!editingChatbot) return;
-    const updated = updateChatbotMessages(editingChatbot.id, mensagens);
-    if (updated) {
+    try {
+      // Buscar o nome do negócio
+      const negocio = negociosDb.find(n => n.id === dadosChatbot.negocioId);
+      const nomeChatbot = `Bot – ${negocio?.nome || 'Negócio'}`;
+
+      // Salvar no Supabase primeiro
+      const { data, error } = await supabase
+        .from('chatbots')
+        .insert({
+          negocio_id: dadosChatbot.negocioId,
+          nome: nomeChatbot,
+          template: dadosChatbot.template,
+          mensagens: dadosChatbot.mensagens,
+          status: 'Em configuração',
+          interacoes: 0,
+          ativo: false,
+          personalidade: null,
+          instrucoes: null
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar chatbot:', error);
+        toast({
+          title: "Erro ao criar chatbot",
+          description: "Não foi possível criar o chatbot. Tente novamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Agora atualizar o estado local
+      const created = createChatbot(dadosChatbot);
+      if (!created) return;
+      
       toast({
-        title: "Chatbot atualizado",
-        description: "As mensagens foram atualizadas com sucesso.",
+        title: "Chatbot criado",
+        description: "Chatbot criado com sucesso e salvo no banco de dados.",
+      });
+      setIsWizardOpen(false);
+
+      // Recarregar a lista de chatbots do banco
+      // (o contexto já está sincronizando via localStorage)
+    } catch (error) {
+      console.error('Erro ao criar chatbot:', error);
+      toast({
+        title: "Erro ao criar chatbot",
+        description: "Ocorreu um erro ao criar o chatbot.",
+        variant: "destructive"
       });
     }
-    setIsEditModalOpen(false);
-    setEditingChatbot(null);
+  };
+
+const handleUpdateChatbot = async (mensagens: Chatbot["mensagens"]) => {
+    if (!editingChatbot) return;
+
+    try {
+      // Atualizar no banco
+      const { error } = await supabase
+        .from('chatbots')
+        .update({ mensagens })
+        .eq('id', editingChatbot.id);
+
+      if (error) {
+        console.error('Erro ao atualizar chatbot:', error);
+        toast({
+          title: "Erro ao atualizar",
+          description: "Não foi possível atualizar o chatbot.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Atualizar estado local
+      const updated = updateChatbotMessages(editingChatbot.id, mensagens);
+      if (updated) {
+        toast({
+          title: "Chatbot atualizado",
+          description: "As mensagens foram atualizadas com sucesso.",
+        });
+      }
+      
+      setIsEditModalOpen(false);
+      setEditingChatbot(null);
+
+      // Atualizar lista local
+      setChatbotsDb(prev => prev.map(c => 
+        c.id === editingChatbot.id ? { ...c, mensagens } : c
+      ));
+    } catch (error) {
+      console.error('Erro ao atualizar chatbot:', error);
+    }
   };
 
   const handlePlansClick = () => {
@@ -255,7 +440,7 @@ const handleUpdateChatbot = (mensagens: Chatbot["mensagens"]) => {
         </CardHeader>
         <CardContent>
             <ChatbotTable
-              chatbots={chatbots}
+              chatbots={chatbotsList}
               negocios={negociosFormatted}
               onEdit={handleEditChatbot}
               onToggleStatus={handleToggleStatus}
