@@ -365,7 +365,9 @@ const handleSaveChatbot = async (dadosChatbot: {
       setIsWizardOpen(false);
 
       // Recarregar a lista de chatbots do banco
-      // (o contexto já está sincronizando via localStorage)
+      if (data) {
+        setChatbotsDb(prev => [...prev, data]);
+      }
     } catch (error) {
       console.error('Erro ao criar chatbot:', error);
       toast({
