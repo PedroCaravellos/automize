@@ -111,10 +111,10 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
                       value={formData.negocio_id}
                       onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background">
                         <SelectValue placeholder="Escolha um negócio" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background z-50">
                         {negocios.map((negocio) => (
                           <SelectItem key={negocio.id} value={negocio.id}>
                             {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
@@ -162,10 +162,10 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
                 value={formData.negocio_id}
                 onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Selecione um negócio" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background z-50">
                   {negocios.map((negocio) => (
                     <SelectItem key={negocio.id} value={negocio.id}>
                       {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
@@ -181,10 +181,10 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
                 value={formData.trigger_type}
                 onValueChange={(value) => setFormData({ ...formData, trigger_type: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background z-50">
                   <SelectItem value="novo_lead">Novo Lead</SelectItem>
                   <SelectItem value="agendamento">Novo Agendamento</SelectItem>
                   <SelectItem value="follow_up">Follow-up Automático</SelectItem>
