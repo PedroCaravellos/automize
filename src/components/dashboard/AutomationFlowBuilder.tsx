@@ -19,6 +19,7 @@ import { MessageSquare, Clock, GitBranch, Webhook, UserPlus, Plus, Trash2 } from
 
 interface AutomationFlowBuilderProps {
   automacao?: any;
+  initialBlocks?: any[];
   onSave?: (nodes: Node[], edges: Edge[]) => void;
 }
 
@@ -30,16 +31,39 @@ const nodeTypes = [
   { type: 'webhook', label: 'Webhook', icon: Webhook, color: 'bg-info' },
 ];
 
-export default function AutomationFlowBuilder({ automacao, onSave }: AutomationFlowBuilderProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([
-    {
-      id: '1',
-      type: 'input',
-      data: { label: 'Novo Lead', nodeType: 'trigger' },
-      position: { x: 250, y: 50 },
-      style: { 
-        background: '#6366f1', 
-        color: 'white', 
+export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave }: AutomationFlowBuilderProps) {
+  // Convert AI-generated blocks to nodes and edges
+  const convertBlocksToNodes = (blocks: any[]): Node[] => {
+    if (!blocks || blocks.length === 0) return [];
+    
+    const getBlockColor = (tipo: string) => {
+      switch (tipo) {
+        case 'trigger': return '#6366f1';
+        case 'message': return '#10b981';
+        case 'delay': return '#f59e0b';
+        case 'condition': return '#3b82f6';
+        case 'webhook': return '#8b5cf6';
+        default: return '#6366f1';
+      }
+    };
+
+    return blocks.map((block, index) => ({
+      id: block.id || `node-${index}`,
+      type: block.tipo === 'trigger' ? 'input' : 'default',
+      data: {
+        label: block.label,
+        nodeType: block.tipo,
+        content: block.conteudo,
+        time: block.tempo,
+        condition: block.condicao,
+      },
+      position: block.posicao || { 
+        x: 250, 
+        y: 50 + (index * 100) 
+      },
+      style: {
+        background: getBlockColor(block.tipo),
+        color: 'white',
         padding: '12px 20px',
         border: '2px solid rgba(255, 255, 255, 0.3)',
         borderRadius: '8px',
@@ -48,9 +72,53 @@ export default function AutomationFlowBuilder({ automacao, onSave }: AutomationF
         fontWeight: '600',
         fontSize: '14px',
       },
-    },
-  ]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    }));
+  };
+
+  const convertBlocksToEdges = (blocks: any[]): Edge[] => {
+    if (!blocks || blocks.length <= 1) return [];
+    
+    const edges: Edge[] = [];
+    for (let i = 0; i < blocks.length - 1; i++) {
+      edges.push({
+        id: `edge-${i}`,
+        source: blocks[i].id || `node-${i}`,
+        target: blocks[i + 1].id || `node-${i + 1}`,
+        type: 'smoothstep',
+        animated: true,
+      });
+    }
+    return edges;
+  };
+
+  const initialNodes = initialBlocks && initialBlocks.length > 0
+    ? convertBlocksToNodes(initialBlocks)
+    : [
+        {
+          id: '1',
+          type: 'input',
+          data: { label: 'Novo Lead', nodeType: 'trigger' },
+          position: { x: 250, y: 50 },
+          style: { 
+            background: '#6366f1', 
+            color: 'white', 
+            padding: '12px 20px',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '8px',
+            minWidth: '150px',
+            minHeight: '50px',
+            fontWeight: '600',
+            fontSize: '14px',
+          },
+        },
+      ];
+
+  const initialEdgesFromBlocks = initialBlocks && initialBlocks.length > 0
+    ? convertBlocksToEdges(initialBlocks)
+    : [];
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdgesFromBlocks);
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
 
   const onConnect = useCallback(
