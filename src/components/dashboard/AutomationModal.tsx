@@ -99,7 +99,7 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
           </TabsList>
 
           {!automacao && (
-            <TabsContent value="ai">
+            <TabsContent value="ai" className="relative z-20">
               {!formData.negocio_id ? (
                 <div className="space-y-4 py-8">
                   <div className="text-center mb-4">
@@ -115,7 +115,7 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
                       value={formData.negocio_id}
                       onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
                     >
-                      <SelectTrigger className="bg-background z-50">
+                      <SelectTrigger className="relative z-50 bg-background">
                         <SelectValue placeholder="Escolha um negócio" />
                       </SelectTrigger>
                       <SelectContent className="bg-background z-50">

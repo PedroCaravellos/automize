@@ -39,43 +39,47 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
   const convertBlocksToNodes = (blocks: any[]): Node[] => {
     if (!blocks || blocks.length === 0) return [];
     
-    const getBlockColor = (tipo: string) => {
+    const getBlockColors = (tipo: string) => {
       switch (tipo) {
-        case 'trigger': return 'hsl(var(--primary))';
-        case 'message': return 'hsl(var(--secondary))';
-        case 'delay': return 'hsl(var(--accent))';
-        case 'condition': return 'hsl(var(--primary))';
-        case 'webhook': return 'hsl(var(--accent))';
-        default: return 'hsl(var(--primary))';
+        case 'trigger': return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
+        case 'message': return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))' };
+        case 'delay': return { bg: 'hsl(var(--accent))', fg: 'hsl(var(--accent-foreground))' };
+        case 'condition': return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
+        case 'webhook': return { bg: 'hsl(var(--accent))', fg: 'hsl(var(--accent-foreground))' };
+        default: return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
       }
     };
 
-    return blocks.map((block, index) => ({
-      id: block.id || `node-${index}`,
-      type: block.tipo === 'trigger' ? 'input' : 'default',
-      data: {
-        label: block.label,
-        nodeType: block.tipo,
-        content: block.conteudo,
-        time: block.tempo,
-        condition: block.condicao,
-      },
-      position: block.posicao || { 
-        x: 250, 
-        y: 50 + (index * 100) 
-      },
-      style: {
-        background: getBlockColor(block.tipo),
-        color: 'white',
-        padding: '12px 20px',
-        border: '2px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '8px',
-        minWidth: '150px',
-        minHeight: '50px',
-        fontWeight: '600',
-        fontSize: '14px',
-      },
-    }));
+    return blocks.map((block, index) => {
+      const colors = getBlockColors(block.tipo);
+      return {
+        id: block.id || `node-${index}`,
+        type: block.tipo === 'trigger' ? 'input' : 'default',
+        data: {
+          label: block.label,
+          nodeType: block.tipo,
+          content: block.conteudo,
+          time: block.tempo,
+          condition: block.condicao,
+        },
+        position: block.posicao || { 
+          x: 250, 
+          y: 50 + (index * 100) 
+        },
+        style: {
+          background: colors.bg,
+          color: colors.fg,
+          padding: '12px 20px',
+          border: '1.5px solid hsl(var(--border))',
+          borderRadius: '10px',
+          minWidth: '150px',
+          minHeight: '50px',
+          fontWeight: 600,
+          fontSize: '14px',
+          boxShadow: '0 4px 14px hsl(var(--foreground) / 0.05)',
+        },
+      };
+    });
   };
 
   const convertBlocksToEdges = (blocks: any[]): Edge[] => {
@@ -140,18 +144,18 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
     }
 
     // Cores sólidas e visíveis para cada tipo de bloco
-    const getBlockColor = (blockType: string) => {
+    const getBlockColors = (blockType: string) => {
       switch (blockType) {
         case 'message':
-          return 'hsl(var(--secondary))';
+          return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))' };
         case 'delay':
-          return 'hsl(var(--accent))';
+          return { bg: 'hsl(var(--accent))', fg: 'hsl(var(--accent-foreground))' };
         case 'condition':
-          return 'hsl(var(--primary))';
+          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
         case 'webhook':
-          return 'hsl(var(--accent))';
+          return { bg: 'hsl(var(--accent))', fg: 'hsl(var(--accent-foreground))' };
         default:
-          return 'hsl(var(--primary))';
+          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
       }
     };
 
@@ -163,24 +167,27 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
         nodeType: type,
       },
       position: {
-        // Posicionar no centro visível (200-400px do topo, centro horizontal)
         x: 250 + (Math.random() * 100 - 50),
         y: 200 + (nodes.length * 30),
       },
-      style: {
-        background: getBlockColor(type),
-        color: 'white',
-        padding: '12px 20px',
-        border: '2px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '8px',
-        minWidth: '150px',
-        minHeight: '50px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: '600',
-        fontSize: '14px',
-      },
+      style: (() => {
+        const colors = getBlockColors(type);
+        return {
+          background: colors.bg,
+          color: colors.fg,
+          padding: '12px 20px',
+          border: '1.5px solid hsl(var(--border))',
+          borderRadius: '10px',
+          minWidth: '150px',
+          minHeight: '50px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 600,
+          fontSize: '14px',
+          boxShadow: '0 4px 14px hsl(var(--foreground) / 0.05)',
+        } as React.CSSProperties;
+      })(),
     };
     setNodes((nds) => [...nds, newNode]);
   };
