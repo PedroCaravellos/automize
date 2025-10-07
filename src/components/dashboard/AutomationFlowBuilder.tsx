@@ -41,12 +41,12 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
     
     const getBlockColor = (tipo: string) => {
       switch (tipo) {
-        case 'trigger': return '#6366f1';
-        case 'message': return '#10b981';
-        case 'delay': return '#f59e0b';
-        case 'condition': return '#3b82f6';
-        case 'webhook': return '#8b5cf6';
-        default: return '#6366f1';
+        case 'trigger': return 'hsl(var(--primary))';
+        case 'message': return 'hsl(var(--secondary))';
+        case 'delay': return 'hsl(var(--accent))';
+        case 'condition': return 'hsl(var(--primary))';
+        case 'webhook': return 'hsl(var(--accent))';
+        default: return 'hsl(var(--primary))';
       }
     };
 
@@ -143,15 +143,15 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
     const getBlockColor = (blockType: string) => {
       switch (blockType) {
         case 'message':
-          return '#10b981'; // Verde sólido
+          return 'hsl(var(--secondary))';
         case 'delay':
-          return '#f59e0b'; // Laranja sólido para "Aguardar"
+          return 'hsl(var(--accent))';
         case 'condition':
-          return '#3b82f6'; // Azul sólido para "Condição"
+          return 'hsl(var(--primary))';
         case 'webhook':
-          return '#8b5cf6'; // Roxo sólido
+          return 'hsl(var(--accent))';
         default:
-          return '#6366f1'; // Índigo sólido padrão
+          return 'hsl(var(--primary))';
       }
     };
 
@@ -299,10 +299,11 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
           fitView
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         >
-          <Controls className="bg-background border-2 rounded-lg shadow-lg" />
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="bg-muted/30" />
+          <Controls className="bg-card border-2 rounded-lg shadow-lg" />
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="hsl(var(--muted-foreground) / 0.35)" className="bg-muted" />
           <MiniMap 
-            className="bg-background border-2 rounded-lg shadow-lg" 
+            className="bg-card border-2 rounded-lg shadow-lg" 
+            style={{ background: 'hsl(var(--card))' }}
             nodeColor={(node) => {
               const type = node.data?.nodeType || 'default';
               switch (type) {

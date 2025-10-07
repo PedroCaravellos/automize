@@ -21,7 +21,7 @@ interface AutomationModalProps {
 
 export default function AutomationModal({ open, onOpenChange, automacao, onSave }: AutomationModalProps) {
   const { negocios } = useAuth();
-  const [activeTab, setActiveTab] = useState(automacao ? "config" : "ai");
+  const [activeTab, setActiveTab] = useState(automacao ? "flow" : "ai");
   const [generatedBlocks, setGeneratedBlocks] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     nome: automacao?.nome || "",
@@ -34,7 +34,7 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
 
   useEffect(() => {
     if (automacao) {
-      setActiveTab("config");
+      setActiveTab("flow");
     } else {
       setActiveTab("ai");
     }
@@ -60,16 +60,21 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
   const selectedNegocio = negocios.find(n => n.id === formData.negocio_id);
 
   const handleSave = () => {
-    if (!formData.nome || !formData.negocio_id) {
+    if (!formData.negocio_id) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
+        description: "Selecione um negócio antes de salvar.",
         variant: "destructive",
       });
       return;
     }
 
-    onSave(formData);
+    const dataToSave = {
+      ...formData,
+      nome: formData.nome || `Automação ${new Date().toLocaleString('pt-BR')}`,
+    };
+
+    onSave(dataToSave);
     onOpenChange(false);
   };
 
@@ -110,7 +115,7 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
                       value={formData.negocio_id}
                       onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
                     >
-                      <SelectTrigger className="bg-background">
+                      <SelectTrigger className="bg-background z-50">
                         <SelectValue placeholder="Escolha um negócio" />
                       </SelectTrigger>
                       <SelectContent className="bg-background z-50">
@@ -133,16 +138,17 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
             </TabsContent>
           )}
 
-
-          <TabsContent value="flow">
-            <AutomationFlowBuilder
-              automacao={automacao}
-              initialBlocks={generatedBlocks}
-              onSave={(nodes, edges) => {
-                console.log("Salvando fluxo:", nodes, edges);
-              }}
-            />
-          </TabsContent>
+          {activeTab === "flow" && (
+            <TabsContent value="flow">
+              <AutomationFlowBuilder
+                automacao={automacao}
+                initialBlocks={generatedBlocks}
+                onSave={(nodes, edges) => {
+                  console.log("Salvando fluxo:", nodes, edges);
+                }}
+              />
+            </TabsContent>
+          )}
         </Tabs>
 
         <div className="flex justify-end gap-2 pt-4">
