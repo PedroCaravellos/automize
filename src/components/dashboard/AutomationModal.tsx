@@ -83,15 +83,14 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             {!automacao && (
               <TabsTrigger value="ai">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Criar com IA
               </TabsTrigger>
             )}
-            <TabsTrigger value="config">Configuração</TabsTrigger>
-            <TabsTrigger value="flow">Fluxo Visual</TabsTrigger>
+            <TabsTrigger value="flow">Editor Visual</TabsTrigger>
           </TabsList>
 
           {!automacao && (
@@ -134,108 +133,6 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
             </TabsContent>
           )}
 
-          <TabsContent value="config" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome da Automação *</Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Ex: Follow-up de leads"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="descricao">Descrição</Label>
-              <Textarea
-                id="descricao"
-                value={formData.descricao}
-                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                placeholder="Descreva o objetivo desta automação"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="negocio">Negócio *</Label>
-              <Select
-                value={formData.negocio_id}
-                onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Selecione um negócio" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {negocios.map((negocio) => (
-                    <SelectItem key={negocio.id} value={negocio.id}>
-                      {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="trigger">Gatilho</Label>
-              <Select
-                value={formData.trigger_type}
-                onValueChange={(value) => setFormData({ ...formData, trigger_type: value })}
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="novo_lead">Novo Lead</SelectItem>
-                  <SelectItem value="agendamento">Novo Agendamento</SelectItem>
-                  <SelectItem value="follow_up">Follow-up Automático</SelectItem>
-                  <SelectItem value="tempo_decorrido">Tempo Decorrido</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.trigger_type === "tempo_decorrido" && (
-              <div className="space-y-2">
-                <Label htmlFor="delay">Aguardar (horas)</Label>
-                <Input
-                  id="delay"
-                  type="number"
-                  value={formData.trigger_config?.delay_hours || 1}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      trigger_config: { ...formData.trigger_config, delay_hours: parseInt(e.target.value) },
-                    })
-                  }
-                  placeholder="1"
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="mensagem">Mensagem Template</Label>
-              <Textarea
-                id="mensagem"
-                value={formData.actions?.send_message?.template || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    actions: {
-                      ...formData.actions,
-                      send_message: {
-                        template: e.target.value,
-                        channel: "whatsapp",
-                      },
-                    },
-                  })
-                }
-                placeholder="Olá {nome}! Obrigado pelo interesse..."
-                rows={4}
-              />
-              <p className="text-xs text-muted-foreground">
-                Use {"{nome}"} para inserir o nome do lead dinamicamente
-              </p>
-            </div>
-          </TabsContent>
 
           <TabsContent value="flow">
             <AutomationFlowBuilder

@@ -10,12 +10,15 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   MiniMap,
+  NodeMouseHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Clock, GitBranch, Webhook, UserPlus, Plus, Trash2 } from 'lucide-react';
+import { MessageSquare, Clock, GitBranch, Webhook, UserPlus, Plus, Trash2, Edit2, Save } from 'lucide-react';
+import BlockEditModal from './BlockEditModal';
+import { toast } from '@/hooks/use-toast';
 
 interface AutomationFlowBuilderProps {
   automacao?: any;
@@ -120,6 +123,8 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdgesFromBlocks);
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
+  const [editingBlock, setEditingBlock] = useState<Node | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -214,18 +219,45 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
     });
   }, [setNodes]);
 
+  const handleNodeDoubleClick: NodeMouseHandler = useCallback((event, node) => {
+    setEditingBlock(node);
+    setIsEditModalOpen(true);
+  }, []);
+
+  const handleBlockUpdate = (updatedBlock: Node) => {
+    setNodes((nds) =>
+      nds.map((node) => (node.id === updatedBlock.id ? updatedBlock : node))
+    );
+    toast({
+      title: "Bloco atualizado",
+      description: "As alterações foram salvas com sucesso.",
+    });
+  };
+
   const handleSave = () => {
     if (onSave) {
       onSave(nodes, edges);
     }
+    toast({
+      title: "Automação salva",
+      description: "Sua automação foi salva com sucesso.",
+    });
   };
 
   return (
     <div className="space-y-4">
       {/* Toolbar de blocos */}
-      <Card className="p-4">
+      <Card className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border-2">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold">Adicionar Bloco</h3>
+          <div>
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" />
+              Adicionar Blocos
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Clique nos blocos abaixo para adicionar ao fluxo
+            </p>
+          </div>
           <Button
             variant="destructive"
             size="sm"
@@ -236,18 +268,18 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
             Remover Selecionados
           </Button>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           {nodeTypes.map((nodeType) => {
             const Icon = nodeType.icon;
             return (
               <Button
                 key={nodeType.type}
                 variant="outline"
-                size="sm"
+                size="lg"
                 onClick={() => addNode(nodeType.type)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 hover:scale-105 transition-transform"
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-5 w-5" />
                 {nodeType.label}
               </Button>
             );
@@ -256,39 +288,85 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
       </Card>
 
       {/* Canvas do fluxo */}
-      <Card className="p-0 overflow-hidden" style={{ height: '500px' }}>
+      <Card className="p-0 overflow-hidden shadow-lg border-2" style={{ height: '600px' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeDoubleClick={handleNodeDoubleClick}
           fitView
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         >
-          <Controls />
-          <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+          <Controls className="bg-background border-2 rounded-lg shadow-lg" />
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="bg-muted/30" />
+          <MiniMap 
+            className="bg-background border-2 rounded-lg shadow-lg" 
+            nodeColor={(node) => {
+              const type = node.data?.nodeType || 'default';
+              switch (type) {
+                case 'trigger': return '#6366f1';
+                case 'message': return '#10b981';
+                case 'delay': return '#f59e0b';
+                case 'condition': return '#3b82f6';
+                case 'webhook': return '#8b5cf6';
+                default: return '#6366f1';
+              }
+            }}
+          />
         </ReactFlow>
       </Card>
 
       {/* Botões de ação */}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline">Cancelar</Button>
-        <Button onClick={handleSave}>Salvar Automação</Button>
+      <div className="flex justify-end gap-3">
+        <Button variant="outline" size="lg">Cancelar</Button>
+        <Button onClick={handleSave} size="lg" className="flex items-center gap-2">
+          <Save className="h-4 w-4" />
+          Salvar Automação
+        </Button>
       </div>
 
-      {/* Legenda */}
-      <Card className="p-4">
-        <h4 className="text-sm font-semibold mb-2">Como usar:</h4>
-        <ul className="text-sm text-muted-foreground space-y-1">
-          <li>• Clique em "Adicionar Bloco" para criar novos passos</li>
-          <li>• Arraste os blocos para organizar seu fluxo</li>
-          <li>• Conecte os blocos clicando e arrastando das bolinhas</li>
-          <li>• Selecione blocos clicando neles e pressione Delete/Backspace para remover</li>
-          <li>• Ou use o botão "Remover Selecionados" para deletar múltiplos blocos</li>
-          <li>• Use Zoom e Pan para navegar no canvas</li>
-        </ul>
+      {/* Legenda melhorada */}
+      <Card className="p-4 bg-muted/30">
+        <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+          <Edit2 className="h-4 w-4 text-primary" />
+          Como usar o Editor Visual
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="flex items-start gap-2">
+            <Badge variant="secondary" className="mt-0.5">1</Badge>
+            <p className="text-sm text-muted-foreground">
+              <strong>Adicionar:</strong> Clique nos botões de blocos acima
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <Badge variant="secondary" className="mt-0.5">2</Badge>
+            <p className="text-sm text-muted-foreground">
+              <strong>Editar:</strong> Clique 2x em qualquer bloco
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <Badge variant="secondary" className="mt-0.5">3</Badge>
+            <p className="text-sm text-muted-foreground">
+              <strong>Conectar:</strong> Arraste das bolinhas laterais
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <Badge variant="secondary" className="mt-0.5">4</Badge>
+            <p className="text-sm text-muted-foreground">
+              <strong>Remover:</strong> Selecione e pressione Delete
+            </p>
+          </div>
+        </div>
       </Card>
+
+      <BlockEditModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        block={editingBlock}
+        onSave={handleBlockUpdate}
+      />
     </div>
   );
 }
