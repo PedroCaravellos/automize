@@ -90,6 +90,27 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
           </DialogDescription>
         </DialogHeader>
 
+        {!automacao && (
+          <div className="mb-4 space-y-2">
+            <Label htmlFor="negocio-select">Selecione o Negócio *</Label>
+            <Select
+              value={formData.negocio_id}
+              onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
+            >
+              <SelectTrigger id="negocio-select" className="bg-background">
+                <SelectValue placeholder="Escolha um negócio" />
+              </SelectTrigger>
+              <SelectContent position="popper" className="bg-popover">
+                {negocios.map((negocio) => (
+                  <SelectItem key={negocio.id} value={negocio.id}>
+                    {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             {!automacao && (
@@ -101,35 +122,10 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
             <TabsTrigger value="flow">Editor Visual</TabsTrigger>
           </TabsList>
 
-          {!automacao && (
-            <TabsContent value="ai" className="relative z-[70] isolate">
+            <TabsContent value="ai">
               {!formData.negocio_id ? (
-                <div className="space-y-4 py-8">
-                  <div className="text-center mb-4">
-                    <Sparkles className="mx-auto h-12 w-12 text-primary mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Criar Automação com IA</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Primeiro, selecione um negócio para personalizar sua automação
-                    </p>
-                  </div>
-                  <div className="relative isolate z-[80] space-y-2 max-w-md mx-auto pointer-events-auto">
-                    <Label htmlFor="negocio-ai">Selecione o Negócio *</Label>
-                    <Select
-                      value={formData.negocio_id}
-                      onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
-                    >
-                      <SelectTrigger className="relative z-[90] bg-background pointer-events-auto">
-                        <SelectValue placeholder="Escolha um negócio" />
-                      </SelectTrigger>
-                      <SelectContent position="popper" className="z-[90] bg-popover">
-                        {negocios.map((negocio) => (
-                          <SelectItem key={negocio.id} value={negocio.id}>
-                            {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  Selecione um negócio acima para continuar.
                 </div>
               ) : (
                 <AIAutomationCreator
@@ -139,7 +135,6 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
                 />
               )}
             </TabsContent>
-          )}
 
           {activeTab === "flow" && (
             <TabsContent value="flow">
