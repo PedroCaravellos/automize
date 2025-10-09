@@ -43,9 +43,9 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
       switch (tipo) {
         case 'trigger': return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
         case 'message': return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))' };
-        case 'delay': return { bg: 'hsl(var(--accent))', fg: 'hsl(var(--foreground))' };
+        case 'delay': return { bg: 'hsl(var(--muted))', fg: 'hsl(var(--foreground))' };
         case 'condition': return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
-        case 'webhook': return { bg: 'hsl(var(--accent))', fg: 'hsl(var(--foreground))' };
+        case 'webhook': return { bg: 'hsl(var(--muted))', fg: 'hsl(var(--foreground))' };
         default: return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
       }
     };
@@ -149,11 +149,11 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
         case 'message':
           return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))' };
         case 'delay':
-          return { bg: 'hsl(var(--accent))', fg: 'hsl(var(--foreground))' };
+          return { bg: 'hsl(var(--muted))', fg: 'hsl(var(--foreground))' };
         case 'condition':
           return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
         case 'webhook':
-          return { bg: 'hsl(var(--accent))', fg: 'hsl(var(--foreground))' };
+          return { bg: 'hsl(var(--muted))', fg: 'hsl(var(--foreground))' };
         default:
           return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
       }

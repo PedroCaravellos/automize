@@ -96,11 +96,12 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
             <Select
               value={formData.negocio_id}
               onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
+              onOpenChange={(open) => console.log('Select open:', open)}
             >
-              <SelectTrigger id="negocio-select" className="bg-background">
+              <SelectTrigger id="negocio-select" className="bg-background pointer-events-auto">
                 <SelectValue placeholder="Escolha um negócio" />
               </SelectTrigger>
-              <SelectContent position="popper" className="bg-popover">
+              <SelectContent position="popper" className="z-[1000] bg-popover">
                 {negocios.map((negocio) => (
                   <SelectItem key={negocio.id} value={negocio.id}>
                     {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
