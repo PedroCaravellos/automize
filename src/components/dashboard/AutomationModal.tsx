@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,6 +85,9 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
           <DialogTitle>
             {automacao ? "Editar Automação" : "Nova Automação"}
           </DialogTitle>
+          <DialogDescription>
+            Selecione um negócio e crie sua automação. Edite tudo pelo Editor Visual.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -99,7 +102,7 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
           </TabsList>
 
           {!automacao && (
-            <TabsContent value="ai" className="relative z-20">
+            <TabsContent value="ai" className="relative z-[70] isolate">
               {!formData.negocio_id ? (
                 <div className="space-y-4 py-8">
                   <div className="text-center mb-4">
@@ -109,16 +112,16 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
                       Primeiro, selecione um negócio para personalizar sua automação
                     </p>
                   </div>
-                  <div className="space-y-2 max-w-md mx-auto">
+                  <div className="relative isolate z-[80] space-y-2 max-w-md mx-auto pointer-events-auto">
                     <Label htmlFor="negocio-ai">Selecione o Negócio *</Label>
                     <Select
                       value={formData.negocio_id}
                       onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
                     >
-                      <SelectTrigger className="relative z-50 bg-background">
+                      <SelectTrigger className="relative z-[90] bg-background pointer-events-auto">
                         <SelectValue placeholder="Escolha um negócio" />
                       </SelectTrigger>
-                      <SelectContent className="bg-background z-50">
+                      <SelectContent position="popper" className="z-[90] bg-popover">
                         {negocios.map((negocio) => (
                           <SelectItem key={negocio.id} value={negocio.id}>
                             {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
