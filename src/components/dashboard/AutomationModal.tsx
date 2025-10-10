@@ -20,7 +20,7 @@ interface AutomationModalProps {
 }
 
 export default function AutomationModal({ open, onOpenChange, automacao, onSave }: AutomationModalProps) {
-  const { negocios } = useAuth();
+  const { negocios, syncNegociosFromDB } = useAuth();
   const [activeTab, setActiveTab] = useState(automacao ? "flow" : "ai");
   const [generatedBlocks, setGeneratedBlocks] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -39,6 +39,23 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
       setActiveTab("ai");
     }
   }, [automacao]);
+
+  // Carrega negócios ao abrir o modal, caso ainda não estejam disponíveis
+  useEffect(() => {
+    if (open && (!negocios || negocios.length === 0)) {
+      console.info('AutomationModal: sincronizando negócios...');
+      try {
+        syncNegociosFromDB?.();
+      } catch (e) {
+        console.error('Falha ao sincronizar negócios', e);
+      }
+    }
+  }, [open]);
+
+  // Log de depuração para confirmar o carregamento
+  useEffect(() => {
+    console.info('AutomationModal: negócios disponíveis', negocios?.length ?? 0);
+  }, [negocios]);
 
   const handleAIAutomationGenerated = (aiAutomation: any) => {
     setFormData({

@@ -42,17 +42,17 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
     const getBlockColors = (tipo: string) => {
       switch (tipo) {
         case 'trigger':
-          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
+          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))' };
         case 'message':
-          return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))' };
+          return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))', br: 'hsl(var(--secondary))' };
         case 'delay':
-          return { bg: 'hsl(var(--primary) / 0.12)', fg: 'hsl(var(--primary))' };
+          return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))' };
         case 'condition':
-          return { bg: 'hsl(var(--primary) / 0.12)', fg: 'hsl(var(--primary))' };
+          return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))' };
         case 'webhook':
-          return { bg: 'hsl(var(--accent) / 0.12)', fg: 'hsl(var(--foreground))' };
+          return { bg: 'hsl(var(--accent) / 0.14)', fg: 'hsl(var(--foreground))', br: 'hsl(var(--accent))' };
         default:
-          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
+          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))' };
       }
     };
 
@@ -76,7 +76,7 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
           background: colors.bg,
           color: colors.fg,
           padding: '12px 20px',
-          border: '1.5px solid hsl(var(--border))',
+          border: `1.5px solid ${colors.br || 'hsl(var(--border))'}`,
           borderRadius: '10px',
           minWidth: '150px',
           minHeight: '50px',
@@ -153,15 +153,15 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
     const getBlockColors = (blockType: string) => {
       switch (blockType) {
         case 'message':
-          return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))' };
+          return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))', br: 'hsl(var(--secondary))' };
         case 'delay':
-          return { bg: 'hsl(var(--primary) / 0.12)', fg: 'hsl(var(--primary))' };
+          return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))' };
         case 'condition':
-          return { bg: 'hsl(var(--primary) / 0.12)', fg: 'hsl(var(--primary))' };
+          return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))' };
         case 'webhook':
-          return { bg: 'hsl(var(--accent) / 0.12)', fg: 'hsl(var(--foreground))' };
+          return { bg: 'hsl(var(--accent) / 0.14)', fg: 'hsl(var(--foreground))', br: 'hsl(var(--accent))' };
         default:
-          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))' };
+          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))' };
       }
     };
 
@@ -182,7 +182,7 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
           background: colors.bg,
           color: colors.fg,
           padding: '12px 20px',
-          border: '1.5px solid hsl(var(--border))',
+          border: `1.5px solid ${colors.br || 'hsl(var(--border))'}`,
           borderRadius: '10px',
           minWidth: '150px',
           minHeight: '50px',
