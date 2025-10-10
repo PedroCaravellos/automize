@@ -9,18 +9,21 @@ import { toast } from "@/hooks/use-toast";
 
 interface AIAutomationCreatorProps {
   negocioInfo?: any;
+  generatedAutomation?: any;
   onAutomationGenerated: (automation: any) => void;
+  onReset: () => void;
   onCancel: () => void;
 }
 
 export default function AIAutomationCreator({ 
-  negocioInfo, 
+  negocioInfo,
+  generatedAutomation,
   onAutomationGenerated,
+  onReset,
   onCancel 
 }: AIAutomationCreatorProps) {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
-  const [generatedAutomation, setGeneratedAutomation] = useState<any>(null);
 
   const examplePrompts = [
     "Quando entrar um novo lead, mandar boas-vindas imediatamente, depois de 1 hora enviar informações sobre nossos planos, se não responder em 24h mandar mensagem de follow-up final",
@@ -68,7 +71,7 @@ export default function AIAutomationCreator({
         return;
       }
 
-      setGeneratedAutomation(data.automation);
+      onAutomationGenerated(data.automation);
       toast({
         title: "Automação gerada!",
         description: "Revise e edite se necessário, depois salve.",
@@ -219,8 +222,8 @@ export default function AIAutomationCreator({
             </div>
 
             <div className="flex gap-2 justify-end pt-4">
-              <Button variant="outline" onClick={() => setGeneratedAutomation(null)}>
-                Gerar Novamente
+              <Button variant="outline" onClick={onReset}>
+                Nova Automação
               </Button>
               <Button onClick={handleConfirm}>
                 <ArrowRight className="mr-2 h-4 w-4" />

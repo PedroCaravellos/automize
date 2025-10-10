@@ -23,6 +23,7 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
   const { negocios, syncNegociosFromDB } = useAuth();
   const [activeTab, setActiveTab] = useState(automacao ? "flow" : "ai");
   const [generatedBlocks, setGeneratedBlocks] = useState<any[]>([]);
+  const [generatedAutomation, setGeneratedAutomation] = useState<any>(null);
   const [formData, setFormData] = useState({
     nome: automacao?.nome || "",
     descricao: automacao?.descricao || "",
@@ -58,6 +59,7 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
   }, [negocios]);
 
   const handleAIAutomationGenerated = (aiAutomation: any) => {
+    setGeneratedAutomation(aiAutomation);
     setFormData({
       nome: aiAutomation.nome,
       descricao: aiAutomation.descricao,
@@ -72,6 +74,10 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
       title: "Pronto para editar!",
       description: "Ajuste o fluxo visual conforme necessário e salve.",
     });
+  };
+
+  const handleResetAutomation = () => {
+    setGeneratedAutomation(null);
   };
 
   const selectedNegocio = negocios.find(n => n.id === formData.negocio_id);
@@ -147,7 +153,9 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
               ) : (
                 <AIAutomationCreator
                   negocioInfo={selectedNegocio}
+                  generatedAutomation={generatedAutomation}
                   onAutomationGenerated={handleAIAutomationGenerated}
+                  onReset={handleResetAutomation}
                   onCancel={() => onOpenChange(false)}
                 />
               )}
