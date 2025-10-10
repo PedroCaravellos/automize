@@ -110,19 +110,21 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
         {!automacao && (
           <div className="mb-4 space-y-2">
             <Label htmlFor="negocio-select">Selecione o Negócio *</Label>
-            <select
-              id="negocio-select"
+            <Select
               value={formData.negocio_id}
-              onChange={(e) => setFormData({ ...formData, negocio_id: e.target.value })}
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              onValueChange={(value) => setFormData({ ...formData, negocio_id: value })}
             >
-              <option value="" disabled>Escolha um negócio</option>
-              {negocios.map((negocio) => (
-                <option key={negocio.id} value={negocio.id}>
-                  {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="negocio-select" className="w-full">
+                <SelectValue placeholder="Escolha um negócio" />
+              </SelectTrigger>
+              <SelectContent className="z-[1000] bg-popover">
+                {negocios?.map((negocio) => (
+                  <SelectItem key={negocio.id} value={negocio.id}>
+                    {negocio.nome} {negocio.unidade && `- ${negocio.unidade}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
