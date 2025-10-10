@@ -34,27 +34,28 @@ const nodeTypes = [
   { type: 'webhook', label: 'Webhook', icon: Webhook, color: 'bg-info' },
 ];
 
+// Unified color mapping function for consistency
+const getBlockColors = (tipo: string) => {
+  switch (tipo) {
+    case 'trigger':
+      return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))', minimap: '#3b82f6' };
+    case 'message':
+      return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))', br: 'hsl(var(--secondary))', minimap: '#10b981' };
+    case 'delay':
+      return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))', minimap: '#93c5fd' };
+    case 'condition':
+      return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))', minimap: '#93c5fd' };
+    case 'webhook':
+      return { bg: 'hsl(var(--accent) / 0.14)', fg: 'hsl(var(--foreground))', br: 'hsl(var(--accent))', minimap: '#1f2937' };
+    default:
+      return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))', minimap: '#3b82f6' };
+  }
+};
+
 export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave }: AutomationFlowBuilderProps) {
   // Convert AI-generated blocks to nodes and edges
   const convertBlocksToNodes = (blocks: any[]): Node[] => {
     if (!blocks || blocks.length === 0) return [];
-    
-    const getBlockColors = (tipo: string) => {
-      switch (tipo) {
-        case 'trigger':
-          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))' };
-        case 'message':
-          return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))', br: 'hsl(var(--secondary))' };
-        case 'delay':
-          return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))' };
-        case 'condition':
-          return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))' };
-        case 'webhook':
-          return { bg: 'hsl(var(--accent) / 0.14)', fg: 'hsl(var(--foreground))', br: 'hsl(var(--accent))' };
-        default:
-          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))' };
-      }
-    };
 
     return blocks.map((block, index) => {
       const colors = getBlockColors(block.tipo);
@@ -149,21 +150,6 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
       return;
     }
 
-    // Cores sólidas e visíveis para cada tipo de bloco
-    const getBlockColors = (blockType: string) => {
-      switch (blockType) {
-        case 'message':
-          return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))', br: 'hsl(var(--secondary))' };
-        case 'delay':
-          return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))' };
-        case 'condition':
-          return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))' };
-        case 'webhook':
-          return { bg: 'hsl(var(--accent) / 0.14)', fg: 'hsl(var(--foreground))', br: 'hsl(var(--accent))' };
-        default:
-          return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))' };
-      }
-    };
 
     const newNode: Node = {
       id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -319,14 +305,8 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
             style={{ background: 'hsl(var(--card))' }}
             nodeColor={(node) => {
               const type = node.data?.nodeType || 'default';
-              switch (type) {
-                case 'trigger': return '#6366f1';
-                case 'message': return '#10b981';
-                case 'delay': return '#f59e0b';
-                case 'condition': return '#3b82f6';
-                case 'webhook': return '#8b5cf6';
-                default: return '#6366f1';
-              }
+              const colors = getBlockColors(type);
+              return colors.minimap;
             }}
           />
         </ReactFlow>
