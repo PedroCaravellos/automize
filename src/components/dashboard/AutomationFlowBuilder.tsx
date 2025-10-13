@@ -34,21 +34,57 @@ const nodeTypes = [
   { type: 'webhook', label: 'Webhook', icon: Webhook, color: 'bg-info' },
 ];
 
-// Unified color mapping function for consistency
+// Modern color mapping with gradients and consistent styling
 const getBlockColors = (tipo: string) => {
   switch (tipo) {
     case 'trigger':
-      return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))', minimap: '#3b82f6' };
+      return { 
+        bg: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%)', 
+        fg: 'hsl(var(--primary-foreground))', 
+        br: 'hsl(var(--primary))', 
+        minimap: '#6366f1',
+        icon: UserPlus
+      };
     case 'message':
-      return { bg: 'hsl(var(--secondary))', fg: 'hsl(var(--secondary-foreground))', br: 'hsl(var(--secondary))', minimap: '#10b981' };
+      return { 
+        bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+        fg: 'white', 
+        br: '#10b981', 
+        minimap: '#10b981',
+        icon: MessageSquare
+      };
     case 'delay':
-      return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))', minimap: '#93c5fd' };
+      return { 
+        bg: 'linear-gradient(135deg, #93c5fd 0%, #60a5fa 100%)', 
+        fg: 'white', 
+        br: '#3b82f6', 
+        minimap: '#3b82f6',
+        icon: Clock
+      };
     case 'condition':
-      return { bg: 'hsl(var(--primary) / 0.14)', fg: 'hsl(var(--primary))', br: 'hsl(var(--primary))', minimap: '#93c5fd' };
+      return { 
+        bg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', 
+        fg: 'white', 
+        br: '#f59e0b', 
+        minimap: '#f59e0b',
+        icon: GitBranch
+      };
     case 'webhook':
-      return { bg: 'hsl(var(--accent) / 0.14)', fg: 'hsl(var(--foreground))', br: 'hsl(var(--accent))', minimap: '#1f2937' };
+      return { 
+        bg: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', 
+        fg: 'white', 
+        br: '#8b5cf6', 
+        minimap: '#8b5cf6',
+        icon: Webhook
+      };
     default:
-      return { bg: 'hsl(var(--primary))', fg: 'hsl(var(--primary-foreground))', br: 'hsl(var(--primary))', minimap: '#3b82f6' };
+      return { 
+        bg: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%)', 
+        fg: 'hsl(var(--primary-foreground))', 
+        br: 'hsl(var(--primary))', 
+        minimap: '#6366f1',
+        icon: UserPlus
+      };
   }
 };
 
@@ -59,11 +95,17 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
 
     return blocks.map((block, index) => {
       const colors = getBlockColors(block.tipo);
+      const Icon = colors.icon;
       return {
         id: block.id || `node-${index}`,
         type: block.tipo === 'trigger' ? 'input' : 'default',
         data: {
-          label: block.label,
+          label: (
+            <div className="flex items-center gap-2 justify-center">
+              <Icon className="h-4 w-4" />
+              <span>{block.label}</span>
+            </div>
+          ),
           nodeType: block.tipo,
           content: block.conteudo,
           time: block.tempo,
@@ -76,14 +118,15 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
         style: {
           background: colors.bg,
           color: colors.fg,
-          padding: '12px 20px',
-          border: `1.5px solid ${colors.br || 'hsl(var(--border))'}`,
-          borderRadius: '10px',
-          minWidth: '150px',
-          minHeight: '50px',
+          padding: '16px 24px',
+          border: `2px solid ${colors.br}`,
+          borderRadius: '12px',
+          minWidth: '180px',
+          minHeight: '60px',
           fontWeight: 600,
           fontSize: '14px',
-          boxShadow: '0 4px 14px hsl(var(--foreground) / 0.05)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
+          transition: 'all 0.2s ease',
         },
       };
     });
@@ -111,18 +154,27 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
         {
           id: '1',
           type: 'input',
-          data: { label: 'Novo Lead', nodeType: 'trigger' },
+          data: { 
+            label: (
+              <div className="flex items-center gap-2 justify-center">
+                <UserPlus className="h-4 w-4" />
+                <span>Novo Lead</span>
+              </div>
+            ), 
+            nodeType: 'trigger' 
+          },
           position: { x: 250, y: 50 },
           style: { 
-            background: '#6366f1', 
+            background: 'linear-gradient(135deg, #6366f1 0%, #5558e3 100%)', 
             color: 'white', 
-            padding: '12px 20px',
-            border: '2px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '8px',
-            minWidth: '150px',
-            minHeight: '50px',
+            padding: '16px 24px',
+            border: '2px solid #6366f1',
+            borderRadius: '12px',
+            minWidth: '180px',
+            minHeight: '60px',
             fontWeight: '600',
             fontSize: '14px',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
           },
         },
       ];
@@ -151,35 +203,41 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
     }
 
 
+    const colors = getBlockColors(type);
+    const Icon = colors.icon;
+    
     const newNode: Node = {
       id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: type === 'trigger' ? 'input' : 'default',
       data: {
-        label: nodeTypeInfo.label,
+        label: (
+          <div className="flex items-center gap-2 justify-center">
+            <Icon className="h-4 w-4" />
+            <span>{nodeTypeInfo.label}</span>
+          </div>
+        ),
         nodeType: type,
       },
       position: {
         x: 250 + (Math.random() * 100 - 50),
         y: 200 + (nodes.length * 30),
       },
-      style: (() => {
-        const colors = getBlockColors(type);
-        return {
-          background: colors.bg,
-          color: colors.fg,
-          padding: '12px 20px',
-          border: `1.5px solid ${colors.br || 'hsl(var(--border))'}`,
-          borderRadius: '10px',
-          minWidth: '150px',
-          minHeight: '50px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 600,
-          fontSize: '14px',
-          boxShadow: '0 4px 14px hsl(var(--foreground) / 0.05)',
-        } as React.CSSProperties;
-      })(),
+      style: {
+        background: colors.bg,
+        color: colors.fg,
+        padding: '16px 24px',
+        border: `2px solid ${colors.br}`,
+        borderRadius: '12px',
+        minWidth: '180px',
+        minHeight: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 600,
+        fontSize: '14px',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
+        transition: 'all 0.2s ease',
+      } as React.CSSProperties,
     };
     setNodes((nds) => [...nds, newNode]);
   };
@@ -246,10 +304,10 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
   return (
     <div className="space-y-4">
       {/* Toolbar de blocos */}
-      <Card className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border-2">
-        <div className="flex items-center justify-between mb-3">
+      <Card className="p-6 bg-gradient-to-br from-card via-card to-muted/20 border-2 shadow-lg">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold flex items-center gap-2">
+            <h3 className="text-lg font-bold flex items-center gap-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               <Plus className="h-5 w-5 text-primary" />
               Adicionar Blocos
             </h3>
@@ -261,7 +319,7 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
             variant="destructive"
             size="sm"
             onClick={deleteSelectedNodes}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 shadow-lg"
           >
             <Trash2 className="h-4 w-4" />
             Remover Selecionados
@@ -270,16 +328,21 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
         <div className="flex flex-wrap gap-3">
           {nodeTypes.map((nodeType) => {
             const Icon = nodeType.icon;
+            const colors = getBlockColors(nodeType.type);
             return (
               <Button
                 key={nodeType.type}
                 variant="outline"
                 size="lg"
                 onClick={() => addNode(nodeType.type)}
-                className="flex items-center gap-2 hover:scale-105 transition-transform"
+                className="flex items-center gap-3 hover:scale-105 transition-all duration-200 shadow-md hover:shadow-xl border-2"
+                style={{
+                  borderColor: colors.br,
+                  background: `linear-gradient(135deg, ${colors.br}15 0%, ${colors.br}05 100%)`,
+                }}
               >
-                <Icon className="h-5 w-5" />
-                {nodeType.label}
+                <Icon className="h-5 w-5" style={{ color: colors.br }} />
+                <span className="font-semibold">{nodeType.label}</span>
               </Button>
             );
           })}
@@ -287,7 +350,7 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
       </Card>
 
       {/* Canvas do fluxo */}
-      <Card className="p-0 overflow-hidden shadow-lg border-2" style={{ height: '600px' }}>
+      <Card className="p-0 overflow-hidden shadow-2xl border-2" style={{ height: '650px' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -297,17 +360,32 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
           onNodeDoubleClick={handleNodeDoubleClick}
           fitView
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: true,
+            style: { 
+              strokeWidth: 2.5,
+              stroke: 'hsl(var(--primary) / 0.5)',
+            },
+          }}
         >
-          <Controls className="bg-card border-2 rounded-lg shadow-lg" />
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="hsl(var(--muted-foreground) / 0.35)" className="bg-muted" />
+          <Controls className="bg-card/95 backdrop-blur-sm border-2 rounded-xl shadow-xl" />
+          <Background 
+            variant={BackgroundVariant.Dots} 
+            gap={20} 
+            size={1.5} 
+            color="hsl(var(--muted-foreground) / 0.25)" 
+            className="bg-gradient-to-br from-muted/30 to-muted/10" 
+          />
           <MiniMap 
-            className="bg-card border-2 rounded-lg shadow-lg" 
-            style={{ background: 'hsl(var(--card))' }}
+            className="bg-card/95 backdrop-blur-sm border-2 rounded-xl shadow-xl" 
+            style={{ background: 'hsl(var(--card) / 0.95)' }}
             nodeColor={(node) => {
               const type = node.data?.nodeType || 'default';
               const colors = getBlockColors(type);
               return colors.minimap;
             }}
+            maskColor="hsl(var(--muted) / 0.2)"
           />
         </ReactFlow>
       </Card>
@@ -322,34 +400,38 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
       </div>
 
       {/* Legenda melhorada */}
-      <Card className="p-4 bg-muted/30">
-        <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+      <Card className="p-5 bg-gradient-to-br from-muted/40 to-muted/20 border-2 shadow-md">
+        <h4 className="text-sm font-bold mb-4 flex items-center gap-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
           <Edit2 className="h-4 w-4 text-primary" />
           Como usar o Editor Visual
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div className="flex items-start gap-2">
-            <Badge variant="secondary" className="mt-0.5">1</Badge>
-            <p className="text-sm text-muted-foreground">
-              <strong>Adicionar:</strong> Clique nos botões de blocos acima
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
+            <Badge variant="default" className="mt-0.5 shadow-sm">1</Badge>
+            <p className="text-sm">
+              <strong className="text-foreground">Adicionar:</strong>{' '}
+              <span className="text-muted-foreground">Clique nos botões de blocos acima</span>
             </p>
           </div>
-          <div className="flex items-start gap-2">
-            <Badge variant="secondary" className="mt-0.5">2</Badge>
-            <p className="text-sm text-muted-foreground">
-              <strong>Editar:</strong> Clique 2x em qualquer bloco
+          <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
+            <Badge variant="default" className="mt-0.5 shadow-sm">2</Badge>
+            <p className="text-sm">
+              <strong className="text-foreground">Editar:</strong>{' '}
+              <span className="text-muted-foreground">Clique 2x em qualquer bloco</span>
             </p>
           </div>
-          <div className="flex items-start gap-2">
-            <Badge variant="secondary" className="mt-0.5">3</Badge>
-            <p className="text-sm text-muted-foreground">
-              <strong>Conectar:</strong> Arraste das bolinhas laterais
+          <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
+            <Badge variant="default" className="mt-0.5 shadow-sm">3</Badge>
+            <p className="text-sm">
+              <strong className="text-foreground">Conectar:</strong>{' '}
+              <span className="text-muted-foreground">Arraste das bolinhas laterais</span>
             </p>
           </div>
-          <div className="flex items-start gap-2">
-            <Badge variant="secondary" className="mt-0.5">4</Badge>
-            <p className="text-sm text-muted-foreground">
-              <strong>Remover:</strong> Selecione e pressione Delete
+          <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
+            <Badge variant="default" className="mt-0.5 shadow-sm">4</Badge>
+            <p className="text-sm">
+              <strong className="text-foreground">Remover:</strong>{' '}
+              <span className="text-muted-foreground">Selecione e pressione Delete</span>
             </p>
           </div>
         </div>
