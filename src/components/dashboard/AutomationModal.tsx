@@ -24,6 +24,7 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
   const [activeTab, setActiveTab] = useState(automacao ? "flow" : "ai");
   const [generatedBlocks, setGeneratedBlocks] = useState<any[]>([]);
   const [generatedAutomation, setGeneratedAutomation] = useState<any>(null);
+  const [flowData, setFlowData] = useState<{ nodes: any[], edges: any[] } | null>(null);
   const [formData, setFormData] = useState({
     nome: automacao?.nome || "",
     descricao: automacao?.descricao || "",
@@ -69,6 +70,33 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
       actions: aiAutomation.actions || {},
     });
     setGeneratedBlocks(aiAutomation.blocos || []);
+    
+    // Se temos blocos gerados pela IA, preparar o flowData automaticamente
+    if (aiAutomation.blocos && aiAutomation.blocos.length > 0) {
+      const nodes = aiAutomation.blocos.map((block: any, index: number) => ({
+        id: block.id || `node-${index}`,
+        type: block.tipo === 'trigger' ? 'input' : 'default',
+        data: { 
+          label: block.label,
+          nodeType: block.tipo,
+        },
+        position: block.posicao || { x: 250, y: 50 + (index * 100) }
+      }));
+      
+      const edges = [];
+      for (let i = 0; i < aiAutomation.blocos.length - 1; i++) {
+        edges.push({
+          id: `edge-${i}`,
+          source: aiAutomation.blocos[i].id || `node-${i}`,
+          target: aiAutomation.blocos[i + 1].id || `node-${i + 1}`,
+          type: 'smoothstep',
+          animated: true,
+        });
+      }
+      
+      setFlowData({ nodes, edges });
+    }
+    
     setActiveTab("flow");
     toast({
       title: "Pronto para editar!",
@@ -95,7 +123,17 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
     const dataToSave = {
       ...formData,
       nome: formData.nome || `Automação ${new Date().toLocaleString('pt-BR')}`,
+      // Incluir dados do fluxo visual se existirem
+      ...(flowData && {
+        trigger_config: {
+          ...formData.trigger_config,
+          flow_nodes: flowData.nodes,
+          flow_edges: flowData.edges,
+        }
+      })
     };
+
+    console.log('Salvando automação com dados:', dataToSave);
 
     onSave(dataToSave);
     onOpenChange(false);
@@ -168,6 +206,11 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
                 initialBlocks={generatedBlocks}
                 onSave={(nodes, edges) => {
                   console.log("Salvando fluxo:", nodes, edges);
+                  setFlowData({ nodes, edges });
+                  toast({
+                    title: "Fluxo salvo",
+                    description: "O fluxo foi salvo temporariamente. Clique em 'Salvar' abaixo para salvar a automação completa.",
+                  });
                 }}
               />
             </TabsContent>
