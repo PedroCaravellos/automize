@@ -279,6 +279,15 @@ const handleToggleStatus = async (chatbotId: string) => {
 
   const handleDeleteChatbot = async (chatbotId: string) => {
     try {
+      const isUuid = (id: string) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+
+      // Se for um chatbot local (id não UUID), removemos apenas do estado
+      if (!isUuid(chatbotId)) {
+        deleteChatbot(chatbotId);
+        toast({ title: "Chatbot removido", description: "Chatbot local removido com sucesso." });
+        return;
+      }
       // Primeiro, deletar todas as mensagens das conversas deste chatbot
       const { data: conversations, error: convError } = await supabase
         .from('chatbot_conversations')
