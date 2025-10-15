@@ -46,7 +46,6 @@ const OnboardingChecklist = ({
   const [isHidden, setIsHidden] = useState(false);
   const { 
     user,
-    negocios, 
     chatbots, 
     onboardingProgress, 
     trialActive, 
@@ -55,6 +54,7 @@ const OnboardingChecklist = ({
 
   // Estado para armazenar contagens do banco de dados
   const [dbCounts, setDbCounts] = useState({
+    negocios: 0,
     chatbots: 0,
     leads: 0,
     automacoes: 0,
@@ -84,7 +84,7 @@ const OnboardingChecklist = ({
         const negocioIds = negociosData?.map(n => n.id) || [];
 
         if (negocioIds.length === 0) {
-          setDbCounts({ chatbots: 0, leads: 0, automacoes: 0, integracoes: 0 });
+          setDbCounts({ negocios: 0, chatbots: 0, leads: 0, automacoes: 0, integracoes: 0 });
           return;
         }
 
@@ -110,6 +110,7 @@ const OnboardingChecklist = ({
         ]);
 
         setDbCounts({
+          negocios: negocioIds.length,
           chatbots: chatbotsRes.count || 0,
           leads: leadsRes.count || 0,
           automacoes: automacoesRes.count || 0,
@@ -129,7 +130,7 @@ const OnboardingChecklist = ({
       title: "Criar seu negócio",
       description: "Configure os dados do seu negócio",
       icon: Building,
-      completed: negocios.length > 0,
+      completed: dbCounts.negocios > 0,
       action: () => onNavigateTo("negocios"),
     },
     {
