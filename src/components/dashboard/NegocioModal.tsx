@@ -523,7 +523,7 @@ const NegocioModal = ({ open, onOpenChange, negocio, onSave }: NegocioModalProps
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} className="min-w-[120px]">
             {negocio ? "Atualizar" : "Salvar"}
           </Button>
         </DialogFooter>

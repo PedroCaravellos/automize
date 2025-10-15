@@ -271,7 +271,7 @@ const ChatbotEditModal = ({ open, onOpenChange, chatbot, onSave }: ChatbotEditMo
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} className="min-w-[120px]">
             Salvar Alterações
           </Button>
         </DialogFooter>

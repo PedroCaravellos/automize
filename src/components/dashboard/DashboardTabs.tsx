@@ -57,19 +57,31 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
     window.dispatchEvent(new CustomEvent('refreshDashboardData'));
   };
 
+  // Sync URL with active tab
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTab = params.get('tab');
+    
+    // Update URL if active tab doesn't match URL
+    if (urlTab !== activeTab) {
+      const newParams = new URLSearchParams();
+      newParams.set('tab', activeTab);
+      window.history.replaceState({}, '', `?${newParams.toString()}`);
+    }
+  }, [activeTab]);
+
   // Handle query params on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
     const plan = urlParams.get('plan');
     
-    if (tab === 'plan') {
-      onTabChange('plan');
-      if (plan && ['Basico', 'Pro', 'Premium'].includes(plan)) {
-        setPreselectedPlan(plan);
-      }
-      // Clear URL params after reading them
-      window.history.replaceState({}, '', '/dashboard');
+    if (tab && tab !== activeTab) {
+      onTabChange(tab);
+    }
+    
+    if (tab === 'plan' && plan && ['Basico', 'Pro', 'Premium'].includes(plan)) {
+      setPreselectedPlan(plan);
     }
     
     // Handle intended route from AuthContext (after login)
@@ -78,9 +90,9 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
       const intentTab = url.searchParams.get('tab');
       const intentPlan = url.searchParams.get('plan');
       
-      if (intentTab === 'plan') {
-        onTabChange('plan');
-        if (intentPlan && ['Basico', 'Pro', 'Premium'].includes(intentPlan)) {
+      if (intentTab) {
+        onTabChange(intentTab);
+        if (intentTab === 'plan' && intentPlan && ['Basico', 'Pro', 'Premium'].includes(intentPlan)) {
           setPreselectedPlan(intentPlan);
         }
       }
@@ -88,7 +100,7 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
       // Clear intended route after consuming it
       setIntendedRoute(null);
     }
-  }, [intendedRoute, setIntendedRoute]);
+  }, []);
 
   // Handlers for onboarding actions
   const handleOpenSimulator = () => {

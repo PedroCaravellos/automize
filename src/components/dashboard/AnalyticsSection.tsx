@@ -63,26 +63,18 @@ export default function AnalyticsSection() {
         return;
       }
 
-      // Buscar dados de leads
-      const { data: leads, error: leadsError } = await supabase
-        .from('leads')
-        .select('origem, status, valor_estimado, created_at');
-
-      // Buscar dados de agendamentos
-      const { data: agendamentos, error: agendamentosError } = await supabase
-        .from('agendamentos')
-        .select('status, created_at');
-
-      // Buscar dados de vendas
-      const { data: vendas, error: vendasError } = await supabase
-        .from('vendas')
-        .select('valor, status, data_fechamento, created_at');
-
-      // Buscar dados de negócios
-      const { data: negocios, error: negociosError } = await supabase
-        .from('negocios')
-        .select('id, nome, tipo_negocio, segmento')
-        .eq('user_id', session.user.id);
+      // Buscar todos os dados em paralelo para otimização
+      const [
+        { data: leads, error: leadsError },
+        { data: agendamentos, error: agendamentosError },
+        { data: vendas, error: vendasError },
+        { data: negocios, error: negociosError }
+      ] = await Promise.all([
+        supabase.from('leads').select('origem, status, valor_estimado, created_at'),
+        supabase.from('agendamentos').select('status, created_at'),
+        supabase.from('vendas').select('valor, status, data_fechamento, created_at'),
+        supabase.from('negocios').select('id, nome, tipo_negocio, segmento').eq('user_id', session.user.id)
+      ]);
 
       if (leadsError || agendamentosError || vendasError || negociosError) {
         throw leadsError || agendamentosError || vendasError || negociosError;
