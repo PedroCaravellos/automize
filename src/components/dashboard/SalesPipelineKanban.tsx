@@ -75,7 +75,15 @@ export default function SalesPipelineKanban({
     }
 
     const leadId = active.id as string;
-    const newStage = over.id as Lead['pipeline_stage'];
+    const newStage = over.id as string;
+    
+    // Validar que newStage é um estágio válido
+    const validStage = PIPELINE_STAGES.find(s => s.id === newStage);
+    if (!validStage) {
+      console.error('Estágio inválido:', newStage);
+      setActiveId(null);
+      return;
+    }
 
     const lead = leads.find((l) => l.id === leadId);
     if (!lead || lead.pipeline_stage === newStage) {
@@ -92,7 +100,7 @@ export default function SalesPipelineKanban({
       if (error) throw error;
 
       toast.success("Lead atualizado!", {
-        description: `${lead.nome} movido para ${PIPELINE_STAGES.find(s => s.id === newStage)?.label}`,
+        description: `${lead.nome} movido para ${validStage.label}`,
       });
 
       // Atualizar dados após sucesso
