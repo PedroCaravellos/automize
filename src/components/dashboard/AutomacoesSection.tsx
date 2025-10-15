@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users, Act
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import AutomationModal from "./AutomationModal";
 import AutomationExecutionsTable from "./AutomationExecutionsTable";
 
@@ -31,16 +32,15 @@ export default function AutomacoesSection() {
   const [activeTab, setActiveTab] = useState("automacoes");
   const { negocios, hasAccess } = useAuth();
 
-  useEffect(() => {
-    fetchAutomacoes();
-  }, []);
+  const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
 
-  const fetchAutomacoes = async () => {
+  const fetchAutomacoes = useCallback(async () => {
     try {
       // Ensure we have a valid session before making requests
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         console.warn('No valid session found for automacoes');
+        setLoading(false);
         return;
       }
 
@@ -54,12 +54,7 @@ export default function AutomacoesSection() {
         throw error;
       }
       
-      // Remover duplicatas com base no ID
-      const uniqueAutomacoes = Array.from(
-        new Map((data as Automacao[])?.map(item => [item.id, item]) || []).values()
-      );
-      
-      setAutomacoes(uniqueAutomacoes);
+      setAutomacoes(data as Automacao[] || []);
     } catch (error) {
       console.error('Erro ao buscar automações:', error);
       toast({
@@ -70,7 +65,14 @@ export default function AutomacoesSection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchAutomacoes();
+  }, [fetchAutomacoes]);
+
+  // Real-time sync
+  useRealtimeTable('automacoes', fetchAutomacoes);
 
   const toggleAutomacao = async (id: string, ativo: boolean) => {
     try {
@@ -81,16 +83,13 @@ export default function AutomacoesSection() {
 
       if (error) throw error;
 
-      setAutomacoes(prev => 
-        prev.map(auto => 
-          auto.id === id ? { ...auto, ativo } : auto
-        )
-      );
-
       toast({
         title: ativo ? "Automação Ativada" : "Automação Desativada",
         description: `A automação foi ${ativo ? 'ativada' : 'desativada'} com sucesso.`,
       });
+
+      await waitForPropagation();
+      await fetchAutomacoes();
     } catch (error) {
       console.error('Erro ao atualizar automação:', error);
       toast({
@@ -195,11 +194,13 @@ export default function AutomacoesSection() {
 
       if (error) throw error;
 
-      await fetchAutomacoes();
       toast({
         title: "Automação Criada",
         description: "Automação de exemplo criada com sucesso! (Só funcionará após integração com WhatsApp)",
       });
+
+      await waitForPropagation();
+      await fetchAutomacoes();
     } catch (error) {
       console.error('Erro ao criar automação:', error);
       toast({
@@ -249,9 +250,11 @@ export default function AutomacoesSection() {
         });
       }
 
-      await fetchAutomacoes();
       setModalOpen(false);
       setSelectedAutomacao(undefined);
+      
+      await waitForPropagation();
+      await fetchAutomacoes();
     } catch (error) {
       console.error('Erro ao salvar automação:', error);
       toast({
@@ -311,12 +314,13 @@ export default function AutomacoesSection() {
 
       if (error) throw error;
 
-      setAutomacoes(prev => prev.filter(auto => auto.id !== id));
-
       toast({
         title: "Automação Excluída",
         description: "A automação foi excluída com sucesso.",
       });
+
+      await waitForPropagation();
+      await fetchAutomacoes();
     } catch (error) {
       console.error('Erro ao excluir automação:', error);
       toast({

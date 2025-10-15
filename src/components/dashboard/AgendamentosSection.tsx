@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Plus, Clock, User, Phone, Trash2, Edit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import NovoAgendamentoModal from "./NovoAgendamentoModal";
 import EditAgendamentoModal from "./EditAgendamentoModal";
 
@@ -30,17 +31,15 @@ export default function AgendamentosSection() {
   const [negociosDb, setNegociosDb] = useState<NegocioShort[]>([]);
   const { negocios, hasAccess, agendamentosDemo, removeAgendamentoDemo } = useAuth();
 
-  useEffect(() => {
-    fetchAgendamentos();
-    fetchNegocios();
-  }, []);
+  const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
 
-  const fetchAgendamentos = async () => {
+  const fetchAgendamentos = useCallback(async () => {
     try {
       // Ensure we have a valid session before making requests
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         console.warn('No valid session found for agendamentos');
+        setLoading(false);
         return;
       }
 
@@ -64,9 +63,9 @@ export default function AgendamentosSection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const fetchNegocios = async () => {
+  const fetchNegocios = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('negocios')
@@ -76,7 +75,15 @@ export default function AgendamentosSection() {
     } catch (error) {
       console.error('Erro ao buscar negócios:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchAgendamentos();
+    fetchNegocios();
+  }, [fetchAgendamentos, fetchNegocios]);
+
+  // Real-time sync
+  useRealtimeTable('agendamentos', fetchAgendamentos);
 
   const getNegocioNome = (negocioId: string) => {
     const nDb = negociosDb.find(n => n.id === negocioId);
@@ -125,13 +132,13 @@ export default function AgendamentosSection() {
             throw error;
           }
 
-          // Refresh the list
-          fetchAgendamentos();
-          
           toast({
             title: "Agendamento excluído",
             description: "O agendamento foi removido com sucesso.",
           });
+          
+          await waitForPropagation();
+          await fetchAgendamentos();
         } catch (error) {
           console.error('Error deleting appointment:', error);
           toast({

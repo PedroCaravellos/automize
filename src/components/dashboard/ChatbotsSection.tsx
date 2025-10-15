@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Plus } from "lucide-react";
@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserData } from "@/utils/userStorage";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import ChatbotWizard from "./ChatbotWizard";
 import ChatbotTable from "./ChatbotTable";
 import ChatbotEditModal from "./ChatbotEditModal";
@@ -115,54 +116,59 @@ const ChatbotsSection = () => {
   const [negociosDb, setNegociosDb] = useState<any[]>([]);
   const [chatbotsDb, setChatbotsDb] = useState<any[]>([]);
 
-  // Load negócios directly from database for consistency
-  useEffect(() => {
-    if (user) {
-      console.log('Carregando negócios...');
-      const fetchNegocios = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('negocios')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
+  // Helper function to wait for database propagation
+  const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
 
-          if (error) throw error;
-          setNegociosDb(data || []);
-          console.log('ChatbotsSection - Negócios carregados:', data?.length || 0);
-        } catch (error) {
-          console.error('Erro ao buscar negócios:', error);
-        }
-      };
-      
-      fetchNegocios();
+  // Load negócios directly from database for consistency
+  const fetchNegocios = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('negocios')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setNegociosDb(data || []);
+      console.log('ChatbotsSection - Negócios carregados:', data?.length || 0);
+    } catch (error) {
+      console.error('Erro ao buscar negócios:', error);
     }
   }, [user]);
 
   // Load chatbots from database
-  useEffect(() => {
-    if (user && negociosDb.length > 0) {
-      console.log('Carregando chatbots do banco...');
-      const fetchChatbots = async () => {
-        try {
-          const negocioIds = negociosDb.map(n => n.id);
-          const { data, error } = await supabase
-            .from('chatbots')
-            .select('*')
-            .in('negocio_id', negocioIds)
-            .order('created_at', { ascending: false });
+  const fetchChatbots = useCallback(async () => {
+    if (!user || negociosDb.length === 0) return;
 
-          if (error) throw error;
-          setChatbotsDb(data || []);
-          console.log('ChatbotsSection - Chatbots carregados:', data?.length || 0);
-        } catch (error) {
-          console.error('Erro ao buscar chatbots:', error);
-        }
-      };
-      
-      fetchChatbots();
+    try {
+      const negocioIds = negociosDb.map(n => n.id);
+      const { data, error } = await supabase
+        .from('chatbots')
+        .select('*')
+        .in('negocio_id', negocioIds)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setChatbotsDb(data || []);
+      console.log('ChatbotsSection - Chatbots carregados:', data?.length || 0);
+    } catch (error) {
+      console.error('Erro ao buscar chatbots:', error);
     }
   }, [user, negociosDb]);
+
+  useEffect(() => {
+    fetchNegocios();
+  }, [fetchNegocios]);
+
+  useEffect(() => {
+    fetchChatbots();
+  }, [fetchChatbots]);
+
+  // Real-time sync for negocios and chatbots
+  useRealtimeTable('negocios', fetchNegocios);
+  useRealtimeTable('chatbots', fetchChatbots);
 
   // Map database data to expected format for compatibility
   const negociosFormatted = negociosDb.map(n => ({
@@ -247,26 +253,16 @@ const handleToggleStatus = async (chatbotId: string) => {
       }
 
       // Atualizar estado local
-      const updated = toggleChatbotStatus(chatbotId);
-      if (!updated) return;
+      toggleChatbotStatus(chatbotId);
       
-      const negocio = negociosFormatted.find(n => n.id === updated.negocioId);
-      if (updated.status === "Ativo") {
-        toast({
-          title: "Chatbot ativado",
-          description: `O chatbot ${updated.nome} foi ativado com sucesso.`,
-        });
-      } else {
-        toast({
-          title: "Chatbot desativado",
-          description: `O chatbot ${updated.nome} foi desativado.`,
-        });
-      }
+      toast({
+        title: novoStatus === "Ativo" ? "Chatbot ativado" : "Chatbot desativado",
+        description: `O chatbot foi ${novoStatus === "Ativo" ? 'ativado' : 'desativado'} com sucesso.`,
+      });
 
-      // Recarregar chatbots
-      setChatbotsDb(prev => prev.map(c => 
-        c.id === chatbotId ? { ...c, status: novoStatus, ativo: novoStatus === "Ativo" } : c
-      ));
+      // Recarregar lista completa
+      await waitForPropagation();
+      await fetchChatbots();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
     }
@@ -291,16 +287,16 @@ const handleToggleStatus = async (chatbotId: string) => {
       }
 
       // Remover do estado local
-      const removed = deleteChatbot(chatbotId);
-      if (!removed) return;
+      deleteChatbot(chatbotId);
       
       toast({
         title: "Chatbot removido",
         description: "O chatbot foi removido com sucesso.",
       });
 
-      // Remover do estado local da página
-      setChatbotsDb(prev => prev.filter(c => c.id !== chatbotId));
+      // Recarregar lista completa
+      await waitForPropagation();
+      await fetchChatbots();
     } catch (error) {
       console.error('Erro ao deletar chatbot:', error);
     }
@@ -354,9 +350,8 @@ const handleSaveChatbot = async (dadosChatbot: {
         return;
       }
 
-      // Agora atualizar o estado local
-      const created = createChatbot(dadosChatbot);
-      if (!created) return;
+      // Atualizar estado local
+      createChatbot(dadosChatbot);
       
       toast({
         title: "Chatbot criado",
@@ -364,10 +359,9 @@ const handleSaveChatbot = async (dadosChatbot: {
       });
       setIsWizardOpen(false);
 
-      // Recarregar a lista de chatbots do banco
-      if (data) {
-        setChatbotsDb(prev => [...prev, data]);
-      }
+      // Recarregar lista completa
+      await waitForPropagation();
+      await fetchChatbots();
     } catch (error) {
       console.error('Erro ao criar chatbot:', error);
       toast({
@@ -399,21 +393,19 @@ const handleUpdateChatbot = async (mensagens: Chatbot["mensagens"]) => {
       }
 
       // Atualizar estado local
-      const updated = updateChatbotMessages(editingChatbot.id, mensagens);
-      if (updated) {
-        toast({
-          title: "Chatbot atualizado",
-          description: "As mensagens foram atualizadas com sucesso.",
-        });
-      }
+      updateChatbotMessages(editingChatbot.id, mensagens);
+      
+      toast({
+        title: "Chatbot atualizado",
+        description: "As mensagens foram atualizadas com sucesso.",
+      });
       
       setIsEditModalOpen(false);
       setEditingChatbot(null);
 
-      // Atualizar lista local
-      setChatbotsDb(prev => prev.map(c => 
-        c.id === editingChatbot.id ? { ...c, mensagens } : c
-      ));
+      // Recarregar lista completa
+      await waitForPropagation();
+      await fetchChatbots();
     } catch (error) {
       console.error('Erro ao atualizar chatbot:', error);
     }

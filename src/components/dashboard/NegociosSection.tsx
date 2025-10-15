@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import NegocioTable from "./NegocioTable";
 import NegocioModal from "./NegocioModal";
 import ActionBlockModal from "./ActionBlockModal";
@@ -71,7 +72,9 @@ const NegociosSection = () => {
     user_id: user?.id
   });
 
-  const fetchNegocios = async () => {
+  const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
+
+  const fetchNegocios = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -91,11 +94,14 @@ const NegociosSection = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [user, toast]);
 
   useEffect(() => {
     fetchNegocios();
-  }, [user]);
+  }, [fetchNegocios]);
+
+  // Real-time sync
+  useRealtimeTable('negocios', fetchNegocios);
 
   const handleAddNegocio = () => {
     if (!hasAccess()) {
@@ -145,6 +151,8 @@ const NegociosSection = () => {
 
       setIsModalOpen(false);
       setEditingNegocio(undefined);
+      
+      await waitForPropagation();
       await fetchNegocios();
       await syncNegociosFromDB(); // Sync with global context
     } catch (error) {
@@ -171,6 +179,7 @@ const NegociosSection = () => {
         description: "Negócio removido com sucesso!",
       });
 
+      await waitForPropagation();
       await fetchNegocios();
       await syncNegociosFromDB(); // Sync with global context
     } catch (error) {

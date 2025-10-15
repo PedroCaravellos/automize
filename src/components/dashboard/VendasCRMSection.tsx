@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { DollarSign, Plus, Users, TrendingUp, Target, Trash2, Edit } from "lucid
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import ActionBlockModal from "./ActionBlockModal";
 import NovoLeadModal from "./NovoLeadModal";
 import EditLeadModal from "./EditLeadModal";
@@ -55,38 +56,9 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const { negocios, hasAccess } = useAuth();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
 
-  // Listen for refresh requests and lead updates
-  useEffect(() => {
-    if (onRefreshRequest) {
-      window.addEventListener('refreshDashboardData', fetchData);
-      return () => window.removeEventListener('refreshDashboardData', fetchData);
-    }
-  }, [onRefreshRequest]);
-
-  // Auto-refresh when component becomes visible (to catch leads from chatbot)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchData();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Also refresh every 30 seconds to catch new leads from chatbot
-    const interval = setInterval(fetchData, 30000);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearInterval(interval);
-    };
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       // Ensure we have a valid session before making requests
       const { data: { session } } = await supabase.auth.getSession();
@@ -146,7 +118,15 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Real-time sync for leads and vendas
+  useRealtimeTable('leads', fetchData);
+  useRealtimeTable('vendas', fetchData);
 
   const handleAddLead = () => {
     if (!hasAccess()) {
@@ -176,13 +156,13 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         throw error;
       }
 
-      // Remove o lead da lista local
-      setLeads(prev => prev.filter(lead => lead.id !== leadId));
-      
       toast({
         title: "Lead deletado",
         description: "O lead foi removido com sucesso.",
       });
+
+      await waitForPropagation();
+      await fetchData();
     } catch (error) {
       console.error('Erro ao deletar lead:', error);
       toast({
