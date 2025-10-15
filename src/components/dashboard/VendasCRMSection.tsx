@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
@@ -16,6 +17,7 @@ import ActionBlockModal from "./ActionBlockModal";
 import NovoLeadModal from "./NovoLeadModal";
 import EditLeadModal from "./EditLeadModal";
 import SalesPipelineKanban from "./SalesPipelineKanban";
+import AccessGate from "./AccessGate";
 
 export interface Lead {
   id: string;
@@ -57,6 +59,7 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
   const [negociosDb, setNegociosDb] = useState<NegocioRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isEditLeadModalOpen, setIsEditLeadModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -148,15 +151,17 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
       return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este lead?')) {
-      return;
-    }
+    setDeleteLeadId(leadId);
+  };
+
+  const confirmDeleteLead = async () => {
+    if (!deleteLeadId) return;
 
     try {
       const { error } = await supabase
         .from('leads')
         .delete()
-        .eq('id', leadId);
+        .eq('id', deleteLeadId);
 
       if (error) {
         throw error;
@@ -176,8 +181,9 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         description: "Não foi possível deletar o lead.",
         variant: "destructive",
       });
+    } finally {
+      setDeleteLeadId(null);
     }
-  };
 
   const handleEditLead = (lead: Lead) => {
     if (!hasAccess()) {
@@ -471,6 +477,20 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         lead={editingLead}
         onLeadUpdated={fetchData}
       />
+
+      <ConfirmationDialog
+        open={deleteLeadId !== null}
+        onOpenChange={(open) => !open && setDeleteLeadId(null)}
+        title="Excluir Lead"
+        description="Tem certeza que deseja excluir este lead? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={confirmDeleteLead}
+        variant="destructive"
+        icon={Trash2}
+      />
+
+      <AccessGate isOpen={isBlockModalOpen} onClose={() => setIsBlockModalOpen(false)} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -16,9 +16,11 @@ import 'reactflow/dist/style.css';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Clock, GitBranch, Webhook, UserPlus, Plus, Trash2, Edit2, Save } from 'lucide-react';
+import { MessageSquare, Clock, GitBranch, Webhook, UserPlus, Plus, Trash2, Edit2, Save, Undo2, Redo2 } from 'lucide-react';
 import BlockEditModal from './BlockEditModal';
 import { toast } from '@/hooks/use-toast';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 interface AutomationFlowBuilderProps {
   automacao?: any;
@@ -390,13 +392,35 @@ export default function AutomationFlowBuilder({ automacao, initialBlocks, onSave
         </ReactFlow>
       </Card>
 
-      {/* Botões de ação */}
-      <div className="flex justify-end gap-3">
-        <Button variant="outline" size="lg">Cancelar</Button>
-        <Button onClick={handleSave} size="lg" className="flex items-center gap-2">
-          <Save className="h-4 w-4" />
-          Salvar Automação
-        </Button>
+      {/* Botões de ação com Undo/Redo */}
+      <div className="flex justify-between gap-3">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="lg"
+            disabled
+            className="flex items-center gap-2"
+          >
+            <Undo2 className="h-4 w-4" />
+            Desfazer
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            disabled
+            className="flex items-center gap-2"
+          >
+            <Redo2 className="h-4 w-4" />
+            Refazer
+          </Button>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" size="lg">Cancelar</Button>
+          <Button onClick={handleSave} size="lg" className="flex items-center gap-2 hover-scale">
+            <Save className="h-4 w-4" />
+            Salvar Automação
+          </Button>
+        </div>
       </div>
 
       {/* Legenda melhorada */}
