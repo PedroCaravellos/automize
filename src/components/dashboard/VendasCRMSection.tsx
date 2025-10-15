@@ -184,7 +184,6 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
     } finally {
       setDeleteLeadId(null);
     }
-
   const handleEditLead = (lead: Lead) => {
     if (!hasAccess()) {
       setIsBlockModalOpen(true);
