@@ -261,6 +261,105 @@ export type Database = {
           },
         ]
       }
+      chatbot_conversations: {
+        Row: {
+          chatbot_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          lead_captured: boolean
+          lead_id: string | null
+          negocio_id: string
+          sentiment_score: number | null
+          started_at: string
+          total_messages: number
+          updated_at: string
+        }
+        Insert: {
+          chatbot_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          lead_captured?: boolean
+          lead_id?: string | null
+          negocio_id: string
+          sentiment_score?: number | null
+          started_at?: string
+          total_messages?: number
+          updated_at?: string
+        }
+        Update: {
+          chatbot_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          lead_captured?: boolean
+          lead_id?: string | null
+          negocio_id?: string
+          sentiment_score?: number | null
+          started_at?: string
+          total_messages?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_conversations_chatbot_id_fkey"
+            columns: ["chatbot_id"]
+            isOneToOne: false
+            referencedRelation: "chatbots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chatbot_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chatbot_conversations_negocio_id_fkey"
+            columns: ["negocio_id"]
+            isOneToOne: false
+            referencedRelation: "negocios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chatbot_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message: string
+          sender: string
+          timestamp: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message: string
+          sender: string
+          timestamp?: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          sender?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chatbots: {
         Row: {
           ativo: boolean | null

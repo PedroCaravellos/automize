@@ -46,6 +46,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [useAI, setUseAI] = useState(true);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -67,20 +68,56 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
       .replace(/\{\{HOJE\}\}/g, today);
   };
 
-  const initializeConversation = () => {
+  const initializeConversation = async () => {
     console.log('initializeConversation called');
-    if (!chatbot) return;
+    if (!chatbot || !negocio) return;
     
-    const welcomeMessage: Message = {
-      id: Date.now().toString(),
-      text: replaceVariables(chatbot.mensagens.boasVindas),
-      sender: "bot",
-      timestamp: new Date(),
-    };
-    
-    setMessages([welcomeMessage]);
-    setConversationEnded(false);
-    setInputValue("");
+    // Create conversation record
+    try {
+      const { data: conversation, error } = await supabase
+        .from("chatbot_conversations")
+        .insert({
+          chatbot_id: chatbot.id,
+          negocio_id: negocio.id,
+          started_at: new Date().toISOString(),
+          total_messages: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setConversationId(conversation.id);
+
+      const welcomeMessage: Message = {
+        id: Date.now().toString(),
+        text: replaceVariables(chatbot.mensagens.boasVindas),
+        sender: "bot",
+        timestamp: new Date(),
+      };
+
+      // Save bot message
+      await supabase.from("chatbot_messages").insert({
+        conversation_id: conversation.id,
+        sender: "bot",
+        message: welcomeMessage.text,
+      });
+
+      setMessages([welcomeMessage]);
+      setConversationEnded(false);
+      setInputValue("");
+    } catch (error) {
+      console.error("Error initializing conversation:", error);
+      // Continue without saving if error occurs
+      const welcomeMessage: Message = {
+        id: Date.now().toString(),
+        text: replaceVariables(chatbot.mensagens.boasVindas),
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
+      setConversationEnded(false);
+      setInputValue("");
+    }
   };
 
   const findBestFaqMatch = (userMessage: string) => {
@@ -118,6 +155,25 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
       sender: "user",
       timestamp: new Date(),
     };
+
+    // Save user message
+    if (conversationId) {
+      try {
+        await supabase.from("chatbot_messages").insert({
+          conversation_id: conversationId,
+          sender: "user",
+          message: userMessage.text,
+        });
+
+        // Update message count
+        await supabase
+          .from("chatbot_conversations")
+          .update({ total_messages: messages.length + 1 })
+          .eq("id", conversationId);
+      } catch (error) {
+        console.error("Error saving user message:", error);
+      }
+    }
 
     setMessages(prev => [...prev, userMessage]);
     const currentInput = inputValue.trim();
@@ -215,13 +271,40 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
           }
         }
         
-        setTimeout(() => {
+        setTimeout(async () => {
           const botMessage: Message = {
             id: (Date.now() + 1).toString(),
             text: botResponse,
             sender: "bot",
             timestamp: new Date(),
           };
+
+          // Save bot message
+          if (conversationId) {
+            try {
+              await supabase.from("chatbot_messages").insert({
+                conversation_id: conversationId,
+                sender: "bot",
+                message: botMessage.text,
+              });
+
+              // Update message count
+              await supabase
+                .from("chatbot_conversations")
+                .update({ total_messages: messages.length + 2 })
+                .eq("id", conversationId);
+
+              // Mark lead captured if lead was saved
+              if (data?.lead_saved) {
+                await supabase
+                  .from("chatbot_conversations")
+                  .update({ lead_captured: true })
+                  .eq("id", conversationId);
+              }
+            } catch (error) {
+              console.error("Error saving bot message:", error);
+            }
+          }
           
           setMessages(prev => [...prev, botMessage]);
           setIsTyping(false);
@@ -290,7 +373,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
     }
   };
 
-  const handleEndConversation = () => {
+  const handleEndConversation = async () => {
     if (!chatbot || conversationEnded) return;
 
     const endMessage: Message = {
@@ -299,6 +382,27 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
       sender: "bot",
       timestamp: new Date(),
     };
+
+    // Save end message and update conversation
+    if (conversationId) {
+      try {
+        await supabase.from("chatbot_messages").insert({
+          conversation_id: conversationId,
+          sender: "bot",
+          message: endMessage.text,
+        });
+
+        await supabase
+          .from("chatbot_conversations")
+          .update({
+            ended_at: new Date().toISOString(),
+            total_messages: messages.length + 1,
+          })
+          .eq("id", conversationId);
+      } catch (error) {
+        console.error("Error ending conversation:", error);
+      }
+    }
     
     setMessages(prev => [...prev, endMessage]);
     setConversationEnded(true);

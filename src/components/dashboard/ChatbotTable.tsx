@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Edit2, Trash2, Bot, Play, Pause, MessageSquare } from "lucide-react";
+import { Edit2, Trash2, Bot, Play, Pause, MessageSquare, BarChart3 } from "lucide-react";
 import { Chatbot } from "./ChatbotsSection";
 import { NegocioItem } from "@/contexts/AuthContext";
 import ChatbotSimulator from "./ChatbotSimulator";
@@ -31,9 +31,10 @@ interface ChatbotTableProps {
   onToggleStatus: (id: string) => void;
   onDelete: (id: string) => void;
   onTest: (chatbot: Chatbot) => void;
+  onViewAnalytics?: (chatbotId: string) => void;
 }
 
-const ChatbotTable = ({ chatbots, negocios, onEdit, onToggleStatus, onDelete, onTest }: ChatbotTableProps) => {
+const ChatbotTable = ({ chatbots, negocios, onEdit, onToggleStatus, onDelete, onTest, onViewAnalytics }: ChatbotTableProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null);
@@ -113,6 +114,18 @@ const ChatbotTable = ({ chatbots, negocios, onEdit, onToggleStatus, onDelete, on
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    {onViewAnalytics && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewAnalytics(chatbot.id)}
+                        aria-label={`Ver analytics ${chatbot.nome}`}
+                        className="text-purple-600 hover:text-purple-600"
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    
                     <Button
                       variant="ghost"
                       size="sm"

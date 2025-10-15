@@ -13,6 +13,8 @@ import ChatbotWizard from "./ChatbotWizard";
 import ChatbotTable from "./ChatbotTable";
 import ChatbotEditModal from "./ChatbotEditModal";
 import ActionBlockModal from "./ActionBlockModal";
+import { ChatbotAnalytics } from "./ChatbotAnalytics";
+import { ConversationHistory } from "./ConversationHistory";
 import { NegocioItem } from "@/contexts/AuthContext";
 
 export interface ChatbotTemplate {
@@ -114,6 +116,7 @@ const ChatbotsSection = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingChatbot, setEditingChatbot] = useState<Chatbot | null>(null);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [selectedChatbotForAnalytics, setSelectedChatbotForAnalytics] = useState<string | null>(null);
 
   const [negociosDb, setNegociosDb] = useState<any[]>([]);
   const [chatbotsDb, setChatbotsDb] = useState<any[]>([]);
@@ -464,9 +467,25 @@ const handleUpdateChatbot = async (mensagens: Chatbot["mensagens"]) => {
               onToggleStatus={handleToggleStatus}
               onDelete={handleDeleteChatbot}
               onTest={handleTestChatbot}
+              onViewAnalytics={setSelectedChatbotForAnalytics}
             />
         </CardContent>
       </Card>
+
+      {selectedChatbotForAnalytics && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">
+              Analytics - {chatbotsList.find(c => c.id === selectedChatbotForAnalytics)?.nome}
+            </h2>
+            <Button variant="outline" onClick={() => setSelectedChatbotForAnalytics(null)}>
+              Voltar
+            </Button>
+          </div>
+          <ChatbotAnalytics chatbotId={selectedChatbotForAnalytics} />
+          <ConversationHistory chatbotId={selectedChatbotForAnalytics} />
+        </div>
+      )}
 
       <ChatbotWizard
         open={isWizardOpen}
