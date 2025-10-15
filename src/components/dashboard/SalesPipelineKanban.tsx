@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -75,15 +76,25 @@ export default function SalesPipelineKanban({
     }
 
     const leadId = active.id as string;
-    const newStage = over.id as string;
-    
-    // Validar que newStage é um estágio válido
-    const validStage = PIPELINE_STAGES.find(s => s.id === newStage);
+    const overId = over.id as string;
+
+    // Determinar o estágio alvo:
+    // - Se o over é uma coluna (id de estágio), usamos diretamente
+    // - Se o over é outro lead, usamos o pipeline_stage desse lead como destino
+    let targetStageId: string | undefined = PIPELINE_STAGES.find(s => s.id === overId)?.id;
+    if (!targetStageId) {
+      const overLead = leads.find((l) => l.id === overId);
+      targetStageId = overLead?.pipeline_stage;
+    }
+
+    const validStage = targetStageId ? PIPELINE_STAGES.find(s => s.id === targetStageId) : undefined;
     if (!validStage) {
-      console.error('Estágio inválido:', newStage);
+      console.error('Estágio inválido como alvo de drop:', overId);
       setActiveId(null);
       return;
     }
+
+    const newStage = validStage.id as Lead['pipeline_stage'];
 
     const lead = leads.find((l) => l.id === leadId);
     if (!lead || lead.pipeline_stage === newStage) {
@@ -155,17 +166,19 @@ export default function SalesPipelineKanban({
                     </p>
                   )}
                 </CardHeader>
-                <CardContent className="space-y-2 min-h-[200px]">
-                  {stageLeads.map((lead, index) => (
-                    <SortableLeadCard
-                      key={lead.id}
-                      lead={lead}
-                      index={index}
-                      onEdit={onEditLead}
-                      formatCurrency={formatCurrency}
-                    />
-                  ))}
-                </CardContent>
+                <ColumnDroppable id={stage.id}>
+                  <CardContent className="space-y-2 min-h-[200px]">
+                    {stageLeads.map((lead, index) => (
+                      <SortableLeadCard
+                        key={lead.id}
+                        lead={lead}
+                        index={index}
+                        onEdit={onEditLead}
+                        formatCurrency={formatCurrency}
+                      />
+                    ))}
+                  </CardContent>
+                </ColumnDroppable>
               </Card>
             </SortableContext>
           );
@@ -222,4 +235,9 @@ function LeadCardPreview({
       </div>
     </div>
   );
+}
+
+function ColumnDroppable({ id, children }: { id: string; children: any }) {
+  const { setNodeRef } = useDroppable({ id });
+  return <div ref={setNodeRef}>{children}</div>;
 }
