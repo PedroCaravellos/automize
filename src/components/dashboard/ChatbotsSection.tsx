@@ -279,7 +279,41 @@ const handleToggleStatus = async (chatbotId: string) => {
 
   const handleDeleteChatbot = async (chatbotId: string) => {
     try {
-      // Deletar do banco primeiro
+      // Primeiro, deletar todas as mensagens das conversas deste chatbot
+      const { data: conversations, error: convError } = await supabase
+        .from('chatbot_conversations')
+        .select('id')
+        .eq('chatbot_id', chatbotId);
+
+      if (convError) {
+        console.error('Erro ao buscar conversas:', convError);
+      }
+
+      if (conversations && conversations.length > 0) {
+        const conversationIds = conversations.map(c => c.id);
+        
+        // Deletar mensagens
+        const { error: messagesError } = await supabase
+          .from('chatbot_messages')
+          .delete()
+          .in('conversation_id', conversationIds);
+
+        if (messagesError) {
+          console.error('Erro ao deletar mensagens:', messagesError);
+        }
+
+        // Deletar conversas
+        const { error: deleteConvError } = await supabase
+          .from('chatbot_conversations')
+          .delete()
+          .eq('chatbot_id', chatbotId);
+
+        if (deleteConvError) {
+          console.error('Erro ao deletar conversas:', deleteConvError);
+        }
+      }
+
+      // Agora deletar o chatbot
       const { error } = await supabase
         .from('chatbots')
         .delete()
