@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Calendar, BarChart3, Building, Bot, Zap, Settings, HelpCircle, Users, DollarSign, Workflow } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import {
   Sidebar,
@@ -56,19 +57,38 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupLabel>Automiza</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    onClick={() => handleTabClick(item.tab)}
-                    className={getNavCls(item.tab)}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>{item.title}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <TooltipProvider>
+              <SidebarMenu>
+                {items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    {collapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton 
+                            onClick={() => handleTabClick(item.tab)}
+                            className={getNavCls(item.tab)}
+                            aria-label={item.title}
+                          >
+                            <item.icon className="h-4 w-4" />
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>{item.title}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <SidebarMenuButton 
+                        onClick={() => handleTabClick(item.tab)}
+                        className={getNavCls(item.tab)}
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    )}
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </TooltipProvider>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

@@ -30,6 +30,7 @@ interface MetricCardProps {
   change?: number;
   icon: React.ReactNode;
   trend?: "up" | "down" | "neutral";
+  onClick?: () => void;
 }
 
 interface ActivityItem {
@@ -47,7 +48,7 @@ interface PerformanceData {
   agendamentos: number;
 }
 
-function MetricCard({ title, value, change, icon, trend = "neutral" }: MetricCardProps) {
+function MetricCard({ title, value, change, icon, trend = "neutral", onClick }: MetricCardProps) {
   const getTrendColor = () => {
     if (trend === "up") return "text-green-600";
     if (trend === "down") return "text-red-600";
@@ -61,14 +62,26 @@ function MetricCard({ title, value, change, icon, trend = "neutral" }: MetricCar
   };
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card 
+      className={`relative overflow-hidden transition-all ${onClick ? 'cursor-pointer hover:scale-105 hover:shadow-lg' : ''}`}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      tabIndex={onClick ? 0 : undefined}
+      role={onClick ? "button" : undefined}
+      aria-label={onClick ? `Ver detalhes de ${title}` : undefined}
+    >
       <div className="absolute inset-0 bg-gradient-card opacity-50" />
       <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         {icon}
       </CardHeader>
       <CardContent className="relative">
-        <div className="text-3xl font-bold">{value}</div>
+        <div className="text-2xl md:text-3xl font-bold">{value}</div>
         {change !== undefined && (
           <p className={`text-xs flex items-center gap-1 mt-1 ${getTrendColor()}`}>
             {getTrendIcon()}
@@ -94,6 +107,15 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
   });
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [visibleSeries, setVisibleSeries] = useState({
+    leads: true,
+    vendas: true,
+    agendamentos: true,
+  });
+
+  const toggleSeries = (series: keyof typeof visibleSeries) => {
+    setVisibleSeries(prev => ({ ...prev, [series]: !prev[series] }));
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -385,6 +407,7 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
           change={metrics.leadsChange}
           trend={metrics.leadsChange > 0 ? "up" : metrics.leadsChange < 0 ? "down" : "neutral"}
           icon={<Users className="h-5 w-5 text-blue-500" />}
+          onClick={() => onNavigateTo("vendas")}
         />
         <MetricCard
           title="Vendas"
@@ -392,6 +415,7 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
           change={metrics.vendasChange}
           trend={metrics.vendasChange > 0 ? "up" : metrics.vendasChange < 0 ? "down" : "neutral"}
           icon={<DollarSign className="h-5 w-5 text-green-500" />}
+          onClick={() => onNavigateTo("vendas")}
         />
         <MetricCard
           title="Agendamentos"
@@ -399,11 +423,13 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
           change={metrics.agendamentosChange}
           trend={metrics.agendamentosChange > 0 ? "up" : metrics.agendamentosChange < 0 ? "down" : "neutral"}
           icon={<Calendar className="h-5 w-5 text-purple-500" />}
+          onClick={() => onNavigateTo("agendamentos")}
         />
         <MetricCard
           title="Chatbots Ativos"
           value={metrics.chatbotsAtivos}
           icon={<Bot className="h-5 w-5 text-primary" />}
+          onClick={() => onNavigateTo("chatbots")}
         />
       </div>
 
@@ -419,6 +445,37 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
             <CardDescription>Evolução de leads, vendas e agendamentos</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Controles de Legenda Interativa */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Button
+                variant={visibleSeries.leads ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleSeries("leads")}
+                aria-pressed={visibleSeries.leads}
+                aria-label="Toggle leads visibility"
+              >
+                Leads
+              </Button>
+              <Button
+                variant={visibleSeries.vendas ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleSeries("vendas")}
+                aria-pressed={visibleSeries.vendas}
+                aria-label="Toggle vendas visibility"
+              >
+                Vendas
+              </Button>
+              <Button
+                variant={visibleSeries.agendamentos ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleSeries("agendamentos")}
+                aria-pressed={visibleSeries.agendamentos}
+                aria-label="Toggle agendamentos visibility"
+              >
+                Agendamentos
+              </Button>
+            </div>
+
             <ChartContainer
               config={{
                 leads: {
@@ -448,30 +505,36 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
                     fontSize={12}
                   />
                   <Tooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="leads"
-                    stroke="hsl(var(--chart-1))"
-                    fill="hsl(var(--chart-1))"
-                    fillOpacity={0.2}
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="vendas"
-                    stroke="hsl(var(--chart-2))"
-                    fill="hsl(var(--chart-2))"
-                    fillOpacity={0.2}
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="agendamentos"
-                    stroke="hsl(var(--chart-3))"
-                    fill="hsl(var(--chart-3))"
-                    fillOpacity={0.2}
-                    strokeWidth={2}
-                  />
+                  {visibleSeries.leads && (
+                    <Area
+                      type="monotone"
+                      dataKey="leads"
+                      stroke="hsl(var(--chart-1))"
+                      fill="hsl(var(--chart-1))"
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                    />
+                  )}
+                  {visibleSeries.vendas && (
+                    <Area
+                      type="monotone"
+                      dataKey="vendas"
+                      stroke="hsl(var(--chart-2))"
+                      fill="hsl(var(--chart-2))"
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                    />
+                  )}
+                  {visibleSeries.agendamentos && (
+                    <Area
+                      type="monotone"
+                      dataKey="agendamentos"
+                      stroke="hsl(var(--chart-3))"
+                      fill="hsl(var(--chart-3))"
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                    />
+                  )}
                 </AreaChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -497,7 +560,41 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
                 recentActivity.map((activity) => (
                   <div
                     key={activity.id}
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors border border-border/50"
+                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors border border-border/50 cursor-pointer"
+                    onClick={() => {
+                      switch(activity.type) {
+                        case "lead":
+                        case "venda":
+                          onNavigateTo("vendas");
+                          break;
+                        case "agendamento":
+                          onNavigateTo("agendamentos");
+                          break;
+                        case "chatbot":
+                          onNavigateTo("chatbots");
+                          break;
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        switch(activity.type) {
+                          case "lead":
+                          case "venda":
+                            onNavigateTo("vendas");
+                            break;
+                          case "agendamento":
+                            onNavigateTo("agendamentos");
+                            break;
+                          case "chatbot":
+                            onNavigateTo("chatbots");
+                            break;
+                        }
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Ver detalhes de ${activity.title}`}
                   >
                     <div className="flex-shrink-0 mt-0.5">
                       {getActivityIcon(activity.type)}
