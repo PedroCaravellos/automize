@@ -13,6 +13,7 @@ import VendasCRMSection from "./VendasCRMSection";
 import AnalyticsSection from "./AnalyticsSection";
 import AutomacoesSection from "./AutomacoesSection";
 import OnboardingChecklist from "./OnboardingChecklist";
+import OverviewSection from "./OverviewSection";
 import ChatbotSimulator from "./ChatbotSimulator";
 import SimulatorShareModal from "./SimulatorShareModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -152,137 +153,8 @@ const DashboardTabs = ({ activeTab, onTabChange }: DashboardTabsProps) => {
               onOpenShareDemo={handleOpenShareDemo}
             />
 
-            {/* KPIs Overview */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-card opacity-50" />
-                <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Chatbots Ativos</CardTitle>
-                  <Bot className="h-5 w-5 text-primary" />
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-3xl font-bold">{chatbots.filter(c => c.status === 'Ativo').length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {chatbots.length === 0 ? "Nenhum chatbot criado ainda" : `${chatbots.length} total criados`}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-card opacity-50" />
-                <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Negócios</CardTitle>
-                  <Building className="h-5 w-5 text-secondary" />
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-3xl font-bold">{negociosCount}</div>
-                  <p className="text-xs text-muted-foreground">Negócios cadastrados</p>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-card opacity-50" />
-                <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Automação</CardTitle>
-                  <Zap className="h-5 w-5 text-accent-foreground" />
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-3xl font-bold">24/7</div>
-                  <p className="text-xs text-muted-foreground">Atendimento automatizado</p>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-card opacity-50" />
-                <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
-                  <div className="h-2 w-2 bg-secondary rounded-full animate-pulse" />
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-3xl font-bold text-secondary">Online</div>
-                  <p className="text-xs text-muted-foreground">Sistema operacional</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Ações rápidas */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card className="relative overflow-hidden shadow-card">
-                <div className="absolute inset-0 bg-gradient-hero opacity-10" />
-                <CardHeader className="relative">
-                  <CardTitle className="flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-primary" />
-                    Criar Primeiro Chatbot
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="relative">
-                  <p className="text-muted-foreground mb-6">Configure seu primeiro chatbot personalizado em minutos e comece a automatizar seu atendimento.</p>
-                  <Button 
-                    onClick={() => onTabChange("chatbots")} 
-                    className="w-full shadow-button"
-                    size="lg"
-                  > 
-                    <Plus className="mr-2 h-4 w-4" />
-                    Criar Agora
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="relative overflow-hidden shadow-card">
-                <div className="absolute inset-0 bg-gradient-accent opacity-30" />
-                <CardHeader className="relative">
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-secondary" />
-                    Conectar WhatsApp
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="relative">
-                  <p className="text-muted-foreground mb-6">Integre seu chatbot com WhatsApp Business e alcance seus clientes onde eles estão.</p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => onTabChange("integracoes")}
-                    className="w-full border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground"
-                    size="lg"
-                  >
-                    <Zap className="mr-2 h-4 w-4" />
-                    Configurar Integração
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Atividade recente */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
-                  Atividade Recente
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {activity.length > 0 ? (
-                  <div className="space-y-3">
-                    {activity.slice(0, 5).map((item) => (
-                      <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg bg-gradient-accent">
-                        <div className="h-2 w-2 bg-primary rounded-full" />
-                        <div className="flex-1">
-                          <span className="text-sm">{item.text}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(item.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Activity className="mx-auto h-16 w-16 text-muted-foreground opacity-50" />
-                    <p className="mt-4 text-muted-foreground">Nenhuma atividade registrada</p>
-                    <p className="text-sm text-muted-foreground">Crie seu primeiro chatbot para começar a ver a atividade aqui</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Overview Section Completo */}
+            <OverviewSection onNavigateTo={onTabChange} />
           </div>
         </TabsContent>
 
