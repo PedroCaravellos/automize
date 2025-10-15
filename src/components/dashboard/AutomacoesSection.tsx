@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -336,32 +338,10 @@ export default function AutomacoesSection() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-40" />
-            <Skeleton className="h-10 w-40" />
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonMetricCard key={i} />
-          ))}
-        </div>
-
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-48" />
-          </CardHeader>
-          <CardContent>
-            <SkeletonList items={3} />
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <SkeletonCard key={i} lines={4} />
+        ))}
       </div>
     );
   }
@@ -454,23 +434,15 @@ export default function AutomacoesSection() {
             </CardHeader>
             <CardContent>
           {automacoes.length === 0 ? (
-              <div className="text-center py-8">
-                <Workflow className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-2 text-sm font-semibold">Nenhuma automação configurada</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Crie sua primeira automação para testar o construtor visual de fluxos.
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  (As automações só funcionarão após integração com WhatsApp Business)
-                </p>
-                <Button 
-                  className="mt-4" 
-                  onClick={criarAutomacaoExemplo}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Criar Automação de Exemplo
-                </Button>
-              </div>
+            <EmptyState
+              icon={Workflow}
+              title="Nenhuma automação criada"
+              description="Automatize tarefas repetitivas e economize tempo. Crie fluxos inteligentes que trabalham para você 24/7."
+              actionLabel="Criar Automação"
+              onAction={() => setModalOpen(true)}
+              secondaryActionLabel="Criar Exemplo"
+              onSecondaryAction={criarAutomacaoExemplo}
+            />
           ) : (
             <div className="space-y-4">
               {automacoes.map((automacao) => {
