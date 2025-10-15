@@ -45,7 +45,7 @@ export default function SalesPipelineKanban({
   formatCurrency,
 }: SalesPipelineKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [optimisticLeads, setOptimisticLeads] = useState(leads);
+  const [isDragging, setIsDragging] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -56,15 +56,18 @@ export default function SalesPipelineKanban({
   );
 
   const activeLead = activeId
-    ? optimisticLeads.find((lead) => lead.id === activeId)
+    ? leads.find((lead) => lead.id === activeId)
     : null;
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    setIsDragging(true);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    
+    setIsDragging(false);
 
     if (!over) {
       setActiveId(null);
@@ -80,12 +83,6 @@ export default function SalesPipelineKanban({
       return;
     }
 
-    // Optimistic update
-    const updatedLeads = optimisticLeads.map((l) =>
-      l.id === leadId ? { ...l, pipeline_stage: newStage } : l
-    );
-    setOptimisticLeads(updatedLeads);
-
     try {
       const { error } = await supabase
         .from('leads')
@@ -98,27 +95,21 @@ export default function SalesPipelineKanban({
         description: `${lead.nome} movido para ${PIPELINE_STAGES.find(s => s.id === newStage)?.label}`,
       });
 
-      onLeadUpdate();
+      // Atualizar dados após sucesso
+      await onLeadUpdate();
     } catch (error) {
       console.error('Erro ao atualizar lead:', error);
       toast.error("Erro ao atualizar lead", {
         description: "Tente novamente mais tarde.",
       });
-      // Rollback optimistic update
-      setOptimisticLeads(leads);
     } finally {
       setActiveId(null);
     }
   };
 
   const getLeadsByStage = (stage: string) => {
-    return optimisticLeads.filter((lead) => lead.pipeline_stage === stage);
+    return leads.filter((lead) => lead.pipeline_stage === stage);
   };
-
-  // Sync with external leads changes
-  if (leads !== optimisticLeads && !activeId) {
-    setOptimisticLeads(leads);
-  }
 
   return (
     <DndContext
@@ -142,7 +133,7 @@ export default function SalesPipelineKanban({
               items={stageLeads.map((lead) => lead.id)}
               strategy={verticalListSortingStrategy}
             >
-              <Card className={`${stage.color} border-2 transition-colors duration-200`}>
+              <Card className={`${stage.color} border-2 transition-all duration-200 ${isDragging ? 'ring-2 ring-primary/20' : ''}`}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center justify-between">
                     <span>{stage.label}</span>
@@ -157,17 +148,15 @@ export default function SalesPipelineKanban({
                   )}
                 </CardHeader>
                 <CardContent className="space-y-2 min-h-[200px]">
-                  <AnimatePresence>
-                    {stageLeads.map((lead, index) => (
-                      <SortableLeadCard
-                        key={lead.id}
-                        lead={lead}
-                        index={index}
-                        onEdit={onEditLead}
-                        formatCurrency={formatCurrency}
-                      />
-                    ))}
-                  </AnimatePresence>
+                  {stageLeads.map((lead, index) => (
+                    <SortableLeadCard
+                      key={lead.id}
+                      lead={lead}
+                      index={index}
+                      onEdit={onEditLead}
+                      formatCurrency={formatCurrency}
+                    />
+                  ))}
                 </CardContent>
               </Card>
             </SortableContext>
