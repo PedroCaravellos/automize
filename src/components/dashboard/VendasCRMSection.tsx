@@ -17,7 +17,6 @@ import ActionBlockModal from "./ActionBlockModal";
 import NovoLeadModal from "./NovoLeadModal";
 import EditLeadModal from "./EditLeadModal";
 import SalesPipelineKanban from "./SalesPipelineKanban";
-import AccessGate from "./AccessGate";
 
 export interface Lead {
   id: string;
@@ -184,6 +183,8 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
     } finally {
       setDeleteLeadId(null);
     }
+  };
+
   const handleEditLead = (lead: Lead) => {
     if (!hasAccess()) {
       setIsBlockModalOpen(true);
@@ -488,8 +489,6 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         variant="destructive"
         icon={Trash2}
       />
-
-      <AccessGate isOpen={isBlockModalOpen} onClose={() => setIsBlockModalOpen(false)} />
     </div>
   );
 }
