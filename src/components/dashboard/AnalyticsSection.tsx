@@ -1,11 +1,22 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, TrendingUp, TrendingDown, Users, MessageSquare, Calendar, DollarSign, Target, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BarChart3, TrendingUp, TrendingDown, Users, MessageSquare, Calendar, DollarSign, Target, ArrowUpRight, ArrowDownRight, Activity, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { AreaChart, Area, ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { SalesFunnel } from "./SalesFunnel";
+import { PeriodComparison } from "./PeriodComparison";
+import { ReportExport } from "./ReportExport";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MetricData {
   value: number;
@@ -22,6 +33,8 @@ interface ChartDataPoint {
 type TrendType = 'up' | 'down' | 'stable';
 
 export default function AnalyticsSection() {
+  const [selectedNegocio, setSelectedNegocio] = useState<string>("all");
+  const [negocios, setNegocios] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState({
     totalLeads: 0,
     totalAgendamentos: 0,
@@ -33,8 +46,16 @@ export default function AnalyticsSection() {
     agendamentosPorBot: 0,
     leadsPorBot: 0,
     conversaoBot: 0,
-    totalNegocios: 0, // Adicionar contador de negócios
-    // Novos dados para métricas avançadas
+    totalNegocios: 0,
+    // Dados para funil
+    funnelData: {
+      leads: 0,
+      contacted: 0,
+      scheduled: 0,
+      converted: 0,
+    },
+    // Dados para exportação
+    exportData: [] as any[],
     metrics: {
       totalLeads: { value: 0, change: 0, trend: 'stable' as TrendType },
       totalRevenue: { value: 0, change: 0, trend: 'stable' as TrendType },
@@ -51,28 +72,58 @@ export default function AnalyticsSection() {
   const { chatbots, user } = useAuth();
 
   useEffect(() => {
-    fetchAnalytics();
+    fetchNegocios();
   }, []);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [selectedNegocio]);
+
+  const fetchNegocios = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('negocios')
+        .select('id, nome, unidade')
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+      setNegocios(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar negócios:', error);
+    }
+  };
 
   const fetchAnalytics = async () => {
     try {
-      // Ensure we have a valid session before making requests
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         console.warn('No valid session found for analytics');
         return;
       }
 
-      // Buscar todos os dados em paralelo para otimização
+      // Filtro por negócio
+      let leadsQuery = supabase.from('leads').select('origem, status, valor_estimado, created_at, pipeline_stage, negocio_id');
+      let agendamentosQuery = supabase.from('agendamentos').select('status, created_at, negocio_id');
+      let vendasQuery = supabase.from('vendas').select('valor, status, data_fechamento, created_at, negocio_id');
+
+      if (selectedNegocio !== "all") {
+        leadsQuery = leadsQuery.eq('negocio_id', selectedNegocio);
+        agendamentosQuery = agendamentosQuery.eq('negocio_id', selectedNegocio);
+        vendasQuery = vendasQuery.eq('negocio_id', selectedNegocio);
+      }
+
       const [
         { data: leads, error: leadsError },
         { data: agendamentos, error: agendamentosError },
         { data: vendas, error: vendasError },
-        { data: negocios, error: negociosError }
+        { data: negociosData, error: negociosError }
       ] = await Promise.all([
-        supabase.from('leads').select('origem, status, valor_estimado, created_at'),
-        supabase.from('agendamentos').select('status, created_at'),
-        supabase.from('vendas').select('valor, status, data_fechamento, created_at'),
+        leadsQuery,
+        agendamentosQuery,
+        vendasQuery,
         supabase.from('negocios').select('id, nome, tipo_negocio, segmento').eq('user_id', session.user.id)
       ]);
 
@@ -83,12 +134,30 @@ export default function AnalyticsSection() {
       // Calcular métricas atuais
       const totalLeads = leads?.length || 0;
       const totalAgendamentos = agendamentos?.length || 0;
-      const totalNegocios = negocios?.length || 0;
-      const vendasFechadas = vendas?.filter(v => v.status === 'fechada') || [];
+      const totalNegocios = negociosData?.length || 0;
+      const vendasFechadas = vendas?.filter(v => v.status === 'fechada' || v.status === 'ativa') || [];
       const totalVendas = vendasFechadas.reduce((sum, v) => sum + (Number(v.valor) || 0), 0);
       const ticketMedio = vendasFechadas.length > 0 ? totalVendas / vendasFechadas.length : 0;
       const leadsConvertidos = leads?.filter(l => l.status === 'convertido').length || 0;
       const conversationRate = totalLeads > 0 ? (leadsConvertidos / totalLeads) * 100 : 0;
+
+      // Dados do funil
+      const leadsContacted = leads?.filter(l => l.pipeline_stage !== 'novo').length || 0;
+      const funnelData = {
+        leads: totalLeads,
+        contacted: leadsContacted,
+        scheduled: totalAgendamentos,
+        converted: vendasFechadas.length,
+      };
+
+      // Preparar dados para exportação
+      const exportData = leads?.map(lead => ({
+        data: new Date(lead.created_at).toLocaleDateString('pt-BR'),
+        origem: lead.origem || 'N/A',
+        status: lead.status,
+        pipeline: lead.pipeline_stage || 'N/A',
+        valor_estimado: lead.valor_estimado || 0,
+      })) || [];
 
       // Calcular dados do mês anterior para comparação
       const lastMonth = new Date();
@@ -163,7 +232,9 @@ export default function AnalyticsSection() {
         agendamentosPorBot,
         leadsPorBot,
         conversaoBot,
-        totalNegocios, // Adicionar contador real de negócios
+        totalNegocios,
+        funnelData,
+        exportData,
         metrics: {
           totalLeads: { 
             value: totalLeads, 
@@ -259,9 +330,28 @@ export default function AnalyticsSection() {
           <h2 className="text-3xl font-bold tracking-tight">Dashboard Analytics</h2>
           <p className="text-muted-foreground mt-1">Visão completa do desempenho do seu negócio</p>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-muted-foreground">Última atualização</div>
-          <div className="text-sm font-medium">{new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedNegocio} onValueChange={setSelectedNegocio}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filtrar por negócio" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os negócios</SelectItem>
+                {negocios.map((negocio) => (
+                  <SelectItem key={negocio.id} value={negocio.id}>
+                    {negocio.nome}
+                    {negocio.unidade && ` - ${negocio.unidade}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">Última atualização</div>
+            <div className="text-sm font-medium">{new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
         </div>
       </div>
 
@@ -443,6 +533,31 @@ export default function AnalyticsSection() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Funil de Vendas */}
+      <SalesFunnel
+        leads={analytics.funnelData.leads}
+        contacted={analytics.funnelData.contacted}
+        scheduled={analytics.funnelData.scheduled}
+        converted={analytics.funnelData.converted}
+      />
+
+      {/* Comparação de Períodos */}
+      <PeriodComparison
+        currentPeriod="Mês Atual"
+        previousPeriod="Mês Anterior"
+        metrics={[
+          { name: "Leads", current: analytics.metrics.totalLeads.value, previous: Math.round(analytics.metrics.totalLeads.value / (1 + analytics.metrics.totalLeads.change / 100)), format: "number" },
+          { name: "Receita", current: analytics.metrics.totalRevenue.value, previous: Math.round(analytics.metrics.totalRevenue.value / (1 + analytics.metrics.totalRevenue.change / 100)), format: "currency" },
+          { name: "Taxa de Conversão", current: analytics.metrics.conversionRate.value, previous: analytics.metrics.conversionRate.value, format: "percentage" },
+        ]}
+      />
+
+      {/* Exportação de Relatórios */}
+      <ReportExport 
+        data={analytics.exportData} 
+        negocioName={selectedNegocio !== "all" ? negocios.find(n => n.id === selectedNegocio)?.nome : undefined}
+      />
 
       {/* Performance do Bot */}
       <Card className="shadow-card">
