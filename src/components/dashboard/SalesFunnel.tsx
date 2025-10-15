@@ -6,7 +6,8 @@ interface FunnelStage {
   count: number;
   percentage: number;
   icon: any;
-  color: string;
+  bgColor: string;
+  bgColorDark: string;
 }
 
 interface SalesFunnelProps {
@@ -23,28 +24,32 @@ export const SalesFunnel = ({ leads, contacted, scheduled, converted }: SalesFun
       count: leads,
       percentage: 100,
       icon: Users,
-      color: "bg-blue-500",
+      bgColor: "bg-blue-500",
+      bgColorDark: "dark:bg-blue-800",
     },
     {
       name: "Contactados",
       count: contacted,
       percentage: leads > 0 ? (contacted / leads) * 100 : 0,
       icon: PhoneCall,
-      color: "bg-purple-500",
+      bgColor: "bg-purple-500",
+      bgColorDark: "dark:bg-purple-800",
     },
     {
       name: "Agendamentos",
       count: scheduled,
       percentage: leads > 0 ? (scheduled / leads) * 100 : 0,
       icon: Calendar,
-      color: "bg-orange-500",
+      bgColor: "bg-orange-500",
+      bgColorDark: "dark:bg-orange-800",
     },
     {
       name: "Conversões",
       count: converted,
       percentage: leads > 0 ? (converted / leads) * 100 : 0,
       icon: CheckCircle,
-      color: "bg-green-500",
+      bgColor: "bg-green-500",
+      bgColorDark: "dark:bg-green-800",
     },
   ];
 
@@ -71,7 +76,7 @@ export const SalesFunnel = ({ leads, contacted, scheduled, converted }: SalesFun
                   style={{ width: `${width}%` }}
                 >
                   <div
-                    className={`${stage.color} text-white rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow`}
+                    className={`${stage.bgColor} ${stage.bgColorDark} text-white rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -105,17 +110,17 @@ export const SalesFunnel = ({ leads, contacted, scheduled, converted }: SalesFun
       </div>
 
       {leads > 0 && (
-        <div className="mt-6 pt-6 border-t">
+        <div className="mt-6 pt-6 border-t border-border">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Taxa de Conversão Geral</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {((converted / leads) * 100).toFixed(1)}%
               </p>
             </div>
             <div>
               <p className="text-muted-foreground">Taxa de Agendamento</p>
-              <p className="text-2xl font-bold text-orange-600">
+              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {((scheduled / leads) * 100).toFixed(1)}%
               </p>
             </div>

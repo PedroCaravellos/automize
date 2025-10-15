@@ -46,10 +46,12 @@ export default function Dashboard() {
       <div className="min-h-screen flex w-full">
         <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
         
-        <div className="flex-1 flex flex-col">
-          <header className="h-12 flex items-center border-b px-4">
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="sticky top-0 z-10 h-12 flex items-center border-b px-4 bg-background">
             <SidebarTrigger className="mr-2" aria-label="Toggle sidebar" />
-            <DashboardHeader />
+            <div className="flex-1 min-w-0">
+              <DashboardHeader />
+            </div>
           </header>
           
           <main className="flex-1 p-4 md:p-6">
