@@ -70,6 +70,9 @@ All colors MUST be HSL. Semantic tokens for consistent branding.
     --z-modal: 1050;
     --z-popover: 1060;
     --z-tooltip: 1070;
+    --z-kanban-card: 1;
+    --z-drag-overlay: 9999;
+    --z-command-palette: 10000;
 
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
@@ -83,6 +86,14 @@ All colors MUST be HSL. Semantic tokens for consistent branding.
 
     /* Transitions */
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Interaction Effects */
+    --drag-overlay: 0 20px 60px rgba(0, 0, 0, 0.3);
+    --hover-lift: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --focus-ring: 0 0 0 3px hsl(var(--primary) / 0.3);
 
     /* Typography - Font Family Variables */
     --font-heading: 'Poppins', system-ui, sans-serif;

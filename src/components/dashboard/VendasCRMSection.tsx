@@ -13,8 +13,9 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import ActionBlockModal from "./ActionBlockModal";
 import NovoLeadModal from "./NovoLeadModal";
 import EditLeadModal from "./EditLeadModal";
+import SalesPipelineKanban from "./SalesPipelineKanban";
 
-interface Lead {
+export interface Lead {
   id: string;
   negocio_id: string;
   nome: string;
@@ -352,36 +353,16 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         </Card>
       </div>
 
-      {/* Pipeline de Vendas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pipeline de Vendas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-5">
-            {['inicial', 'interesse', 'visita_agendada', 'proposta', 'fechamento'].map(stage => (
-              <div key={stage} className="space-y-2">
-                <h4 className="font-semibold text-sm capitalize">
-                  {stage.replace('_', ' ')} ({leads.filter(l => l.pipeline_stage === stage).length})
-                </h4>
-                <div className="space-y-2">
-                  {leads.filter(l => l.pipeline_stage === stage).slice(0, 3).map(lead => (
-                    <div key={lead.id} className="p-2 border rounded-md bg-card">
-                      <p className="font-medium text-sm">{lead.nome}</p>
-                      <p className="text-xs text-muted-foreground">{lead.interesse || 'Sem interesse definido'}</p>
-                      {lead.valor_estimado && (
-                        <p className="text-xs font-medium text-green-600">
-                          {formatCurrency(lead.valor_estimado)}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Pipeline de Vendas Interativo com Drag & Drop */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Pipeline de Vendas</h3>
+        <SalesPipelineKanban
+          leads={leads}
+          onLeadUpdate={fetchData}
+          onEditLead={handleEditLead}
+          formatCurrency={formatCurrency}
+        />
+      </div>
 
       {/* Lista de Leads Recentes */}
       <Card>
