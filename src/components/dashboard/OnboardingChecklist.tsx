@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -12,9 +12,12 @@ import {
   Check, 
   ChevronRight,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  X,
+  EyeOff
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OnboardingChecklistProps {
   onNavigateTo: (tab: string) => void;
@@ -32,36 +35,109 @@ interface ChecklistItem {
   disabled?: boolean;
 }
 
+const ONBOARDING_HIDDEN_KEY = 'onboarding_checklist_hidden';
+
 const OnboardingChecklist = ({ 
   onNavigateTo, 
   onOpenSimulator, 
   onOpenShareDemo 
 }: OnboardingChecklistProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isHidden, setIsHidden] = useState(false);
   const { 
-    academias, 
+    user,
+    negocios, 
     chatbots, 
     onboardingProgress, 
     trialActive, 
     planoAtivo,
-    updateOnboardingProgress 
   } = useAuth();
+
+  // Estado para armazenar contagens do banco de dados
+  const [dbCounts, setDbCounts] = useState({
+    chatbots: 0,
+    leads: 0,
+    automacoes: 0,
+    integracoes: 0,
+  });
+
+  // Verificar se está oculto no localStorage
+  useEffect(() => {
+    const hidden = localStorage.getItem(ONBOARDING_HIDDEN_KEY);
+    if (hidden === 'true') {
+      setIsHidden(true);
+    }
+  }, []);
+
+  // Buscar contagens do banco de dados
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchCounts = async () => {
+      try {
+        // Buscar negocios do usuário
+        const { data: negociosData } = await supabase
+          .from('negocios')
+          .select('id')
+          .eq('user_id', user.id);
+
+        const negocioIds = negociosData?.map(n => n.id) || [];
+
+        if (negocioIds.length === 0) {
+          setDbCounts({ chatbots: 0, leads: 0, automacoes: 0, integracoes: 0 });
+          return;
+        }
+
+        // Buscar contagens em paralelo
+        const [chatbotsRes, leadsRes, automacoesRes, integracoesRes] = await Promise.all([
+          supabase
+            .from('chatbots')
+            .select('id', { count: 'exact', head: true })
+            .in('negocio_id', negocioIds),
+          supabase
+            .from('leads')
+            .select('id', { count: 'exact', head: true })
+            .in('negocio_id', negocioIds),
+          supabase
+            .from('automacoes')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id),
+          supabase
+            .from('whatsapp_integrations')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('is_active', true),
+        ]);
+
+        setDbCounts({
+          chatbots: chatbotsRes.count || 0,
+          leads: leadsRes.count || 0,
+          automacoes: automacoesRes.count || 0,
+          integracoes: integracoesRes.count || 0,
+        });
+      } catch (error) {
+        console.error('Erro ao buscar contagens:', error);
+      }
+    };
+
+    fetchCounts();
+  }, [user?.id]);
 
   const checklistItems: ChecklistItem[] = [
     {
-      id: "academia",
-      title: "Criar sua academia",
-      description: "Configure os dados da sua academia",
+      id: "negocio",
+      title: "Criar seu negócio",
+      description: "Configure os dados do seu negócio",
       icon: Building,
-      completed: academias.length > 0,
-      action: () => onNavigateTo("academias"),
+      completed: negocios.length > 0,
+      action: () => onNavigateTo("negocios"),
     },
     {
       id: "chatbot",
       title: "Criar seu chatbot",
       description: "Configure seu primeiro chatbot",
       icon: Bot,
-      completed: chatbots.length > 0,
+      completed: dbCounts.chatbots > 0,
       action: () => onNavigateTo("chatbots"),
     },
     {
@@ -71,7 +147,7 @@ const OnboardingChecklist = ({
       icon: Play,
       completed: onboardingProgress.simulatorOpened,
       action: onOpenSimulator,
-      disabled: chatbots.length === 0,
+      disabled: dbCounts.chatbots === 0,
     },
     {
       id: "share",
@@ -80,7 +156,7 @@ const OnboardingChecklist = ({
       icon: Share,
       completed: onboardingProgress.demoShared,
       action: onOpenShareDemo,
-      disabled: chatbots.length === 0,
+      disabled: dbCounts.chatbots === 0,
     },
     {
       id: "plan",
@@ -97,16 +173,42 @@ const OnboardingChecklist = ({
   const progressPercentage = (completedItems / totalItems) * 100;
   const isCompleted = completedItems === totalItems;
 
+  const handleHideChecklist = () => {
+    localStorage.setItem(ONBOARDING_HIDDEN_KEY, 'true');
+    setIsHidden(true);
+  };
+
+  const handleShowChecklist = () => {
+    localStorage.removeItem(ONBOARDING_HIDDEN_KEY);
+    setIsHidden(false);
+    setIsExpanded(true);
+  };
+
+  // Mostrar botão para reexibir se estiver oculto
+  if (isHidden) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleShowChecklist}
+        className="mb-4 hover-scale"
+      >
+        <EyeOff className="mr-2 h-4 w-4" />
+        Mostrar Checklist de Início
+      </Button>
+    );
+  }
+
   // Auto-minimize when completed (but allow manual expansion)
   const shouldShowMinimized = isCompleted && !isExpanded;
 
   return (
-    <Card className={shouldShowMinimized ? "border-green-200 dark:border-green-800" : ""}>
+    <Card className={`${shouldShowMinimized ? "border-green-200 dark:border-green-800" : ""} animate-fade-in`}>
       <CardHeader className={shouldShowMinimized ? "pb-3" : ""}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CardTitle className={shouldShowMinimized ? "text-sm" : ""}>
-              {shouldShowMinimized ? "✅ Onboarding Concluído" : "Checklist de Onboarding"}
+              {shouldShowMinimized ? "✅ Onboarding Concluído" : "🚀 Checklist de Onboarding"}
             </CardTitle>
             {shouldShowMinimized && (
               <Button
@@ -124,6 +226,15 @@ const OnboardingChecklist = ({
               <Badge variant={isCompleted ? "default" : "secondary"}>
                 {completedItems}/{totalItems} concluídos
               </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleHideChecklist}
+                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                title="Não mostrar mais"
+              >
+                <X className="h-4 w-4" />
+              </Button>
               {isCompleted && (
                 <Button
                   variant="ghost"
@@ -138,7 +249,7 @@ const OnboardingChecklist = ({
           )}
         </div>
         {!shouldShowMinimized && (
-          <Progress value={progressPercentage} className="w-full" />
+          <Progress value={progressPercentage} className="w-full mt-4" />
         )}
       </CardHeader>
       {!shouldShowMinimized && (
@@ -146,16 +257,16 @@ const OnboardingChecklist = ({
         {checklistItems.map((item) => (
           <div
             key={item.id}
-            className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+            className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
               item.completed 
                 ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800" 
-                : "bg-muted/30 hover:bg-muted/50"
+                : "bg-muted/30 hover:bg-muted/50 hover-scale"
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${
+              <div className={`p-2 rounded-full transition-all ${
                 item.completed 
-                  ? "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400" 
+                  ? "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400 animate-scale-in" 
                   : "bg-muted text-muted-foreground"
               }`}>
                 {item.completed ? (
@@ -176,7 +287,7 @@ const OnboardingChecklist = ({
                 variant="outline"
                 onClick={item.action}
                 disabled={item.disabled}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 hover-scale"
               >
                 {item.disabled ? "Indisponível" : "Começar"}
                 {!item.disabled && <ChevronRight className="h-3 w-3" />}
@@ -186,7 +297,7 @@ const OnboardingChecklist = ({
         ))}
         
         {isCompleted && (
-          <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
+          <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg animate-fade-in">
             <p className="text-sm font-medium text-green-600 dark:text-green-400">
               🎉 Parabéns! Você completou o onboarding!
             </p>
