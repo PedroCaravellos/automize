@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +40,7 @@ const NegociosSection = () => {
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [editingNegocio, setEditingNegocio] = useState<Negocio | undefined>();
   const [negociosDb, setNegociosDb] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const mapFromDb = (dbNegocio: any): Negocio => ({
     id: dbNegocio.id,
@@ -78,6 +81,7 @@ const NegociosSection = () => {
     if (!user) return;
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('negocios')
         .select('*')
@@ -93,6 +97,8 @@ const NegociosSection = () => {
         description: "Não foi possível carregar os negócios.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   }, [user, toast]);
 
@@ -200,6 +206,20 @@ const NegociosSection = () => {
   };
 
   const negocios = negociosDb.map(mapFromDb);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-40" />
+        </CardHeader>
+        <CardContent>
+          <SkeletonTable rows={3} columns={4} />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>

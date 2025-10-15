@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
 import { Bot, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -115,6 +117,7 @@ const ChatbotsSection = () => {
 
   const [negociosDb, setNegociosDb] = useState<any[]>([]);
   const [chatbotsDb, setChatbotsDb] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Helper function to wait for database propagation
   const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
@@ -124,6 +127,7 @@ const ChatbotsSection = () => {
     if (!user) return;
     
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('negocios')
         .select('*')
@@ -135,6 +139,8 @@ const ChatbotsSection = () => {
       console.log('ChatbotsSection - Negócios carregados:', data?.length || 0);
     } catch (error) {
       console.error('Erro ao buscar negócios:', error);
+    } finally {
+      setLoading(false);
     }
   }, [user]);
 
@@ -416,6 +422,24 @@ const handleUpdateChatbot = async (mensagens: Chatbot["mensagens"]) => {
     url.searchParams.set('tab', 'plan');
     window.history.replaceState({}, '', url.toString());
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <SkeletonTable rows={3} columns={5} />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

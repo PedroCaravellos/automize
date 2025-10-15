@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonMetricCard } from "@/components/ui/skeleton-metric-card";
+import { SkeletonList } from "@/components/ui/skeleton-list";
 import { Calendar, Plus, Clock, User, Phone, Trash2, Edit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -192,8 +195,29 @@ interface NegocioShort {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-40" />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonMetricCard key={i} />
+          ))}
+        </div>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-48" />
+          </CardHeader>
+          <CardContent>
+            <SkeletonList items={5} />
+          </CardContent>
+        </Card>
       </div>
     );
   }
