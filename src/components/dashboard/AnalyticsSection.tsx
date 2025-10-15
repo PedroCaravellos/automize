@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, TrendingUp, TrendingDown, Users, MessageSquare, Calendar, DollarSign, Target, ArrowUpRight, ArrowDownRight, Activity, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { AreaChart, Area, ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { SalesFunnel } from "./SalesFunnel";
 import { PeriodComparison } from "./PeriodComparison";
 import { ReportExport } from "./ReportExport";
+import { EnhancedAnalyticsChart } from "./EnhancedAnalyticsChart";
 import {
   Select,
   SelectContent,
@@ -390,148 +389,31 @@ export default function AnalyticsSection() {
         />
       </div>
 
-      {/* Gráficos */}
+      {/* Gráficos Interativos */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              Evolução da Receita
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analytics.chartData.revenue.length > 0 ? (
-              <div className="h-[200px] w-full">
-                <ChartContainer
-                  config={{
-                    value: {
-                      label: "Receita",
-                      color: "hsl(var(--primary))",
-                    },
-                  }}
-                  className="h-full w-full"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={analytics.chartData.revenue}>
-                      <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                      <YAxis axisLine={false} tickLine={false} />
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Area
-                        type="monotone"
-                        dataKey="value"
-                        stroke="hsl(var(--primary))"
-                        fillOpacity={1}
-                        fill="url(#colorRevenue)"
-                        strokeWidth={2}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Dados insuficientes para exibir gráfico</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <EnhancedAnalyticsChart
+          title="Evolução da Receita"
+          data={analytics.chartData.revenue}
+          color="hsl(var(--primary))"
+          icon={BarChart3}
+          enableBrush={true}
+          showReference={true}
+          onDrillDown={(dataPoint) => {
+            console.log("Drill down receita:", dataPoint);
+          }}
+        />
 
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-secondary" />
-              Leads Mensais
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analytics.chartData.leads.length > 0 ? (
-              <div className="h-[200px] w-full">
-                <ChartContainer
-                  config={{
-                    value: {
-                      label: "Leads",
-                      color: "hsl(var(--secondary))",
-                    },
-                  }}
-                  className="h-full w-full"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analytics.chartData.leads}>
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                      <YAxis axisLine={false} tickLine={false} />
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar 
-                        dataKey="value" 
-                        fill="hsl(var(--secondary))" 
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            ) : (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Dados insuficientes para exibir gráfico</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Métricas Secundárias */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-l-4 border-l-primary">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Chatbots Ativos</CardTitle>
-            <MessageSquare className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{chatbots.filter(c => c.status === 'Ativo').length}</div>
-            <p className="text-xs text-muted-foreground">
-              {chatbots.length} total criados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-secondary">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Agendamentos</CardTitle>
-            <Calendar className="h-4 w-4 text-secondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalAgendamentos}</div>
-            <p className="text-xs text-muted-foreground">
-              Total de agendamentos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-accent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Negócios</CardTitle>
-            <BarChart3 className="h-4 w-4 text-accent-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalNegocios}</div>
-            <p className="text-xs text-muted-foreground">
-              Negócios cadastrados
-            </p>
-          </CardContent>
-        </Card>
+        <EnhancedAnalyticsChart
+          title="Leads Mensais"
+          data={analytics.chartData.leads}
+          color="hsl(var(--secondary))"
+          icon={Users}
+          enableBrush={true}
+          showReference={true}
+          onDrillDown={(dataPoint) => {
+            console.log("Drill down leads:", dataPoint);
+          }}
+        />
       </div>
 
       {/* Funil de Vendas */}
