@@ -1,38 +1,47 @@
-import { useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
-/**
- * Hook customizado para sincronização em tempo real com tabelas do Supabase
- * @param tableName - Nome da tabela para monitorar
- * @param onRefresh - Função callback para recarregar dados
- */
-export const useRealtimeTable = (
-  tableName: string,
-  onRefresh: () => Promise<void>
-) => {
+interface RealtimeTableOptions<T> {
+  queryKey: readonly any[];
+  enabled?: boolean;
+  showNotifications?: boolean;
+  onInsert?: (record: T) => void;
+  onUpdate?: (record: T) => void;
+  onDelete?: (record: T) => void;
+  filter?: { column: string; value: any };
+}
+
+interface RealtimeStats {
+  inserts: number;
+  updates: number;
+  deletes: number;
+  lastEvent: Date | null;
+}
+
+export function useRealtimeTable<T extends Record<string, any>>(tableName: string, options: RealtimeTableOptions<T>) {
+  const { queryKey, enabled = true, filter } = options;
+  const queryClient = useQueryClient();
+  const [stats, setStats] = useState<RealtimeStats>({ inserts: 0, updates: 0, deletes: 0, lastEvent: null });
+  const [isConnected, setIsConnected] = useState(false);
+
   useEffect(() => {
-    const channel = supabase
-      .channel(`${tableName}-realtime-changes`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: tableName,
-        },
-        (payload) => {
-          console.log(`[Realtime] ${tableName} changed:`, payload);
-          // Refresh data when any change occurs
-          onRefresh();
-        }
-      )
-      .subscribe();
+    if (!enabled) return;
+    const channel = supabase.channel(`rt-${tableName}-${Date.now()}`);
+    
+    ['INSERT', 'UPDATE', 'DELETE'].forEach(event => {
+      channel.on('postgres_changes', { event: event as any, schema: 'public', table: tableName }, (payload) => {
+        setStats((prev) => ({ ...prev, [event.toLowerCase() + 's']: prev[event.toLowerCase() + 's' as keyof RealtimeStats] as number + 1, lastEvent: new Date() }));
+        queryClient.invalidateQueries({ queryKey });
+      });
+    });
 
-    console.log(`[Realtime] Subscribed to ${tableName} changes`);
+    channel.subscribe((status) => setIsConnected(status === 'SUBSCRIBED'));
+    return () => { supabase.removeChannel(channel); setIsConnected(false); };
+  }, [enabled, tableName, queryKey, queryClient]);
 
-    return () => {
-      console.log(`[Realtime] Unsubscribed from ${tableName} changes`);
-      supabase.removeChannel(channel);
-    };
-  }, [tableName, onRefresh]);
-};
+  const resetStats = useCallback(() => setStats({ inserts: 0, updates: 0, deletes: 0, lastEvent: null }), []);
+  const totalEvents = useMemo(() => stats.inserts + stats.updates + stats.deletes, [stats]);
+
+  return { isConnected, stats, totalEvents, resetStats };
+}

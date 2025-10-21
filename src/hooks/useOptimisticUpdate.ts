@@ -1,46 +1,77 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 interface OptimisticUpdateOptions<T> {
-  updateFn: (data: T) => Promise<void>;
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
+  onSuccess?: (result: T) => void;
+  onError?: (error: Error, rollbackData: T) => void;
+  successMessage?: string;
+  errorMessage?: string;
+  showToasts?: boolean;
 }
 
 export function useOptimisticUpdate<T>(initialData: T) {
   const [data, setData] = useState<T>(initialData);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [isOptimistic, setIsOptimistic] = useState(false);
+  const previousDataRef = useRef<T>(initialData);
 
-  const update = async (
-    newData: T,
-    { updateFn, onSuccess, onError }: OptimisticUpdateOptions<T>
-  ) => {
-    const previousData = data;
-    
-    // Optimistic update
-    setData(newData);
-    setIsUpdating(true);
-    setError(null);
+  useEffect(() => {
+    setData(initialData);
+    previousDataRef.current = initialData;
+  }, [initialData]);
+
+  const update = useCallback(async (optimisticData: T, asyncAction: () => Promise<T>, options: OptimisticUpdateOptions<T> = {}) => {
+    const { onSuccess, onError, successMessage = 'Sucesso', errorMessage = 'Erro', showToasts = true } = options;
+    previousDataRef.current = data;
+    setData(optimisticData);
+    setIsOptimistic(true);
 
     try {
-      await updateFn(newData);
-      onSuccess?.();
-    } catch (err) {
-      // Rollback on error
-      setData(previousData);
-      const error = err instanceof Error ? err : new Error('Update failed');
-      setError(error);
-      onError?.(error);
-    } finally {
-      setIsUpdating(false);
+      const result = await asyncAction();
+      setData(result);
+      setIsOptimistic(false);
+      if (showToasts) toast({ title: successMessage });
+      onSuccess?.(result);
+      return { success: true, data: result };
+    } catch (error) {
+      setData(previousDataRef.current);
+      setIsOptimistic(false);
+      if (showToasts) toast({ title: errorMessage, variant: 'destructive' });
+      onError?.(error as Error, previousDataRef.current);
+      return { success: false, error: error as Error };
     }
-  };
+  }, [data]);
 
-  return {
-    data,
-    isUpdating,
-    error,
-    update,
-    setData,
-  };
+  return { data, isOptimistic, update };
+}
+
+export function useOptimisticList<T extends { id: string | number }>(initialList: T[]) {
+  const [list, setList] = useState<T[]>(initialList);
+  const [optimisticIds, setOptimisticIds] = useState<Set<string | number>>(new Set());
+
+  useEffect(() => setList(initialList), [initialList]);
+
+  const addOptimistic = useCallback(async (item: T, asyncAction: () => Promise<T>, options: OptimisticUpdateOptions<T> = {}) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimisticItem = { ...item, id: tempId as any };
+    setList((prev) => [...prev, optimisticItem]);
+    setOptimisticIds((prev) => new Set(prev).add(tempId));
+
+    try {
+      const result = await asyncAction();
+      setList((prev) => prev.map((i) => (i.id === tempId ? result : i)));
+      setOptimisticIds((prev) => { const s = new Set(prev); s.delete(tempId); return s; });
+      if (options.showToasts !== false) toast({ title: options.successMessage || 'Item adicionado' });
+      options.onSuccess?.(result);
+      return { success: true, data: result };
+    } catch (error) {
+      setList((prev) => prev.filter((i) => i.id !== tempId));
+      setOptimisticIds((prev) => { const s = new Set(prev); s.delete(tempId); return s; });
+      if (options.showToasts !== false) toast({ title: options.errorMessage || 'Erro', variant: 'destructive' });
+      return { success: false, error: error as Error };
+    }
+  }, []);
+
+  const isOptimistic = useCallback((id: string | number) => optimisticIds.has(id), [optimisticIds]);
+
+  return { list, addOptimistic, isOptimistic };
 }
