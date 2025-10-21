@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, Calendar, Zap, Settings } from "lucide-react";
 import { IntegrationsGrid } from "./IntegrationsGrid";
-import { WhatsAppSetupRequest } from "./WhatsAppSetupRequest";
+import { WhatsAppConfig } from "./WhatsAppConfig";
 import { GoogleCalendarConfig } from "./GoogleCalendarConfig";
 
 export default function IntegrationsSection() {
@@ -43,7 +43,7 @@ export default function IntegrationsSection() {
         </TabsContent>
 
         <TabsContent value="whatsapp" className="mt-6">
-          <WhatsAppSetupRequest onSuccess={() => setActiveTab("overview")} />
+          <WhatsAppConfig onSuccess={() => setActiveTab("overview")} />
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-6">
