@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Bot } from "lucide-react";
+import { loginSchema, signupSchema } from "@/lib/validations";
+import { z } from "zod";
 
 interface AuthFormProps {
   mode?: "signin" | "signup";
@@ -39,7 +41,10 @@ export default function AuthForm({ mode, onModeChange, onSuccess, isModal = fals
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(loginForm.email, loginForm.password);
+      // Validate form data
+      const validatedData = loginSchema.parse(loginForm);
+      
+      const { error } = await signIn(validatedData.email, validatedData.password);
       
       if (error) {
         toast({
@@ -65,11 +70,20 @@ export default function AuthForm({ mode, onModeChange, onSuccess, isModal = fals
         }
       }
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Algo deu errado. Tente novamente.",
-        variant: "destructive"
-      });
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast({
+          title: "Erro de validação",
+          description: firstError.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Algo deu errado. Tente novamente.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -77,29 +91,13 @@ export default function AuthForm({ mode, onModeChange, onSuccess, isModal = fals
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (signupForm.password !== signupForm.confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (signupForm.password.length < 6) {
-      toast({
-        title: "Erro",
-        description: "A senha deve ter pelo menos 6 caracteres",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      const { error } = await signUp(signupForm.email, signupForm.password, signupForm.name);
+      // Validate form data
+      const validatedData = signupSchema.parse(signupForm);
+      
+      const { error } = await signUp(validatedData.email, validatedData.password, validatedData.name);
       
       if (error) {
         if (error.message.includes("already registered")) {
@@ -131,11 +129,20 @@ export default function AuthForm({ mode, onModeChange, onSuccess, isModal = fals
         }
       }
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Algo deu errado. Tente novamente.",
-        variant: "destructive"
-      });
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast({
+          title: "Erro de validação",
+          description: firstError.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Algo deu errado. Tente novamente.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
