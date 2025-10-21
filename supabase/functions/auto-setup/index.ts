@@ -198,34 +198,34 @@ serve(async (req) => {
       console.log(`✅ ${leads.length} leads de exemplo criados`);
     }
 
-    // 4. Criar automação de boas-vindas
-    const automacaoData = {
-      user_id: userId,
-      negocio_id: negocio.id,
-      nome: "Boas-vindas Automáticas",
-      descricao: "Envia mensagem de boas-vindas para novos leads",
-      trigger_type: "novo_lead",
-      trigger_config: { evento: "lead_criado" },
-      actions: [
-        {
-          tipo: "enviar_whatsapp",
-          mensagem: template.mensagens.boas_vindas,
-          delay: 0
-        }
-      ],
-      ativa: true,
-      created_at: new Date().toISOString(),
-    };
-
-    const { error: automacaoError } = await supabase
+    // 4. Criar automações inteligentes por segmento
+    const automacoes = getAutomacoesPorSegmento(segmento, negocio.id, userId, template);
+    
+    const { data: automacoesCreated, error: automacaoError } = await supabase
       .from('automacoes')
-      .insert([automacaoData]);
+      .insert(automacoes)
+      .select();
 
     if (automacaoError) {
-      console.error("Erro ao criar automação:", automacaoError);
+      console.error("Erro ao criar automações:", automacaoError);
       // Não é crítico, continua
     } else {
-      console.log("✅ Automação de boas-vindas criada");
+      console.log(`✅ ${automacoesCreated.length} automações criadas`);
+    }
+
+    // 5. Criar agendamentos de exemplo (se aplicável)
+    let agendamentosCount = 0;
+    if (['academia', 'salao', 'clinica', 'restaurante'].includes(segmento)) {
+      const agendamentosData = getAgendamentosExemplo(segmento, negocio.id);
+      const { data: agendamentos, error: agendamentosError } = await supabase
+        .from('agendamentos')
+        .insert(agendamentosData)
+        .select();
+
+      if (!agendamentosError && agendamentos) {
+        agendamentosCount = agendamentos.length;
+        console.log(`✅ ${agendamentosCount} agendamentos de exemplo criados`);
+      }
     }
 
     // Retornar sucesso
@@ -236,6 +236,9 @@ serve(async (req) => {
           negocio,
           chatbot,
           leadsCount: leads?.length || 0,
+          automacoesCount: automacoesCreated?.length || 0,
+          agendamentosCount,
+          segmento,
           message: "Setup concluído com sucesso! 🎉"
         }
       }),
@@ -259,3 +262,320 @@ serve(async (req) => {
     );
   }
 });
+
+// ============= FUNÇÕES AUXILIARES =============
+
+function getAutomacoesPorSegmento(segmento: string, negocioId: string, userId: string, template: any) {
+  const baseAutomacoes = [
+    {
+      user_id: userId,
+      negocio_id: negocioId,
+      nome: "Boas-vindas Automáticas",
+      descricao: "Envia mensagem de boas-vindas para novos leads",
+      trigger_type: "novo_lead",
+      trigger_config: { evento: "lead_criado" },
+      actions: [{
+        tipo: "enviar_whatsapp",
+        mensagem: template.mensagens.boas_vindas,
+        delay: 0
+      }],
+      ativa: true,
+      created_at: new Date().toISOString(),
+    }
+  ];
+
+  // Automações específicas por segmento
+  const segmentAutomacoes: Record<string, any[]> = {
+    academia: [
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Lembrete de Treino",
+        descricao: "Envia lembrete motivacional de treino",
+        trigger_type: "agendamento",
+        trigger_config: { tipo: "aula_experimental", horas_antes: 2 },
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "💪 Olá! Seu treino está chegando! Lembre-se de trazer roupa confortável e uma garrafinha de água. Vamos juntos! 🏋️",
+          delay: 0
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Follow-up Pós-Aula",
+        descricao: "Pergunta como foi a experiência após a aula",
+        trigger_type: "agendamento_concluido",
+        trigger_config: { tipo: "aula_experimental" },
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "👋 E aí, como foi seu treino hoje? Gostou? Quer conhecer nossos planos? Estou aqui para te ajudar! 💪",
+          delay: 3600
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      }
+    ],
+    salao: [
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Lembrete 24h Antes",
+        descricao: "Lembra o cliente do agendamento",
+        trigger_type: "agendamento",
+        trigger_config: { horas_antes: 24 },
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "✨ Olá! Lembrete: você tem agendamento amanhã conosco! Estamos ansiosos para te deixar ainda mais linda(o)! 💅",
+          delay: 0
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Oferta de Retorno",
+        descricao: "Oferece desconto para retorno após 30 dias",
+        trigger_type: "tempo_decorrido",
+        trigger_config: { dias: 30, ultima_visita: true },
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "✨ Sentimos sua falta! Que tal voltar com 15% de desconto no seu próximo serviço? Estamos te esperando! 💇",
+          delay: 0
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      }
+    ],
+    clinica: [
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Confirmação de Consulta",
+        descricao: "Confirma consulta 24h antes",
+        trigger_type: "agendamento",
+        trigger_config: { horas_antes: 24 },
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "🏥 Olá! Confirme sua consulta de amanhã respondendo SIM. Se precisar reagendar, avise-nos com antecedência. Aguardamos você!",
+          delay: 0
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Follow-up Pós-Consulta",
+        descricao: "Verifica como o paciente está após consulta",
+        trigger_type: "agendamento_concluido",
+        trigger_config: {},
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "🩺 Olá! Como você está se sentindo após a consulta? Se tiver alguma dúvida ou precisar de algo, estamos à disposição!",
+          delay: 86400 // 24h depois
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      }
+    ],
+    restaurante: [
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Confirmação de Reserva",
+        descricao: "Confirma reserva 2h antes",
+        trigger_type: "agendamento",
+        trigger_config: { horas_antes: 2 },
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "🍽️ Olá! Confirme sua reserva para hoje respondendo SIM. Estamos preparando tudo para te receber!",
+          delay: 0
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Feedback Pós-Refeição",
+        descricao: "Pede feedback após a visita",
+        trigger_type: "agendamento_concluido",
+        trigger_config: {},
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "🍴 Esperamos que tenha aproveitado! Como foi sua experiência? Adoraríamos receber seu feedback!",
+          delay: 7200 // 2h depois
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      }
+    ],
+    consultoria: [
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Preparação para Reunião",
+        descricao: "Envia materiais antes da reunião",
+        trigger_type: "agendamento",
+        trigger_config: { horas_antes: 48 },
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "💼 Olá! Nossa reunião se aproxima. Para aproveitarmos melhor o tempo, que tal me contar um pouco sobre os principais desafios da sua empresa?",
+          delay: 0
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      }
+    ],
+    ecommerce: [
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Carrinho Abandonado",
+        descricao: "Recupera vendas de carrinho abandonado",
+        trigger_type: "carrinho_abandonado",
+        trigger_config: { horas: 2 },
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "🛍️ Notamos que você deixou itens no carrinho! Ainda está interessado? Posso te ajudar a finalizar a compra!",
+          delay: 0
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        user_id: userId,
+        negocio_id: negocioId,
+        nome: "Pós-Compra",
+        descricao: "Agradece e pede avaliação",
+        trigger_type: "venda_concluida",
+        trigger_config: {},
+        actions: [{
+          tipo: "enviar_whatsapp",
+          mensagem: "📦 Obrigado pela compra! Seu pedido está a caminho. Quando receber, adoraríamos saber sua opinião! ⭐",
+          delay: 3600
+        }],
+        ativa: true,
+        created_at: new Date().toISOString(),
+      }
+    ]
+  };
+
+  return [...baseAutomacoes, ...(segmentAutomacoes[segmento] || [])];
+}
+
+function getAgendamentosExemplo(segmento: string, negocioId: string) {
+  const hoje = new Date();
+  const amanha = new Date(hoje);
+  amanha.setDate(amanha.getDate() + 1);
+  amanha.setHours(14, 0, 0, 0);
+
+  const depoisAmanha = new Date(hoje);
+  depoisAmanha.setDate(depoisAmanha.getDate() + 2);
+  depoisAmanha.setHours(10, 0, 0, 0);
+
+  const agendamentosBase: Record<string, any[]> = {
+    academia: [
+      {
+        negocio_id: negocioId,
+        cliente_nome: "João Silva (Exemplo)",
+        cliente_telefone: "(11) 99999-0001",
+        cliente_email: "joao.exemplo@email.com",
+        servico: "Aula Experimental de Musculação",
+        data_hora: amanha.toISOString(),
+        status: "agendado",
+        observacoes: "Primeira vez em academia, nunca treinou",
+        created_at: new Date().toISOString(),
+      },
+      {
+        negocio_id: negocioId,
+        cliente_nome: "Maria Santos (Exemplo)",
+        cliente_telefone: "(11) 99999-0002",
+        cliente_email: "maria.exemplo@email.com",
+        servico: "Avaliação Física Completa",
+        data_hora: depoisAmanha.toISOString(),
+        status: "agendado",
+        observacoes: "Quer treino + personal trainer",
+        created_at: new Date().toISOString(),
+      }
+    ],
+    salao: [
+      {
+        negocio_id: negocioId,
+        cliente_nome: "Ana Costa (Exemplo)",
+        cliente_telefone: "(11) 99999-0001",
+        cliente_email: "ana.exemplo@email.com",
+        servico: "Coloração + Corte",
+        data_hora: amanha.toISOString(),
+        status: "confirmado",
+        observacoes: "Quer loiro platinado",
+        created_at: new Date().toISOString(),
+      },
+      {
+        negocio_id: negocioId,
+        cliente_nome: "Carla Souza (Exemplo)",
+        cliente_telefone: "(11) 99999-0002",
+        cliente_email: "carla.exemplo@email.com",
+        servico: "Manicure + Pedicure",
+        data_hora: depoisAmanha.toISOString(),
+        status: "agendado",
+        observacoes: "Preferência: cores neutras",
+        created_at: new Date().toISOString(),
+      }
+    ],
+    clinica: [
+      {
+        negocio_id: negocioId,
+        cliente_nome: "Roberto Lima (Exemplo)",
+        cliente_telefone: "(11) 99999-0001",
+        cliente_email: "roberto.exemplo@email.com",
+        servico: "Consulta Ortopedia",
+        data_hora: amanha.toISOString(),
+        status: "confirmado",
+        observacoes: "Dor no joelho há 2 semanas",
+        created_at: new Date().toISOString(),
+      },
+      {
+        negocio_id: negocioId,
+        cliente_nome: "Juliana Melo (Exemplo)",
+        cliente_telefone: "(11) 99999-0002",
+        cliente_email: "juliana.exemplo@email.com",
+        servico: "Check-up Completo",
+        data_hora: depoisAmanha.toISOString(),
+        status: "agendado",
+        observacoes: "Exames de rotina anuais",
+        created_at: new Date().toISOString(),
+      }
+    ],
+    restaurante: [
+      {
+        negocio_id: negocioId,
+        cliente_nome: "Pedro Oliveira (Exemplo)",
+        cliente_telefone: "(11) 99999-0001",
+        cliente_email: "pedro.exemplo@email.com",
+        servico: "Jantar Romântico - Mesa para 2",
+        data_hora: amanha.toISOString(),
+        status: "confirmado",
+        observacoes: "Aniversário de namoro, decoração especial",
+        created_at: new Date().toISOString(),
+      },
+      {
+        negocio_id: negocioId,
+        cliente_nome: "Fernanda Dias (Exemplo)",
+        cliente_telefone: "(11) 99999-0002",
+        cliente_email: "fernanda.exemplo@email.com",
+        servico: "Almoço Corporativo - 20 pessoas",
+        data_hora: depoisAmanha.toISOString(),
+        status: "agendado",
+        observacoes: "Menu vegetariano para 5 pessoas",
+        created_at: new Date().toISOString(),
+      }
+    ]
+  };
+
+  return agendamentosBase[segmento] || [];
+}

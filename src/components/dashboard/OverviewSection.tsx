@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SkeletonMetricCard } from "@/components/ui/skeleton-metric-card";
+import AIAutoTunePanel from "./AIAutoTunePanel";
 import { 
   Bot, 
   Building, 
@@ -96,6 +97,7 @@ function MetricCard({ title, value, change, icon, trend = "neutral", onClick }: 
 export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: string) => void }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [firstNegocioId, setFirstNegocioId] = useState<string | null>(null);
   const [metrics, setMetrics] = useState({
     totalLeads: 0,
     totalVendas: 0,
@@ -134,6 +136,11 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
         .eq("user_id", user?.id);
 
       const negocioIds = negocios?.map(n => n.id) || [];
+      
+      // Armazenar o primeiro negocio para o AI Auto-Tune
+      if (negocioIds.length > 0) {
+        setFirstNegocioId(negocioIds[0]);
+      }
 
       if (negocioIds.length === 0) {
         setLoading(false);
@@ -432,6 +439,11 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
           onClick={() => onNavigateTo("chatbots")}
         />
       </div>
+
+      {/* AI Auto-Tune Panel */}
+      {firstNegocioId && (
+        <AIAutoTunePanel negocioId={firstNegocioId} />
+      )}
 
       {/* Gráfico de Performance e Atividade Recente */}
       <div className="grid gap-6 md:grid-cols-2">
