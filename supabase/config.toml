@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.generate-automation]
 verify_jwt = true
+
+[functions.auto-setup]
+verify_jwt = true

@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
 import { useIsMobile } from "@/hooks/use-mobile";
+import OnboardingGate from "@/components/dashboard/OnboardingGate";
 
 export default function Dashboard() {
   const { isHydrating } = useAuth();
@@ -42,23 +43,25 @@ export default function Dashboard() {
   };
 
   return (
-    <SidebarProvider defaultOpen={!isMobile} open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
-        
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-10 h-12 flex items-center border-b px-4 bg-background">
-            <SidebarTrigger className="mr-2" aria-label="Toggle sidebar" />
-            <div className="flex-1 min-w-0">
-              <DashboardHeader />
-            </div>
-          </header>
+    <OnboardingGate>
+      <SidebarProvider defaultOpen={!isMobile} open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />
           
-          <main className="flex-1 p-4 md:p-6">
-            <DashboardTabs activeTab={activeTab} onTabChange={handleTabChange} />
-          </main>
+          <div className="flex-1 flex flex-col min-w-0">
+            <header className="sticky top-0 z-10 h-12 flex items-center border-b px-4 bg-background">
+              <SidebarTrigger className="mr-2" aria-label="Toggle sidebar" />
+              <div className="flex-1 min-w-0">
+                <DashboardHeader />
+              </div>
+            </header>
+            
+            <main className="flex-1 p-4 md:p-6">
+              <DashboardTabs activeTab={activeTab} onTabChange={handleTabChange} />
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </OnboardingGate>
   );
 }
