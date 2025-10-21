@@ -4,14 +4,46 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
+import FloatingActionButton from "@/components/dashboard/FloatingActionButton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import OnboardingGate from "@/components/dashboard/OnboardingGate";
+import NovoLeadModal from "@/components/dashboard/NovoLeadModal";
+import NovoAgendamentoModal from "@/components/dashboard/NovoAgendamentoModal";
+import AutomationModal from "@/components/dashboard/AutomationModal";
 
 export default function Dashboard() {
   const { isHydrating } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  // Modal states
+  const [novoLeadModalOpen, setNovoLeadModalOpen] = useState(false);
+  const [novoAgendamentoModalOpen, setNovoAgendamentoModalOpen] = useState(false);
+  const [novaAutomacaoModalOpen, setNovaAutomacaoModalOpen] = useState(false);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      ctrl: true,
+      action: () => setNovoLeadModalOpen(true),
+      description: 'Novo lead',
+    },
+    {
+      key: 'a',
+      ctrl: true,
+      action: () => setNovoAgendamentoModalOpen(true),
+      description: 'Novo agendamento',
+    },
+    {
+      key: 'm',
+      ctrl: true,
+      action: () => setNovaAutomacaoModalOpen(true),
+      description: 'Nova automação',
+    },
+  ]);
 
   // Add event listener for navigation between tabs
   useEffect(() => {
@@ -60,6 +92,40 @@ export default function Dashboard() {
               <DashboardTabs activeTab={activeTab} onTabChange={handleTabChange} />
             </main>
           </div>
+
+          {/* Floating Action Button */}
+          <FloatingActionButton
+            onNavigateTo={handleTabChange}
+            onOpenNewLead={() => setNovoLeadModalOpen(true)}
+            onOpenNewAgendamento={() => setNovoAgendamentoModalOpen(true)}
+            onOpenNewAutomacao={() => setNovaAutomacaoModalOpen(true)}
+          />
+
+          {/* Quick Action Modals */}
+          <NovoLeadModal
+            open={novoLeadModalOpen}
+            onOpenChange={setNovoLeadModalOpen}
+            onLeadCriado={() => {
+              setNovoLeadModalOpen(false);
+              // Opcional: Refresh dashboard ou navegar para leads
+            }}
+          />
+          <NovoAgendamentoModal
+            open={novoAgendamentoModalOpen}
+            onOpenChange={setNovoAgendamentoModalOpen}
+            onAgendamentoCriado={() => {
+              setNovoAgendamentoModalOpen(false);
+              // Opcional: Refresh dashboard ou navegar para agendamentos
+            }}
+          />
+          <AutomationModal
+            open={novaAutomacaoModalOpen}
+            onOpenChange={setNovaAutomacaoModalOpen}
+            onSave={() => {
+              setNovaAutomacaoModalOpen(false);
+              // Opcional: Refresh dashboard ou navegar para automações
+            }}
+          />
         </div>
       </SidebarProvider>
     </OnboardingGate>

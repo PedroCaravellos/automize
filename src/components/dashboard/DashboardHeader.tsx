@@ -8,6 +8,7 @@ import { Bot, LogOut, Settings, User, Clock, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import ProgressRing from "./ProgressRing";
 
 export default function DashboardHeader() {
   const { user, profile, signOut, trialDaysRemaining } = useAuth();
@@ -60,6 +61,9 @@ export default function DashboardHeader() {
       </div>
 
       <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
+        {/* Progress Ring */}
+        <ProgressRing />
+
         {/* Trial Badge */}
         {profile?.trial_ativo && (
           <TooltipProvider>

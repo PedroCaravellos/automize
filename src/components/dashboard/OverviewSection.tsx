@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SkeletonMetricCard } from "@/components/ui/skeleton-metric-card";
 import AIAutoTunePanel from "./AIAutoTunePanel";
+import SmartSuggestions from "./SmartSuggestions";
+import ExpertModeToggle from "./ExpertModeToggle";
+import { useExpertMode } from "./ExpertModeToggle";
 import { 
   Bot, 
   Building, 
@@ -96,6 +99,7 @@ function MetricCard({ title, value, change, icon, trend = "neutral", onClick }: 
 
 export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: string) => void }) {
   const { user } = useAuth();
+  const isExpertMode = useExpertMode();
   const [loading, setLoading] = useState(true);
   const [firstNegocioId, setFirstNegocioId] = useState<string | null>(null);
   const [metrics, setMetrics] = useState({
@@ -406,6 +410,14 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
 
   return (
     <div className="space-y-6">
+      {/* Expert Mode Toggle e Smart Suggestions */}
+      {!isExpertMode && (
+        <>
+          <ExpertModeToggle />
+          <SmartSuggestions onNavigateTo={onNavigateTo} />
+        </>
+      )}
+
       {/* Métricas Principais */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
