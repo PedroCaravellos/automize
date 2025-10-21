@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserData } from "@/utils/userStorage";
 import { supabase } from "@/integrations/supabase/client";
-import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useRealtimeTable } from "@/hooks/useOptimizedRealtime";
 import ChatbotWizard from "./ChatbotWizard";
 import ChatbotTable from "./ChatbotTable";
 import ChatbotEditModal from "./ChatbotEditModal";

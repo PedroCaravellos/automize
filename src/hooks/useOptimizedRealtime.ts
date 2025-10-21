@@ -91,3 +91,39 @@ export function useMultipleRealtime(subscriptions: UseOptimizedRealtimeOptions[]
     subscriptions: results,
   };
 }
+
+/**
+ * Hook simplificado para realtime (compatibilidade com código legado)
+ * @deprecated Use useOptimizedRealtime com queryKey ao invés
+ */
+export function useRealtimeTable(
+  table: string, 
+  callback: () => void | Promise<void>
+) {
+  const queryClient = useQueryClient();
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    const channelName = `${table}-simple-${Date.now()}`;
+    
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table,
+      }, () => {
+        callback();
+      })
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [table, callback]);
+}

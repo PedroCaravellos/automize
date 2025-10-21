@@ -12,7 +12,7 @@ import { DollarSign, Plus, Users, TrendingUp, Target, Trash2, Edit } from "lucid
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useRealtimeTable } from "@/hooks/useOptimizedRealtime";
 import ActionBlockModal from "./ActionBlockModal";
 import NovoLeadModal from "./NovoLeadModal";
 import EditLeadModal from "./EditLeadModal";

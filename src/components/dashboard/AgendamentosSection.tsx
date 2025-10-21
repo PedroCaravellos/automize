@@ -8,7 +8,7 @@ import { Calendar, Plus, Clock, User, Phone, Trash2, Edit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useRealtimeTable } from "@/hooks/useOptimizedRealtime";
 import NovoAgendamentoModal from "./NovoAgendamentoModal";
 import EditAgendamentoModal from "./EditAgendamentoModal";
 
