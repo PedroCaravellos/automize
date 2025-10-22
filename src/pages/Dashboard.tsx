@@ -11,6 +11,7 @@ import OnboardingGate from "@/components/dashboard/OnboardingGate";
 import NovoLeadModal from "@/components/dashboard/NovoLeadModal";
 import NovoAgendamentoModal from "@/components/dashboard/NovoAgendamentoModal";
 import AutomationModal from "@/components/dashboard/AutomationModal";
+import { VideoOnboarding } from "@/components/dashboard/VideoOnboarding";
 
 export default function Dashboard() {
   const { isHydrating } = useAuth();
@@ -76,6 +77,7 @@ export default function Dashboard() {
 
   return (
     <OnboardingGate>
+      <VideoOnboarding />
       <SidebarProvider defaultOpen={!isMobile} open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <div className="min-h-screen flex w-full">
           <AppSidebar activeTab={activeTab} onTabChange={handleTabChange} />

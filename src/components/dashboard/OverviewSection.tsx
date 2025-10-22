@@ -8,6 +8,7 @@ import AIAutoTunePanel from "./AIAutoTunePanel";
 import SmartSuggestions from "./SmartSuggestions";
 import ExpertModeToggle from "./ExpertModeToggle";
 import { useExpertMode } from "./ExpertModeToggle";
+import { TemplatesLibrary } from "./TemplatesLibrary";
 import { 
   Bot, 
   Building, 
@@ -411,11 +412,15 @@ export default function OverviewSection({ onNavigateTo }: { onNavigateTo: (tab: 
   return (
     <div className="space-y-6">
       {/* Expert Mode Toggle e Smart Suggestions */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <TemplatesLibrary />
+        </div>
+        {!isExpertMode && <ExpertModeToggle />}
+      </div>
+      
       {!isExpertMode && (
-        <>
-          <ExpertModeToggle />
-          <SmartSuggestions onNavigateTo={onNavigateTo} />
-        </>
+        <SmartSuggestions onNavigateTo={onNavigateTo} />
       )}
 
       {/* Métricas Principais */}
