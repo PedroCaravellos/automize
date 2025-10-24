@@ -66,15 +66,30 @@ export default function Dashboard() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const n: any = await supabase.from('negocios').select('*').eq('user_id', user.id);
-        const c: any = await supabase.from('chatbots').select('*').eq('user_id', user.id);
-        const l: any = await supabase.from('leads').select('*').eq('user_id', user.id);
-        const a: any = await supabase.from('automacoes').select('*').eq('user_id', user.id);
+        const negociosResult = await (supabase as any)
+          .from('negocios')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        const chatbotsResult = await (supabase as any)
+          .from('chatbots')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        const leadsResult = await (supabase as any)
+          .from('leads')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        const automacoesResult = await (supabase as any)
+          .from('automacoes')
+          .select('*')
+          .eq('user_id', user.id);
 
-        if (n.data) setNegocios(n.data);
-        if (c.data) setChatbots(c.data);
-        if (l.data) setLeads(l.data);
-        if (a.data) setAutomacoes(a.data);
+        setNegocios(negociosResult.data || []);
+        setChatbots(chatbotsResult.data || []);
+        setLeads(leadsResult.data || []);
+        setAutomacoes(automacoesResult.data || []);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
       } finally {
@@ -199,8 +214,11 @@ export default function Dashboard() {
               setSelectedLeadForSchedule(undefined);
               if (user) {
                 const fetchLeads = async () => {
-                  const r: any = await supabase.from('leads').select('*').eq('user_id', user.id);
-                  if (r.data) setLeads(r.data);
+                  const result = await (supabase as any)
+                    .from('leads')
+                    .select('*')
+                    .eq('user_id', user.id);
+                  if (result.data) setLeads(result.data);
                 };
                 fetchLeads();
               }
@@ -213,8 +231,11 @@ export default function Dashboard() {
               setNovaAutomacaoModalOpen(false);
               if (user) {
                 const fetchAuto = async () => {
-                  const r: any = await supabase.from('automacoes').select('*').eq('user_id', user.id);
-                  if (r.data) setAutomacoes(r.data);
+                  const result = await (supabase as any)
+                    .from('automacoes')
+                    .select('*')
+                    .eq('user_id', user.id);
+                  if (result.data) setAutomacoes(result.data);
                 };
                 fetchAuto();
               }
@@ -231,8 +252,11 @@ export default function Dashboard() {
               onConversationEnd={() => {
                 if (user) {
                   const fetchLeads = async () => {
-                    const r: any = await supabase.from('leads').select('*').eq('user_id', user.id);
-                    if (r.data) setLeads(r.data);
+                    const result = await (supabase as any)
+                      .from('leads')
+                      .select('*')
+                      .eq('user_id', user.id);
+                    if (result.data) setLeads(result.data);
                   };
                   fetchLeads();
                 }
