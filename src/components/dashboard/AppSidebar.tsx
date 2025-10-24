@@ -17,16 +17,8 @@ import {
 } from "@/components/ui/sidebar";
 
 const items = [
-  { title: "Dashboard", url: "/dashboard", icon: BarChart3, tab: "overview" },
-  { title: "Meus Negócios", url: "/dashboard", icon: Building, tab: "negocios" },
-  { title: "Chatbots", url: "/dashboard", icon: Bot, tab: "chatbots" },
-  { title: "Agendamentos", url: "/dashboard", icon: Calendar, tab: "agendamentos" },
-  { title: "Vendas & CRM", url: "/dashboard", icon: DollarSign, tab: "vendas" },
-  { title: "Analytics", url: "/dashboard", icon: BarChart3, tab: "analytics" },
-  { title: "Automações", url: "/dashboard", icon: Workflow, tab: "automacoes" },
-  { title: "Integrações", url: "/dashboard", icon: Zap, tab: "integracoes" },
+  { title: "Visão Geral", url: "/dashboard", icon: BarChart3, tab: "overview" },
   { title: "Configurações", url: "/dashboard", icon: Settings, tab: "plan" },
-  { title: "Ajuda", url: "/dashboard", icon: HelpCircle, tab: "ajuda" },
 ];
 
 interface AppSidebarProps {
