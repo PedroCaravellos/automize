@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeleton-table";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtimeTable } from "@/hooks/useOptimizedRealtime";
 import NegocioTable from "./NegocioTable";
 import NegocioModal from "./NegocioModal";
 import ActionBlockModal from "./ActionBlockModal";
+import AIAssistedNegocioCreator from "./AIAssistedNegocioCreator";
 
 export interface Negocio {
   id: string;
@@ -37,6 +38,7 @@ const NegociosSection = () => {
   const { user, hasAccess, syncNegociosFromDB } = useAuth();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [editingNegocio, setEditingNegocio] = useState<Negocio | undefined>();
   const [negociosDb, setNegociosDb] = useState<any[]>([]);
@@ -226,10 +228,20 @@ const NegociosSection = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-xl font-semibold">Meus Negócios</CardTitle>
-          <Button onClick={handleAddNegocio} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Adicionar Negócio
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setIsAIModalOpen(true)} 
+              className="gap-2"
+              variant="default"
+            >
+              <Sparkles className="h-4 w-4" />
+              Criar com IA
+            </Button>
+            <Button onClick={handleAddNegocio} className="gap-2" variant="outline">
+              <Plus className="h-4 w-4" />
+              Manual
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <NegocioTable
@@ -247,12 +259,21 @@ const NegociosSection = () => {
         onSave={handleSaveNegocio}
       />
 
-        <ActionBlockModal
-          open={isBlockModalOpen}
-          onOpenChange={setIsBlockModalOpen}
-          onPlansClick={handlePlansClick}
-          action="gerenciar negócios"
-        />
+      <AIAssistedNegocioCreator
+        open={isAIModalOpen}
+        onOpenChange={setIsAIModalOpen}
+        onSuccess={() => {
+          fetchNegocios();
+          syncNegociosFromDB();
+        }}
+      />
+
+      <ActionBlockModal
+        open={isBlockModalOpen}
+        onOpenChange={setIsBlockModalOpen}
+        onPlansClick={handlePlansClick}
+        action="gerenciar negócios"
+      />
     </>
   );
 };

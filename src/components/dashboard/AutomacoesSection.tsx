@@ -9,13 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonMetricCard } from "@/components/ui/skeleton-metric-card";
 import { SkeletonList } from "@/components/ui/skeleton-list";
-import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users, Activity, Trash2 } from "lucide-react";
+import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users, Activity, Trash2, Sparkles, Loader2, Lightbulb } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useRealtimeTable } from "@/hooks/useOptimizedRealtime";
 import AutomationModal from "./AutomationModal";
 import AutomationExecutionsTable from "./AutomationExecutionsTable";
+import { Input } from "@/components/ui/input";
 
 interface Automacao {
   id: string;
@@ -35,7 +36,9 @@ export default function AutomacoesSection() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAutomacao, setSelectedAutomacao] = useState<Automacao | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("automacoes");
-  const { negocios, hasAccess } = useAuth();
+  const [nlDescription, setNlDescription] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { negocios, hasAccess, user } = useAuth();
 
   const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
 
@@ -296,6 +299,81 @@ export default function AutomacoesSection() {
     setModalOpen(true);
   };
 
+  const handleGenerateFromNL = async () => {
+    if (!nlDescription.trim()) {
+      toast({
+        title: "Descrição vazia",
+        description: "Descreva o que você quer automatizar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (negocios.length === 0) {
+      toast({
+        title: "Nenhum negócio cadastrado",
+        description: "Crie um negócio primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+
+      const { data, error } = await supabase.functions.invoke('generate-automation', {
+        body: {
+          description: nlDescription,
+          negocioInfo: {
+            nome: negocios[0].nome,
+            segmento: negocios[0].segmento,
+            tipo: (negocios[0] as any).tipo_negocio || 'outros',
+          }
+        }
+      });
+
+      if (error) throw error;
+      if (!data?.automation) throw new Error('Falha ao gerar automação');
+
+      const automation = data.automation;
+      const automacaoData = {
+        user_id: user?.id,
+        negocio_id: negocios[0].id,
+        nome: automation.nome,
+        descricao: automation.descricao,
+        trigger_type: automation.trigger_type,
+        trigger_config: automation.trigger_config,
+        actions: automation.actions,
+        ativo: false,
+      };
+
+      const { error: insertError } = await supabase
+        .from('automacoes')
+        .insert([automacaoData]);
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "✨ Automação criada com IA!",
+        description: "Revise e ative quando estiver pronta.",
+      });
+
+      setNlDescription('');
+      await waitForPropagation();
+      await fetchAutomacoes();
+
+    } catch (error) {
+      console.error('Erro ao gerar automação:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Não foi possível gerar a automação.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleDeleteAutomacao = async (id: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir a automação "${nome}"?`)) {
       return;
@@ -355,8 +433,8 @@ export default function AutomacoesSection() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={criarAutomacaoExemplo}>
-            <Target className="mr-2 h-4 w-4" />
-            Criar Exemplo
+            <Lightbulb className="mr-2 h-4 w-4" />
+            Exemplo
           </Button>
           <Button onClick={handleNovaAutomacao}>
             <Plus className="mr-2 h-4 w-4" />
@@ -364,6 +442,62 @@ export default function AutomacoesSection() {
           </Button>
         </div>
       </div>
+
+      {/* Criação com Linguagem Natural */}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3 mb-4">
+            <Sparkles className="h-5 w-5 text-primary mt-1" />
+            <div>
+              <h3 className="font-semibold text-lg mb-1">Criar com IA</h3>
+              <p className="text-sm text-muted-foreground">
+                Descreva o que você quer automatizar e a IA cria para você
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ex: Enviar boas-vindas para novos leads..."
+              value={nlDescription}
+              onChange={(e) => setNlDescription(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleGenerateFromNL()}
+              disabled={isGenerating}
+              className="flex-1"
+            />
+            <Button 
+              onClick={handleGenerateFromNL}
+              disabled={!nlDescription.trim() || isGenerating}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Criar
+                </>
+              )}
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {[
+              "Enviar follow-up para leads inativos há 3 dias",
+              "Lembrar cliente 1 dia antes do agendamento",
+              "Agradecer após primeira compra"
+            ].map((suggestion, idx) => (
+              <button
+                key={idx}
+                onClick={() => setNlDescription(suggestion)}
+                className="text-xs px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Status das Automações */}
       <div className="grid gap-4 md:grid-cols-4">
