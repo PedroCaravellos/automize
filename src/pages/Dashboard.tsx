@@ -14,6 +14,12 @@ import { VideoOnboarding } from "@/components/dashboard/VideoOnboarding";
 import AdaptiveDashboard from "@/components/dashboard/AdaptiveDashboard";
 import ChatbotSimulator from "@/components/dashboard/ChatbotSimulator";
 import PlanManagement from "@/components/dashboard/PlanManagement";
+import NegociosSection from "@/components/dashboard/NegociosSection";
+import ChatbotsSection from "@/components/dashboard/ChatbotsSection";
+import VendasCRMSection from "@/components/dashboard/VendasCRMSection";
+import AgendamentosSection from "@/components/dashboard/AgendamentosSection";
+import AutomacoesSection from "@/components/dashboard/AutomacoesSection";
+import IntegrationsSection from "@/components/dashboard/IntegrationsSection";
 import { supabase } from "@/integrations/supabase/client";
 import { NegocioItem, ChatbotItem, LeadItem, AutomacaoItem } from "@/types";
 
@@ -170,18 +176,27 @@ export default function Dashboard() {
                 <div className="flex items-center justify-center min-h-[400px]">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : activeTab === "plan" ? (
-                <PlanManagement preselectedPlan={null} />
               ) : (
-                <AdaptiveDashboard
-                  negocios={negocios}
-                  chatbots={chatbots}
-                  leads={leads}
-                  automacoes={automacoes}
-                  onOpenSimulator={() => setSimulatorOpen(true)}
-                  onOpenSchedule={handleOpenSchedule}
-                  onActionClick={handleActionClick}
-                />
+                <>
+                  {activeTab === "overview" && (
+                    <AdaptiveDashboard
+                      negocios={negocios}
+                      chatbots={chatbots}
+                      leads={leads}
+                      automacoes={automacoes}
+                      onOpenSimulator={() => setSimulatorOpen(true)}
+                      onOpenSchedule={handleOpenSchedule}
+                      onActionClick={handleActionClick}
+                    />
+                  )}
+                  {activeTab === "negocios" && <NegociosSection />}
+                  {activeTab === "chatbots" && <ChatbotsSection />}
+                  {activeTab === "crm" && <VendasCRMSection />}
+                  {activeTab === "agendamentos" && <AgendamentosSection />}
+                  {activeTab === "automacoes" && <AutomacoesSection />}
+                  {activeTab === "integracoes" && <IntegrationsSection />}
+                  {activeTab === "plan" && <PlanManagement preselectedPlan={null} />}
+                </>
               )}
             </main>
           </div>

@@ -18,7 +18,13 @@ import {
 
 const items = [
   { title: "Visão Geral", url: "/dashboard", icon: BarChart3, tab: "overview" },
-  { title: "Configurações", url: "/dashboard", icon: Settings, tab: "plan" },
+  { title: "Meus Negócios", url: "/dashboard", icon: Building, tab: "negocios" },
+  { title: "Chatbots", url: "/dashboard", icon: Bot, tab: "chatbots" },
+  { title: "Leads/CRM", url: "/dashboard", icon: Users, tab: "crm" },
+  { title: "Agendamentos", url: "/dashboard", icon: Calendar, tab: "agendamentos" },
+  { title: "Automações", url: "/dashboard", icon: Workflow, tab: "automacoes" },
+  { title: "Integrações", url: "/dashboard", icon: Zap, tab: "integracoes" },
+  { title: "Planos", url: "/dashboard", icon: DollarSign, tab: "plan" },
 ];
 
 interface AppSidebarProps {
