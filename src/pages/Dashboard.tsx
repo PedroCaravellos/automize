@@ -20,6 +20,7 @@ import VendasCRMSection from "@/components/dashboard/VendasCRMSection";
 import AgendamentosSection from "@/components/dashboard/AgendamentosSection";
 import AutomacoesSection from "@/components/dashboard/AutomacoesSection";
 import IntegrationsSection from "@/components/dashboard/IntegrationsSection";
+import QuickCommandPalette from "@/components/dashboard/QuickCommandPalette";
 import { supabase } from "@/integrations/supabase/client";
 import { NegocioItem, ChatbotItem, LeadItem, AutomacaoItem } from "@/types";
 
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [novaAutomacaoModalOpen, setNovaAutomacaoModalOpen] = useState(false);
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [selectedLeadForSchedule, setSelectedLeadForSchedule] = useState<string | undefined>();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Data states for AdaptiveDashboard
   const [negocios, setNegocios] = useState<any[]>([]);
@@ -45,6 +47,12 @@ export default function Dashboard() {
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
+    {
+      key: 'k',
+      ctrl: true,
+      action: () => setCommandPaletteOpen(true),
+      description: 'Command Palette',
+    },
     {
       key: 'n',
       ctrl: true,
@@ -62,6 +70,12 @@ export default function Dashboard() {
       ctrl: true,
       action: () => setNovaAutomacaoModalOpen(true),
       description: 'Nova automação',
+    },
+    {
+      key: 'b',
+      ctrl: true,
+      action: () => setSimulatorOpen(true),
+      description: 'Testar chatbot',
     },
   ]);
 
@@ -156,6 +170,47 @@ export default function Dashboard() {
     setNovoAgendamentoModalOpen(true);
   };
 
+  const handleCommandPalette = (command: string, data?: any) => {
+    switch (command) {
+      case 'novo-lead':
+        setNovoLeadModalOpen(true);
+        break;
+      case 'novo-agendamento':
+        setNovoAgendamentoModalOpen(true);
+        break;
+      case 'nova-automacao':
+        setNovaAutomacaoModalOpen(true);
+        break;
+      case 'testar-chatbot':
+        setSimulatorOpen(true);
+        break;
+      case 'nav-overview':
+        setActiveTab('overview');
+        break;
+      case 'nav-negocios':
+        setActiveTab('negocios');
+        break;
+      case 'nav-chatbots':
+        setActiveTab('chatbots');
+        break;
+      case 'nav-crm':
+        setActiveTab('crm');
+        break;
+      case 'nav-agendamentos':
+        setActiveTab('agendamentos');
+        break;
+      case 'nav-automacoes':
+        setActiveTab('automacoes');
+        break;
+      case 'open-lead':
+        setActiveTab('crm');
+        break;
+      case 'open-chatbot':
+        setSimulatorOpen(true);
+        break;
+    }
+  };
+
   return (
     <OnboardingGate>
       <VideoOnboarding />
@@ -207,6 +262,17 @@ export default function Dashboard() {
             onOpenNewLead={() => setNovoLeadModalOpen(true)}
             onOpenNewAgendamento={() => setNovoAgendamentoModalOpen(true)}
             onOpenNewAutomacao={() => setNovaAutomacaoModalOpen(true)}
+          />
+
+          {/* Command Palette */}
+          <QuickCommandPalette
+            open={commandPaletteOpen}
+            onOpenChange={setCommandPaletteOpen}
+            leads={leads}
+            negocios={negocios}
+            chatbots={chatbots}
+            automacoes={automacoes}
+            onCommand={handleCommandPalette}
           />
 
           {/* Quick Action Modals */}
