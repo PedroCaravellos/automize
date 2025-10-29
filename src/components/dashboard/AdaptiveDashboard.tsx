@@ -221,7 +221,12 @@ export default function AdaptiveDashboard({
               )}
             </div>
 
-            <ProactiveAIPanel leads={leads} chatbots={chatbots} />
+            <ProactiveAIPanel 
+              leads={leads} 
+              chatbots={chatbots}
+              negocios={negocios}
+              automacoes={automacoes}
+            />
             <NaturalLanguageAutomation automacoes={automacoes} />
           </div>
         );
@@ -267,7 +272,12 @@ export default function AdaptiveDashboard({
               </div>
             </Card>
 
-            <ProactiveAIPanel leads={leads} chatbots={chatbots} />
+            <ProactiveAIPanel 
+              leads={leads} 
+              chatbots={chatbots}
+              negocios={negocios}
+              automacoes={automacoes}
+            />
 
             <div className="grid gap-4">
               <h2 className="text-lg font-semibold">Leads Recentes</h2>

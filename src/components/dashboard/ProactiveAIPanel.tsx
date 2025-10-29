@@ -1,9 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, TrendingUp, Clock, Zap, CheckCircle2, AlertCircle } from "lucide-react";
-import { LeadItem, ChatbotItem } from "@/types";
-import { useState } from "react";
+import { Sparkles, TrendingUp, Clock, Zap, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { LeadItem, ChatbotItem, NegocioItem, AutomacaoItem } from "@/types";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface AIAction {
   id: string;
@@ -18,38 +20,51 @@ interface AIAction {
 interface ProactiveAIPanelProps {
   leads: LeadItem[];
   chatbots: ChatbotItem[];
+  negocios: NegocioItem[];
+  automacoes: AutomacaoItem[];
 }
 
-export default function ProactiveAIPanel({ leads, chatbots }: ProactiveAIPanelProps) {
-  const [actions, setActions] = useState<AIAction[]>([
-    {
-      id: '1',
-      type: 'automatic',
-      title: 'Follow-up automático enviado',
-      description: '3 leads não responderam há 3+ dias. Sistema enviou follow-up via WhatsApp.',
-      status: 'completed',
-      impact: '+40% resposta esperada',
-      timestamp: new Date(Date.now() - 1000 * 60 * 15) // 15 min atrás
-    },
-    {
-      id: '2',
-      type: 'suggested',
-      title: 'Horário de pico detectado',
-      description: '80% dos leads perguntam sobre valores entre 18h-20h. Sugestão: chatbot enviar tabela automaticamente.',
-      status: 'pending',
-      impact: '+25% conversão',
-      timestamp: new Date()
-    },
-    {
-      id: '3',
-      type: 'automatic',
-      title: 'Resposta otimizada aplicada',
-      description: 'IA melhorou resposta sobre preços baseado em padrões de conversão.',
-      status: 'completed',
-      impact: 'Tempo resposta -30%',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2) // 2h atrás
+export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes }: ProactiveAIPanelProps) {
+  const [actions, setActions] = useState<AIAction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    analyzeOpportunities();
+  }, [leads.length, chatbots.length, automacoes.length]);
+
+  const analyzeOpportunities = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-analyze-opportunities', {
+        body: { 
+          leads, 
+          chatbots, 
+          automacoes, 
+          negocios 
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.opportunities) {
+        const aiActions: AIAction[] = data.opportunities.map((opp: any, idx: number) => ({
+          id: `ai-${Date.now()}-${idx}`,
+          type: opp.type || 'suggested',
+          title: opp.title,
+          description: opp.description,
+          status: opp.type === 'automatic' ? 'completed' : 'pending',
+          impact: opp.impact,
+          timestamp: new Date()
+        }));
+        setActions(aiActions);
+      }
+    } catch (error) {
+      console.error('Error analyzing opportunities:', error);
+      toast.error('Erro ao analisar oportunidades');
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
 
   const handleApplyAction = (actionId: string) => {
     setActions(prev => prev.map(action => 
@@ -113,6 +128,14 @@ export default function ProactiveAIPanel({ leads, chatbots }: ProactiveAIPanelPr
         <Badge variant="secondary" className="ml-auto">
           {actions.filter(a => a.status === 'pending').length} ações pendentes
         </Badge>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={analyzeOpportunities}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       <div className="space-y-3">
@@ -156,7 +179,14 @@ export default function ProactiveAIPanel({ leads, chatbots }: ProactiveAIPanelPr
         ))}
       </div>
 
-      {actions.length === 0 && (
+      {isLoading && (
+        <div className="text-center py-8 text-muted-foreground">
+          <RefreshCw className="h-12 w-12 mx-auto mb-3 animate-spin text-primary" />
+          <p>Analisando oportunidades...</p>
+        </div>
+      )}
+
+      {!isLoading && actions.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-20" />
           <p>Nenhuma ação da IA no momento</p>
