@@ -17,6 +17,8 @@ import ActionBlockModal from "./ActionBlockModal";
 import NovoLeadModal from "./NovoLeadModal";
 import EditLeadModal from "./EditLeadModal";
 import SalesPipelineKanban from "./SalesPipelineKanban";
+import BulkActionsToolbar from "./BulkActionsToolbar";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface Lead {
   id: string;
@@ -62,6 +64,7 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isEditLeadModalOpen, setIsEditLeadModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const { negocios, hasAccess } = useAuth();
 
   const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
@@ -230,6 +233,73 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
     }).format(value);
   };
 
+  const handleSelectLead = (leadId: string) => {
+    setSelectedLeads(prev => 
+      prev.includes(leadId) 
+        ? prev.filter(id => id !== leadId)
+        : [...prev, leadId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedLeads(leads.map(l => l.id));
+  };
+
+  const handleClearSelection = () => {
+    setSelectedLeads([]);
+  };
+
+  const handleBulkAction = async (action: string, status?: string) => {
+    if (!hasAccess()) {
+      setIsBlockModalOpen(true);
+      return;
+    }
+
+    if (selectedLeads.length === 0) {
+      toast({
+        title: "Nenhum lead selecionado",
+        description: "Selecione ao menos um lead para realizar ações em massa.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('bulk-lead-actions', {
+        body: {
+          action,
+          leadIds: selectedLeads,
+          newStatus: status,
+        }
+      });
+
+      if (error) throw error;
+
+      const actionMessages: Record<string, string> = {
+        'update_status': `Status atualizado para "${status}" em ${selectedLeads.length} lead(s)`,
+        'send_followup': `Follow-up enviado para ${selectedLeads.length} lead(s)`,
+        'archive': `${selectedLeads.length} lead(s) arquivado(s)`,
+        'delete': `${selectedLeads.length} lead(s) excluído(s)`,
+      };
+
+      toast({
+        title: "Ação em massa concluída",
+        description: actionMessages[action] || "Ação realizada com sucesso",
+      });
+
+      setSelectedLeads([]);
+      await waitForPropagation();
+      await fetchData();
+    } catch (error) {
+      console.error('Erro na ação em massa:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível realizar a ação em massa.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const totalVendasMes = vendas
     .filter(v => v.status === 'fechada' && v.data_fechamento)
     .filter(v => {
@@ -377,6 +447,15 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
         <CardHeader>
           <CardTitle>Leads Recentes</CardTitle>
         </CardHeader>
+        {leads.length > 0 && (
+          <BulkActionsToolbar
+            selectedLeads={selectedLeads}
+            totalLeads={leads.length}
+            onSelectAll={handleSelectAll}
+            onClearSelection={handleClearSelection}
+            onBulkAction={handleBulkAction}
+          />
+        )}
         <CardContent>
           {leads.length === 0 ? (
             <div className="text-center py-8">
@@ -389,7 +468,11 @@ export default function VendasCRMSection({ onRefreshRequest }: VendasCRMSectionP
           ) : (
             <div className="space-y-4">
               {leads.slice(0, 10).map((lead) => (
-                <div key={lead.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={lead.id} className="flex items-center gap-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <Checkbox
+                    checked={selectedLeads.includes(lead.id)}
+                    onCheckedChange={() => handleSelectLead(lead.id)}
+                  />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold">{lead.nome}</h4>

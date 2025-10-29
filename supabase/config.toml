@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.ai-analyze-opportunities]
 verify_jwt = true
+
+[functions.bulk-lead-actions]
+verify_jwt = true
