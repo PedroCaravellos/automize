@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, BarChart3, Building, Bot, Zap, Settings, HelpCircle, Users, DollarSign, Workflow } from "lucide-react";
+import { Calendar, BarChart3, Building, Bot, Zap, Settings, HelpCircle, Users, DollarSign, Workflow, Shield } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -24,6 +24,7 @@ const items = [
   { title: "Agendamentos", url: "/dashboard", icon: Calendar, tab: "agendamentos" },
   { title: "Automações", url: "/dashboard", icon: Workflow, tab: "automacoes" },
   { title: "Integrações", url: "/dashboard", icon: Zap, tab: "integracoes" },
+  { title: "Segurança", url: "/dashboard", icon: Shield, tab: "security" },
   { title: "Planos", url: "/dashboard", icon: DollarSign, tab: "plan" },
 ];
 

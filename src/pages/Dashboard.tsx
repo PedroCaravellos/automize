@@ -20,15 +20,22 @@ import VendasCRMSection from "@/components/dashboard/VendasCRMSection";
 import AgendamentosSection from "@/components/dashboard/AgendamentosSection";
 import AutomacoesSection from "@/components/dashboard/AutomacoesSection";
 import IntegrationsSection from "@/components/dashboard/IntegrationsSection";
+import { SecurityDashboard } from "@/components/dashboard/SecurityDashboard";
 import QuickCommandPalette from "@/components/dashboard/QuickCommandPalette";
 import { supabase } from "@/integrations/supabase/client";
 import { NegocioItem, ChatbotItem, LeadItem, AutomacaoItem } from "@/types";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
+import { useSecurityMonitor } from "@/hooks/useSecurityMonitor";
 
 export default function Dashboard() {
   const { isHydrating, user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  // Security & Performance monitoring
+  const { measure } = usePerformanceMonitor();
+  const { logEvent } = useSecurityMonitor();
 
   // Modal states
   const [novoLeadModalOpen, setNovoLeadModalOpen] = useState(false);
@@ -79,46 +86,54 @@ export default function Dashboard() {
     },
   ]);
 
-  // Load dashboard data
+  // Load dashboard data with performance monitoring
   useEffect(() => {
     if (!user) return;
 
     const loadData = async () => {
       setLoading(true);
       try {
-        const negociosResult = await (supabase as any)
-          .from('negocios')
-          .select('*')
-          .eq('user_id', user.id);
-        
-        const chatbotsResult = await (supabase as any)
-          .from('chatbots')
-          .select('*')
-          .eq('user_id', user.id);
-        
-        const leadsResult = await (supabase as any)
-          .from('leads')
-          .select('*')
-          .eq('user_id', user.id);
-        
-        const automacoesResult = await (supabase as any)
-          .from('automacoes')
-          .select('*')
-          .eq('user_id', user.id);
+        await measure('dashboard-data-load', async () => {
+          const negociosResult = await (supabase as any)
+            .from('negocios')
+            .select('*')
+            .eq('user_id', user.id);
+          
+          const chatbotsResult = await (supabase as any)
+            .from('chatbots')
+            .select('*')
+            .eq('user_id', user.id);
+          
+          const leadsResult = await (supabase as any)
+            .from('leads')
+            .select('*')
+            .eq('user_id', user.id);
+          
+          const automacoesResult = await (supabase as any)
+            .from('automacoes')
+            .select('*')
+            .eq('user_id', user.id);
 
-        setNegocios(negociosResult.data || []);
-        setChatbots(chatbotsResult.data || []);
-        setLeads(leadsResult.data || []);
-        setAutomacoes(automacoesResult.data || []);
+          setNegocios(negociosResult.data || []);
+          setChatbots(chatbotsResult.data || []);
+          setLeads(leadsResult.data || []);
+          setAutomacoes(automacoesResult.data || []);
+        });
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
+        logEvent({
+          type: 'suspicious_activity',
+          severity: 'high',
+          message: 'Failed to load dashboard data',
+          metadata: { error: String(error), userId: user.id }
+        });
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [user]);
+  }, [user, measure, logEvent]);
 
   // Add event listener for navigation between tabs
   useEffect(() => {
@@ -202,6 +217,9 @@ export default function Dashboard() {
       case 'nav-automacoes':
         setActiveTab('automacoes');
         break;
+      case 'nav-security':
+        setActiveTab('security');
+        break;
       case 'open-lead':
         setActiveTab('crm');
         break;
@@ -250,6 +268,7 @@ export default function Dashboard() {
                   {activeTab === "agendamentos" && <AgendamentosSection />}
                   {activeTab === "automacoes" && <AutomacoesSection />}
                   {activeTab === "integracoes" && <IntegrationsSection />}
+                  {activeTab === "security" && <SecurityDashboard />}
                   {activeTab === "plan" && <PlanManagement preselectedPlan={null} />}
                 </>
               )}
