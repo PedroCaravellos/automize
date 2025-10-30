@@ -45,3 +45,68 @@ export function useRealtimeTable<T extends Record<string, any>>(tableName: strin
 
   return { isConnected, stats, totalEvents, resetStats };
 }
+
+interface TableConfig {
+  name: string;
+  queryKey: readonly any[];
+  enabled?: boolean;
+  filter?: { column: string; value: any };
+}
+
+interface MultiTableConnection {
+  [tableName: string]: boolean;
+}
+
+interface GlobalStats extends RealtimeStats {
+  totalEvents: number;
+}
+
+export function useMultipleRealtimeTables(tables: TableConfig[]) {
+  const [connections, setConnections] = useState<MultiTableConnection>({});
+  const [globalStats, setGlobalStats] = useState<GlobalStats>({
+    inserts: 0,
+    updates: 0,
+    deletes: 0,
+    lastEvent: null,
+    totalEvents: 0,
+  });
+
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channels = tables.map((table) => {
+      const channel = supabase.channel(`rt-multi-${table.name}-${Date.now()}`);
+      
+      ['INSERT', 'UPDATE', 'DELETE'].forEach(event => {
+        channel.on('postgres_changes', { event: event as any, schema: 'public', table: table.name }, () => {
+          setGlobalStats((prev) => ({
+            ...prev,
+            [event.toLowerCase() + 's']: (prev[event.toLowerCase() + 's' as keyof RealtimeStats] as number) + 1,
+            lastEvent: new Date(),
+            totalEvents: prev.totalEvents + 1,
+          }));
+          queryClient.invalidateQueries({ queryKey: table.queryKey });
+        });
+      });
+
+      channel.subscribe((status) => {
+        setConnections((prev) => ({ ...prev, [table.name]: status === 'SUBSCRIBED' }));
+      });
+
+      return channel;
+    });
+
+    return () => {
+      channels.forEach((channel) => supabase.removeChannel(channel));
+      setConnections({});
+    };
+  }, [tables, queryClient]);
+
+  const allConnected = useMemo(() => Object.values(connections).every(Boolean), [connections]);
+  
+  const resetAllStats = useCallback(() => {
+    setGlobalStats({ inserts: 0, updates: 0, deletes: 0, lastEvent: null, totalEvents: 0 });
+  }, []);
+
+  return { connections, allConnected, globalStats, resetAllStats };
+}

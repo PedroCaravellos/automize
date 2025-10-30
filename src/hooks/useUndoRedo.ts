@@ -78,6 +78,7 @@ export function useListUndoRedo<T extends { id: string | number }>(initialList: 
   const removeItem = useCallback((id: string | number) => undoRedo.set((list) => list.filter((item) => item.id !== id)), [undoRedo]);
   const updateItem = useCallback((id: string | number, updates: Partial<T>) => 
     undoRedo.set((list) => list.map((item) => item.id === id ? { ...item, ...updates } : item)), [undoRedo]);
+  const reorderItems = useCallback((newList: T[]) => undoRedo.set(newList), [undoRedo]);
 
-  return { items: undoRedo.state, addItem, removeItem, updateItem, ...undoRedo };
+  return { items: undoRedo.state, addItem, removeItem, updateItem, reorderItems, ...undoRedo };
 }

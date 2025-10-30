@@ -71,7 +71,45 @@ export function useOptimisticList<T extends { id: string | number }>(initialList
     }
   }, []);
 
+  const updateOptimistic = useCallback(async (id: string | number, updates: Partial<T>, asyncAction: () => Promise<T>, options: OptimisticUpdateOptions<T> = {}) => {
+    setList((prev) => prev.map((i) => (i.id === id ? { ...i, ...updates } : i)));
+    setOptimisticIds((prev) => new Set(prev).add(id));
+
+    try {
+      const result = await asyncAction();
+      setList((prev) => prev.map((i) => (i.id === id ? result : i)));
+      setOptimisticIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      if (options.showToasts !== false) toast({ title: options.successMessage || 'Item atualizado' });
+      options.onSuccess?.(result);
+      return { success: true, data: result };
+    } catch (error) {
+      setList(initialList);
+      setOptimisticIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      if (options.showToasts !== false) toast({ title: options.errorMessage || 'Erro', variant: 'destructive' });
+      return { success: false, error: error as Error };
+    }
+  }, [initialList]);
+
+  const removeOptimistic = useCallback(async (id: string | number, asyncAction: () => Promise<void>, options: OptimisticUpdateOptions<void> = {}) => {
+    const itemToRemove = list.find((i) => i.id === id);
+    setList((prev) => prev.filter((i) => i.id !== id));
+    setOptimisticIds((prev) => new Set(prev).add(id));
+
+    try {
+      await asyncAction();
+      setOptimisticIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      if (options.showToasts !== false) toast({ title: options.successMessage || 'Item removido' });
+      options.onSuccess?.(undefined as any);
+      return { success: true };
+    } catch (error) {
+      if (itemToRemove) setList((prev) => [...prev, itemToRemove]);
+      setOptimisticIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      if (options.showToasts !== false) toast({ title: options.errorMessage || 'Erro', variant: 'destructive' });
+      return { success: false, error: error as Error };
+    }
+  }, [list]);
+
   const isOptimistic = useCallback((id: string | number) => optimisticIds.has(id), [optimisticIds]);
 
-  return { list, addOptimistic, isOptimistic };
+  return { list, addOptimistic, updateOptimistic, removeOptimistic, isOptimistic };
 }
