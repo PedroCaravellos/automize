@@ -41,7 +41,6 @@ export default function AgendamentosSection() {
       // Ensure we have a valid session before making requests
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.warn('No valid session found for agendamentos');
         setLoading(false);
         return;
       }
@@ -51,13 +50,9 @@ export default function AgendamentosSection() {
         .select('*')
         .order('data_hora', { ascending: true });
 
-      if (error) {
-        console.error('Erro ao buscar agendamentos:', error);
-        throw error;
-      }
+      if (error) throw error;
       setAgendamentos((data as Agendamento[]) || []);
     } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os agendamentos.",
@@ -143,7 +138,6 @@ export default function AgendamentosSection() {
           await waitForPropagation();
           await fetchAgendamentos();
         } catch (error) {
-          console.error('Error deleting appointment:', error);
           toast({
             title: "Erro ao excluir",
             description: "Não foi possível excluir o agendamento.",

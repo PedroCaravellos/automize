@@ -50,13 +50,7 @@ export function useAuditLog() {
         },
       };
 
-      // Log localmente para debugging
-      console.log('[AuditLog]', logEntry);
-
-      // TODO: Enviar para edge function de auditoria quando implementada
-      // await supabase.functions.invoke('audit-log', { body: logEntry });
-
-      // Por enquanto, salvamos em localStorage para demonstração
+      // Save to localStorage for demonstration
       const logs = JSON.parse(localStorage.getItem('audit_logs') || '[]');
       logs.push(logEntry);
       if (logs.length > 100) logs.shift(); // Manter apenas últimos 100

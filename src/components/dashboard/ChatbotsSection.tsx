@@ -139,7 +139,6 @@ const ChatbotsSection = () => {
 
       if (error) throw error;
       setNegociosDb(data || []);
-      console.log('ChatbotsSection - Negócios carregados:', data?.length || 0);
     } catch (error) {
       console.error('Erro ao buscar negócios:', error);
     } finally {
@@ -161,7 +160,6 @@ const ChatbotsSection = () => {
 
       if (error) throw error;
       setChatbotsDb(data || []);
-      console.log('ChatbotsSection - Chatbots carregados:', data?.length || 0);
     } catch (error) {
       console.error('Erro ao buscar chatbots:', error);
     }
@@ -252,7 +250,6 @@ const handleToggleStatus = async (chatbotId: string) => {
         .eq('id', chatbotId);
 
       if (error) {
-        console.error('Erro ao atualizar status do chatbot:', error);
         toast({
           title: "Erro",
           description: "Não foi possível alterar o status do chatbot.",
@@ -294,32 +291,21 @@ const handleToggleStatus = async (chatbotId: string) => {
         .select('id')
         .eq('chatbot_id', chatbotId);
 
-      if (convError) {
-        console.error('Erro ao buscar conversas:', convError);
-      }
+      if (convError) throw convError;
 
       if (conversations && conversations.length > 0) {
         const conversationIds = conversations.map(c => c.id);
         
         // Deletar mensagens
-        const { error: messagesError } = await supabase
+        await supabase
           .from('chatbot_messages')
           .delete()
           .in('conversation_id', conversationIds);
 
-        if (messagesError) {
-          console.error('Erro ao deletar mensagens:', messagesError);
-        }
-
-        // Deletar conversas
-        const { error: deleteConvError } = await supabase
+        await supabase
           .from('chatbot_conversations')
           .delete()
           .eq('chatbot_id', chatbotId);
-
-        if (deleteConvError) {
-          console.error('Erro ao deletar conversas:', deleteConvError);
-        }
       }
 
       // Agora deletar o chatbot
@@ -329,7 +315,6 @@ const handleToggleStatus = async (chatbotId: string) => {
         .eq('id', chatbotId);
 
       if (error) {
-        console.error('Erro ao deletar chatbot:', error);
         toast({
           title: "Erro ao deletar",
           description: "Não foi possível deletar o chatbot.",
@@ -393,7 +378,6 @@ const handleSaveChatbot = async (dadosChatbot: {
         .single();
 
       if (error) {
-        console.error('Erro ao criar chatbot:', error);
         toast({
           title: "Erro ao criar chatbot",
           description: "Não foi possível criar o chatbot. Tente novamente.",
@@ -435,7 +419,6 @@ const handleUpdateChatbot = async (mensagens: Chatbot["mensagens"]) => {
         .eq('id', editingChatbot.id);
 
       if (error) {
-        console.error('Erro ao atualizar chatbot:', error);
         toast({
           title: "Erro ao atualizar",
           description: "Não foi possível atualizar o chatbot.",

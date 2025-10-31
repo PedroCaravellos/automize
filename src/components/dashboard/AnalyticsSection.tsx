@@ -91,17 +91,14 @@ export default function AnalyticsSection() {
       if (error) throw error;
       setNegocios(data || []);
     } catch (error) {
-      console.error('Erro ao buscar negócios:', error);
+      // Silent fail - non-critical
     }
   };
 
   const fetchAnalytics = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.warn('No valid session found for analytics');
-        return;
-      }
+      if (!session) return;
 
       // Filtro por negócio
       let leadsQuery = supabase.from('leads').select('origem, status, valor_estimado, created_at, pipeline_stage, negocio_id');
@@ -263,7 +260,7 @@ export default function AnalyticsSection() {
         }
       });
     } catch (error) {
-      console.error('Erro ao buscar analytics:', error);
+      // Silent fail - non-critical
     } finally {
       setLoading(false);
     }
@@ -399,7 +396,7 @@ export default function AnalyticsSection() {
           enableBrush={true}
           showReference={true}
           onDrillDown={(dataPoint) => {
-            console.log("Drill down receita:", dataPoint);
+            // Handle drill down
           }}
         />
 
@@ -411,7 +408,7 @@ export default function AnalyticsSection() {
           enableBrush={true}
           showReference={true}
           onDrillDown={(dataPoint) => {
-            console.log("Drill down leads:", dataPoint);
+            // Handle drill down
           }}
         />
       </div>

@@ -41,7 +41,7 @@ export function useSecurityMonitor() {
         setEvents(parsed.map((e: any) => ({ ...e, timestamp: new Date(e.timestamp) })));
       }
     } catch (error) {
-      console.error('[SecurityMonitor] Failed to load events:', error);
+      // Silent fail
     }
   }, []);
 

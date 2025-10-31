@@ -57,7 +57,6 @@ const PublicChatbotSimulator = ({ demoData, isMobilePreview = false }: PublicCha
   };
 
   const initializeConversation = () => {
-    console.log('initializeConversation called');
     const welcomeMessage: Message = {
       id: Date.now().toString(),
       text: replaceVariables(demoData.mensagens.boasVindas),
@@ -91,11 +90,7 @@ const PublicChatbotSimulator = ({ demoData, isMobilePreview = false }: PublicCha
   };
 
   const handleSendMessage = async () => {
-    console.log('handleSendMessage called:', { inputValue, conversationEnded, isTyping });
-    if (!inputValue.trim() || conversationEnded || isTyping) {
-      console.log('Returning early from handleSendMessage');
-      return;
-    }
+    if (!inputValue.trim() || conversationEnded || isTyping) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -194,9 +189,7 @@ const PublicChatbotSimulator = ({ demoData, isMobilePreview = false }: PublicCha
         }, 800);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      
-      // Try FAQ fallback instead of disabling AI
+      // Try FAQ fallback
       const faqMatch = findBestFaqMatch(currentInput);
       
       setTimeout(() => {
@@ -228,7 +221,6 @@ const PublicChatbotSimulator = ({ demoData, isMobilePreview = false }: PublicCha
 
   // Initialize conversation on component mount
   useEffect(() => {
-    console.log('useEffect triggered for initialization');
     initializeConversation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

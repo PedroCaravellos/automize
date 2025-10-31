@@ -61,8 +61,6 @@ export default function AIAutoTunePanel({ negocioId }: AIAutoTunePanelProps) {
     setLoading(true);
 
     try {
-      console.log("🧠 Solicitando análise AI Auto-Tune...");
-
       const { data, error } = await supabase.functions.invoke("ai-auto-tune", {
         body: { userId: user.id, negocioId },
       });
@@ -72,8 +70,6 @@ export default function AIAutoTunePanel({ negocioId }: AIAutoTunePanelProps) {
       if (!data?.success) {
         throw new Error(data?.error || "Erro ao gerar análise");
       }
-
-      console.log("✅ Análise recebida:", data);
 
       setSugestoes(data.data.sugestoes);
       setContexto(data.data.contexto);
@@ -85,7 +81,6 @@ export default function AIAutoTunePanel({ negocioId }: AIAutoTunePanelProps) {
       });
 
     } catch (error) {
-      console.error("❌ Erro na análise:", error);
       toast({
         title: "Erro ao analisar",
         description: error instanceof Error ? error.message : "Tente novamente",

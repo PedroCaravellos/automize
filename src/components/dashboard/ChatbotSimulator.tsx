@@ -69,7 +69,6 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
   };
 
   const initializeConversation = async () => {
-    console.log('initializeConversation called');
     if (!chatbot || !negocio) return;
     
     // Create conversation record
@@ -106,7 +105,6 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
       setConversationEnded(false);
       setInputValue("");
     } catch (error) {
-      console.error("Error initializing conversation:", error);
       // Continue without saving if error occurs
       const welcomeMessage: Message = {
         id: Date.now().toString(),
@@ -143,11 +141,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
   };
 
   const handleSendMessage = async () => {
-    console.log('handleSendMessage called:', { inputValue, chatbot: !!chatbot, conversationEnded, isTyping });
-    if (!inputValue.trim() || !chatbot || conversationEnded || isTyping) {
-      console.log('Returning early from handleSendMessage');
-      return;
-    }
+    if (!inputValue.trim() || !chatbot || conversationEnded || isTyping) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -170,9 +164,9 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
           .from("chatbot_conversations")
           .update({ total_messages: messages.length + 1 })
           .eq("id", conversationId);
-      } catch (error) {
-        console.error("Error saving user message:", error);
-      }
+        } catch (error) {
+          // Continue without saving
+        }
     }
 
     setMessages(prev => [...prev, userMessage]);
@@ -202,13 +196,6 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
 
     try {
       if (useAI) {
-        console.log('Sending to chatbot-ai:', { 
-          message: currentInput, 
-          negocio: negocio?.nome, 
-          chatbot: chatbot?.nome,
-          faqCount: chatbot?.mensagens?.faqs?.length 
-        });
-        
         // Use AI-powered response
         const conversationHistory = messages.map(msg => ({
           role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
@@ -267,7 +254,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
               description: "O agendamento aparecerá na seção de agendamentos.",
             });
           } catch (error) {
-            console.error('Erro ao salvar agendamento demo:', error);
+            // Continue without saving
           }
         }
         
@@ -302,7 +289,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
                   .eq("id", conversationId);
               }
             } catch (error) {
-              console.error("Error saving bot message:", error);
+              // Continue without saving
             }
           }
           
@@ -344,8 +331,6 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
         }, 800);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      
       // Try FAQ fallback instead of disabling AI
       const faqMatch = findBestFaqMatch(currentInput);
       
@@ -400,7 +385,7 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
           })
           .eq("id", conversationId);
       } catch (error) {
-        console.error("Error ending conversation:", error);
+        // Continue without saving
       }
     }
     
@@ -458,7 +443,6 @@ const ChatbotSimulator = ({ open, onOpenChange, chatbot, negocio, onConversation
   // Initialize conversation when drawer opens  
   useEffect(() => {
     if (open && chatbot && negocio) {
-      console.log('useEffect triggered for initialization');
       initializeConversation();
       updateOnboardingProgress({ simulatorOpened: true });
       // Add activity log

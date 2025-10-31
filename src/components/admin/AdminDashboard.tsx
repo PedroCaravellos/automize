@@ -74,7 +74,6 @@ export default function AdminDashboard() {
 
       setIntegrations(integrationsWithProfiles);
     } catch (error) {
-      console.error("Erro ao carregar integrações:", error);
       toast({
         title: "Erro",
         description: "Falha ao carregar integrações",
@@ -121,7 +120,6 @@ export default function AdminDashboard() {
       setPhoneNumberId("");
       setObservacoes("");
     } catch (error) {
-      console.error("Erro ao atualizar status:", error);
       toast({
         title: "Erro",
         description: "Falha ao atualizar status",

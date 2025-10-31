@@ -47,7 +47,6 @@ export default function AutomacoesSection() {
       // Ensure we have a valid session before making requests
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.warn('No valid session found for automacoes');
         setLoading(false);
         return;
       }
@@ -57,14 +56,10 @@ export default function AutomacoesSection() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Erro ao buscar automações:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       setAutomacoes(data as Automacao[] || []);
     } catch (error) {
-      console.error('Erro ao buscar automações:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar as automações.",
@@ -99,7 +94,6 @@ export default function AutomacoesSection() {
       await waitForPropagation();
       await fetchAutomacoes();
     } catch (error) {
-      console.error('Erro ao atualizar automação:', error);
       toast({
         title: "Erro",
         description: "Não foi possível atualizar a automação.",
@@ -210,7 +204,6 @@ export default function AutomacoesSection() {
       await waitForPropagation();
       await fetchAutomacoes();
     } catch (error) {
-      console.error('Erro ao criar automação:', error);
       toast({
         title: "Erro",
         description: "Não foi possível criar a automação.",
@@ -264,7 +257,6 @@ export default function AutomacoesSection() {
       await waitForPropagation();
       await fetchAutomacoes();
     } catch (error) {
-      console.error('Erro ao salvar automação:', error);
       toast({
         title: "Erro",
         description: "Não foi possível salvar a automação.",
@@ -363,7 +355,6 @@ export default function AutomacoesSection() {
       await fetchAutomacoes();
 
     } catch (error) {
-      console.error('Erro ao gerar automação:', error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Não foi possível gerar a automação.",
@@ -405,7 +396,6 @@ export default function AutomacoesSection() {
       await waitForPropagation();
       await fetchAutomacoes();
     } catch (error) {
-      console.error('Erro ao excluir automação:', error);
       toast({
         title: "Erro",
         description: "Não foi possível excluir a automação.",
