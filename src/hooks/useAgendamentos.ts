@@ -1,20 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useOptimizedRealtime } from './useOptimizedRealtime';
-
-async function fetchAgendamentos(userId: string): Promise<any[]> {
-  const result: any = (supabase as any)
-    .from('agendamentos')
-    .select('*')
-    .eq('user_id', userId)
-    .order('data_hora', { ascending: true });
-  
-  const { data, error } = await result;
-  if (error) throw error;
-  return data || [];
-}
+import { agendamentosService } from '@/services/agendamentosService';
 
 export function useAgendamentos() {
   const { user } = useAuth();
@@ -22,7 +10,7 @@ export function useAgendamentos() {
 
   const { data: agendamentos = [], isLoading, error } = useQuery<any[]>({
     queryKey: ['agendamentos', user?.id],
-    queryFn: () => (user?.id ? fetchAgendamentos(user.id) : Promise.resolve([])),
+    queryFn: () => (user?.id ? agendamentosService.getAll(user.id) : Promise.resolve([])),
     enabled: !!user?.id,
   });
 
@@ -34,15 +22,7 @@ export function useAgendamentos() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newAgendamento: any) => {
-      const { data, error } = await supabase
-        .from('agendamentos')
-        .insert([{ ...newAgendamento, user_id: user?.id }])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (newAgendamento: any) => agendamentosService.create({ ...newAgendamento, user_id: user?.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos', user?.id] });
       toast({ title: 'Agendamento criado com sucesso!' });
@@ -53,16 +33,7 @@ export function useAgendamentos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
-      const { data, error } = await supabase
-        .from('agendamentos')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: ({ id, updates }: { id: string; updates: any }) => agendamentosService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos', user?.id] });
       toast({ title: 'Agendamento atualizado!' });
@@ -73,10 +44,7 @@ export function useAgendamentos() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('agendamentos').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => agendamentosService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos', user?.id] });
       toast({ title: 'Agendamento deletado!' });

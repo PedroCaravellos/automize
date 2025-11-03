@@ -1,26 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useOptimizedRealtime } from './useOptimizedRealtime';
+import { automacoesService } from '@/services/automacoesService';
 
 export function useAutomacoes() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: automacoes = [], isLoading, error } = useQuery({
+  const { data: automacoes = [], isLoading, error } = useQuery<any[]>({
     queryKey: ['automacoes', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('automacoes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => (user?.id ? automacoesService.getAll(user.id) : Promise.resolve([])),
     enabled: !!user?.id,
   });
 
@@ -32,15 +22,7 @@ export function useAutomacoes() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newAutomacao: any) => {
-      const { data, error } = await supabase
-        .from('automacoes')
-        .insert([{ ...newAutomacao, user_id: user?.id }])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (newAutomacao: any) => automacoesService.create({ ...newAutomacao, user_id: user?.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automacoes', user?.id] });
       toast({ title: 'Automação criada com sucesso!' });
@@ -51,16 +33,7 @@ export function useAutomacoes() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
-      const { data, error } = await supabase
-        .from('automacoes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: ({ id, updates }: { id: string; updates: any }) => automacoesService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automacoes', user?.id] });
       toast({ title: 'Automação atualizada!' });
@@ -71,10 +44,7 @@ export function useAutomacoes() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('automacoes').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => automacoesService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automacoes', user?.id] });
       toast({ title: 'Automação deletada!' });
@@ -85,16 +55,7 @@ export function useAutomacoes() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
-      const { data, error } = await supabase
-        .from('automacoes')
-        .update({ ativo })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: ({ id, ativo }: { id: string; ativo: boolean }) => automacoesService.toggle(id, ativo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automacoes', user?.id] });
     },

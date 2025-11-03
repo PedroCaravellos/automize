@@ -1,20 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useOptimizedRealtime } from './useOptimizedRealtime';
-
-async function fetchChatbots(userId: string): Promise<any[]> {
-  const result: any = (supabase as any)
-    .from('chatbots')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  
-  const { data, error } = await result;
-  if (error) throw error;
-  return data || [];
-}
+import { chatbotsService } from '@/services/chatbotsService';
 
 export function useChatbots() {
   const { user } = useAuth();
@@ -22,7 +10,7 @@ export function useChatbots() {
 
   const { data: chatbots = [], isLoading, error } = useQuery<any[]>({
     queryKey: ['chatbots', user?.id],
-    queryFn: () => (user?.id ? fetchChatbots(user.id) : Promise.resolve([])),
+    queryFn: () => (user?.id ? chatbotsService.getAll(user.id) : Promise.resolve([])),
     enabled: !!user?.id,
   });
 
@@ -34,15 +22,7 @@ export function useChatbots() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newChatbot: any) => {
-      const result: any = await supabase
-        .from('chatbots')
-        .insert([{ ...newChatbot, user_id: user?.id }])
-        .select()
-        .single();
-      if (result.error) throw result.error;
-      return result.data;
-    },
+    mutationFn: (newChatbot: any) => chatbotsService.create({ ...newChatbot, user_id: user?.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatbots', user?.id] });
       toast({ title: 'Chatbot criado com sucesso!' });
@@ -53,16 +33,7 @@ export function useChatbots() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
-      const result: any = await supabase
-        .from('chatbots')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (result.error) throw result.error;
-      return result.data;
-    },
+    mutationFn: ({ id, updates }: { id: string; updates: any }) => chatbotsService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatbots', user?.id] });
       toast({ title: 'Chatbot atualizado!' });
@@ -73,10 +44,7 @@ export function useChatbots() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const result: any = await supabase.from('chatbots').delete().eq('id', id);
-      if (result.error) throw result.error;
-    },
+    mutationFn: (id: string) => chatbotsService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatbots', user?.id] });
       toast({ title: 'Chatbot deletado!' });

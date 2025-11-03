@@ -1,20 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useOptimizedRealtime } from './useOptimizedRealtime';
-
-async function fetchLeads(userId: string): Promise<any[]> {
-  const result: any = (supabase as any)
-    .from('leads')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  
-  const { data, error } = await result;
-  if (error) throw error;
-  return data || [];
-}
+import { leadsService } from '@/services/leadsService';
 
 export function useLeads() {
   const { user } = useAuth();
@@ -22,7 +10,7 @@ export function useLeads() {
 
   const { data: leads = [], isLoading, error } = useQuery<any[]>({
     queryKey: ['leads', user?.id],
-    queryFn: () => (user?.id ? fetchLeads(user.id) : Promise.resolve([])),
+    queryFn: () => (user?.id ? leadsService.getAll(user.id) : Promise.resolve([])),
     enabled: !!user?.id,
   });
 
@@ -34,15 +22,7 @@ export function useLeads() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newLead: any) => {
-      const { data, error } = await supabase
-        .from('leads')
-        .insert([{ ...newLead, user_id: user?.id }])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (newLead: any) => leadsService.create({ ...newLead, user_id: user?.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads', user?.id] });
       toast({ title: 'Lead criado com sucesso!' });
@@ -53,16 +33,7 @@ export function useLeads() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
-      const { data, error } = await supabase
-        .from('leads')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: ({ id, updates }: { id: string; updates: any }) => leadsService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads', user?.id] });
       toast({ title: 'Lead atualizado!' });
@@ -73,10 +44,7 @@ export function useLeads() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('leads').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => leadsService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads', user?.id] });
       toast({ title: 'Lead deletado!' });
@@ -87,13 +55,7 @@ export function useLeads() {
   });
 
   const bulkUpdateMutation = useMutation({
-    mutationFn: async ({ ids, updates }: { ids: string[]; updates: any }) => {
-      const { error } = await supabase
-        .from('leads')
-        .update(updates)
-        .in('id', ids);
-      if (error) throw error;
-    },
+    mutationFn: ({ ids, updates }: { ids: string[]; updates: any }) => leadsService.bulkUpdate(ids, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads', user?.id] });
       toast({ title: 'Leads atualizados!' });
