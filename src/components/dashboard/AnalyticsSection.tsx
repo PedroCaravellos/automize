@@ -1,21 +1,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { BarChart3, TrendingUp, TrendingDown, Users, MessageSquare, Calendar, DollarSign, Target, ArrowUpRight, ArrowDownRight, Activity, Filter } from "lucide-react";
+import { BarChart3, TrendingUp, Users, MessageSquare, Calendar, DollarSign, Target } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SalesFunnel } from "./SalesFunnel";
 import { PeriodComparison } from "./PeriodComparison";
 import { ReportExport } from "./ReportExport";
 import { EnhancedAnalyticsChart } from "./EnhancedAnalyticsChart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { AnalyticsSectionHeader } from "./analytics/AnalyticsSectionHeader";
+import { AnalyticsKPICards } from "./analytics/AnalyticsKPICards";
 
 interface MetricData {
   value: number;
@@ -277,39 +270,6 @@ export default function AnalyticsSection() {
     return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 
-  const MetricCard = ({ title, value, change, trend, icon: Icon, format = 'number' }: {
-    title: string;
-    value: number;
-    change: number;
-    trend: TrendType;
-    icon: any;
-    format?: 'number' | 'currency' | 'percentage';
-  }) => {
-    const TrendIcon = trend === 'up' ? ArrowUpRight : trend === 'down' ? ArrowDownRight : Activity;
-    const trendColor = trend === 'up' ? 'text-secondary' : trend === 'down' ? 'text-destructive' : 'text-muted-foreground';
-    
-    return (
-      <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-card opacity-50" />
-        <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-          <Icon className="h-5 w-5 text-primary" />
-        </CardHeader>
-        <CardContent className="relative">
-          <div className="text-3xl font-bold text-foreground mb-2">
-            {format === 'currency' ? formatCurrency(value) : 
-             format === 'percentage' ? `${value.toFixed(1)}%` : 
-             value.toLocaleString('pt-BR')}
-          </div>
-          <div className={`flex items-center gap-1 text-sm ${trendColor}`}>
-            <TrendIcon className="h-4 w-4" />
-            <span>{formatPercentage(change)}</span>
-            <span className="text-muted-foreground text-xs">vs mês anterior</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
 
   if (loading) {
     return (
@@ -321,70 +281,21 @@ export default function AnalyticsSection() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard Analytics</h2>
-          <p className="text-muted-foreground mt-1">Visão completa do desempenho do seu negócio</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedNegocio} onValueChange={setSelectedNegocio}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filtrar por negócio" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os negócios</SelectItem>
-                {negocios.map((negocio) => (
-                  <SelectItem key={negocio.id} value={negocio.id}>
-                    {negocio.nome}
-                    {negocio.unidade && ` - ${negocio.unidade}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-muted-foreground">Última atualização</div>
-            <div className="text-sm font-medium">{new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
-          </div>
-        </div>
-      </div>
+      <AnalyticsSectionHeader 
+        selectedNegocio={selectedNegocio}
+        onNegocioChange={setSelectedNegocio}
+        negocios={negocios}
+      />
 
-      {/* KPIs Principais */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total de Leads"
-          value={analytics.metrics.totalLeads.value}
-          change={analytics.metrics.totalLeads.change}
-          trend={analytics.metrics.totalLeads.trend}
-          icon={Users}
-        />
-        <MetricCard
-          title="Receita Total"
-          value={analytics.metrics.totalRevenue.value}
-          change={analytics.metrics.totalRevenue.change}
-          trend={analytics.metrics.totalRevenue.trend}
-          icon={DollarSign}
-          format="currency"
-        />
-        <MetricCard
-          title="Taxa de Conversão"
-          value={analytics.metrics.conversionRate.value}
-          change={analytics.metrics.conversionRate.change}
-          trend={analytics.metrics.conversionRate.trend}
-          icon={Target}
-          format="percentage"
-        />
-        <MetricCard
-          title="Ticket Médio"
-          value={analytics.metrics.avgTicket.value}
-          change={analytics.metrics.avgTicket.change}
-          trend={analytics.metrics.avgTicket.trend}
-          icon={TrendingUp}
-          format="currency"
-        />
-      </div>
+      <AnalyticsKPICards 
+        metrics={analytics.metrics}
+        icons={{
+          totalLeads: Users,
+          totalRevenue: DollarSign,
+          conversionRate: Target,
+          avgTicket: TrendingUp,
+        }}
+      />
 
       {/* Gráficos Interativos */}
       <div className="grid gap-6 lg:grid-cols-2">

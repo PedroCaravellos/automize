@@ -1,22 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { SkeletonMetricCard } from "@/components/ui/skeleton-metric-card";
-import { SkeletonList } from "@/components/ui/skeleton-list";
-import { Workflow, Plus, Zap, Clock, MessageSquare, Target, Calendar, Users, Activity, Trash2, Sparkles, Loader2, Lightbulb } from "lucide-react";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { Workflow, Activity } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useRealtimeTable } from "@/hooks/useOptimizedRealtime";
 import AutomationModal from "./AutomationModal";
 import AutomationExecutionsTable from "./AutomationExecutionsTable";
-import { Input } from "@/components/ui/input";
+import { AutomacoesSectionHeader } from "./automacoes/AutomacoesSectionHeader";
+import { AutomacoesMetrics } from "./automacoes/AutomacoesMetrics";
+import { AutomacoesAICreator } from "./automacoes/AutomacoesAICreator";
+import { AutomacoesList } from "./automacoes/AutomacoesList";
 
 interface Automacao {
   id: string;
@@ -105,6 +100,20 @@ export default function AutomacoesSection() {
   const getNegocioNome = (negocioId: string) => {
     const negocio = negocios.find(n => n.id === negocioId);
     return negocio ? `${negocio.nome}${negocio.unidade ? ' - ' + negocio.unidade : ''}` : 'Negócio não encontrado';
+  };
+
+  const getTriggerIcon = (trigger: string) => {
+    return trigger;
+  };
+
+  const getTriggerLabel = (trigger: string) => {
+    const labels = {
+      novo_lead: 'Novo Lead',
+      agendamento: 'Agendamento',
+      follow_up: 'Follow-up',
+      tempo_decorrido: 'Tempo Decorrido',
+    };
+    return labels[trigger as keyof typeof labels] || trigger;
   };
 
   const getTriggerIcon = (trigger: string) => {
@@ -416,126 +425,22 @@ export default function AutomacoesSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Automações</h2>
-          <p className="text-muted-foreground">Configure fluxos automáticos para leads e clientes</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={criarAutomacaoExemplo}>
-            <Lightbulb className="mr-2 h-4 w-4" />
-            Exemplo
-          </Button>
-          <Button onClick={handleNovaAutomacao}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Automação
-          </Button>
-        </div>
-      </div>
+      <AutomacoesSectionHeader 
+        onNovaAutomacao={handleNovaAutomacao}
+        onCriarExemplo={criarAutomacaoExemplo}
+      />
 
-      {/* Criação com Linguagem Natural */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3 mb-4">
-            <Sparkles className="h-5 w-5 text-primary mt-1" />
-            <div>
-              <h3 className="font-semibold text-lg mb-1">Criar com IA</h3>
-              <p className="text-sm text-muted-foreground">
-                Descreva o que você quer automatizar e a IA cria para você
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Ex: Enviar boas-vindas para novos leads..."
-              value={nlDescription}
-              onChange={(e) => setNlDescription(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleGenerateFromNL()}
-              disabled={isGenerating}
-              className="flex-1"
-            />
-            <Button 
-              onClick={handleGenerateFromNL}
-              disabled={!nlDescription.trim() || isGenerating}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Criar
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {[
-              "Enviar follow-up para leads inativos há 3 dias",
-              "Lembrar cliente 1 dia antes do agendamento",
-              "Agradecer após primeira compra"
-            ].map((suggestion, idx) => (
-              <button
-                key={idx}
-                onClick={() => setNlDescription(suggestion)}
-                className="text-xs px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <AutomacoesAICreator 
+        onGenerate={handleGenerateFromNL}
+        isGenerating={isGenerating}
+      />
 
-      {/* Status das Automações */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <Workflow className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{automacoes.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ativas</CardTitle>
-            <Zap className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {automacoes.filter(a => a.ativo).length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inativas</CardTitle>
-            <Clock className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-500">
-              {automacoes.filter(a => !a.ativo).length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Execuções</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Esta semana</p>
-          </CardContent>
-        </Card>
-      </div>
+      <AutomacoesMetrics 
+        total={automacoes.length}
+        ativas={automacoes.filter(a => a.ativo).length}
+        inativas={automacoes.filter(a => !a.ativo).length}
+        execucoes={0}
+      />
 
       {/* Tabs para Automações e Execuções */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -551,115 +456,13 @@ export default function AutomacoesSection() {
         </TabsList>
 
         <TabsContent value="automacoes" className="space-y-6">
-          {/* Lista de Automações */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Suas Automações</CardTitle>
-            </CardHeader>
-            <CardContent>
-          {automacoes.length === 0 ? (
-            <EmptyState
-              icon={Workflow}
-              title="Nenhuma automação criada"
-              description="Automatize tarefas repetitivas e economize tempo. Crie fluxos inteligentes que trabalham para você 24/7."
-              actionLabel="Criar Automação"
-              onAction={() => setModalOpen(true)}
-              secondaryActionLabel="Criar Exemplo"
-              onSecondaryAction={criarAutomacaoExemplo}
-            />
-          ) : (
-            <div className="space-y-4">
-              {automacoes.map((automacao) => {
-                const TriggerIcon = getTriggerIcon(automacao.trigger_type);
-                return (
-                  <div key={automacao.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-primary/10 rounded-md">
-                        <TriggerIcon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold">{automacao.nome}</h4>
-                          <Badge variant={automacao.ativo ? "default" : "secondary"}>
-                            {automacao.ativo ? "Ativa" : "Inativa"}
-                          </Badge>
-                          <Badge variant="outline">
-                            {getTriggerLabel(automacao.trigger_type)}
-                          </Badge>
-                        </div>
-                        {automacao.descricao && (
-                          <p className="text-sm text-muted-foreground mb-1">
-                            {automacao.descricao}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {getNegocioNome(automacao.negocio_id)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={automacao.ativo}
-                        onCheckedChange={(checked) => toggleAutomacao(automacao.id, checked)}
-                      />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleEditAutomacao(automacao)}
-                      >
-                        Editar
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDeleteAutomacao(automacao.id, automacao.nome)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-            </CardContent>
-          </Card>
-
-          {/* Templates de Automação */}
-          <Card>
-        <CardHeader>
-          <CardTitle>Templates Disponíveis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="p-4 border rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <MessageSquare className="h-4 w-4 text-primary" />
-                <h4 className="font-semibold">Follow-up de Leads</h4>
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Envie mensagens automáticas para leads que não responderam
-              </p>
-              <Button variant="outline" size="sm" disabled>
-                Em breve
-              </Button>
-            </div>
-
-            <div className="p-4 border rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                <h4 className="font-semibold">Lembrete de Aula</h4>
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Envie lembretes automáticos para agendamentos
-              </p>
-              <Button variant="outline" size="sm" disabled>
-                Em breve
-              </Button>
-            </div>
-          </div>
-            </CardContent>
-          </Card>
+          <AutomacoesList 
+            automacoes={automacoes}
+            onToggle={toggleAutomacao}
+            onEdit={handleEditAutomacao}
+            onDelete={handleDeleteAutomacao}
+            getNegocioNome={getNegocioNome}
+          />
         </TabsContent>
 
         <TabsContent value="execucoes">

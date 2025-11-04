@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/ui/skeleton-table";
-import { Bot, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { updateUserData } from "@/utils/userStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeTable } from "@/hooks/useOptimizedRealtime";
 import ChatbotWizard from "./ChatbotWizard";
@@ -15,7 +13,7 @@ import ChatbotEditModal from "./ChatbotEditModal";
 import ActionBlockModal from "./ActionBlockModal";
 import { ChatbotAnalytics } from "./ChatbotAnalytics";
 import { ConversationHistory } from "./ConversationHistory";
-import { NegocioItem } from "@/contexts/AuthContext";
+import { ChatbotsSectionHeader } from "./chatbots/ChatbotsSectionHeader";
 
 export interface ChatbotTemplate {
   id: string;
@@ -472,29 +470,19 @@ const handleUpdateChatbot = async (mensagens: Chatbot["mensagens"]) => {
 
   return (
     <div className="space-y-6">
+      <ChatbotsSectionHeader onCreateClick={handleCreateChatbot} />
+      
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              Chatbots
-            </div>
-            <Button onClick={handleCreateChatbot}>
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Chatbot
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-            <ChatbotTable
-              chatbots={chatbotsList}
-              negocios={negociosFormatted}
-              onEdit={handleEditChatbot}
-              onToggleStatus={handleToggleStatus}
-              onDelete={handleDeleteChatbot}
-              onTest={handleTestChatbot}
-              onViewAnalytics={setSelectedChatbotForAnalytics}
-            />
+        <CardContent className="pt-6">
+          <ChatbotTable
+            chatbots={chatbotsList}
+            negocios={negociosFormatted}
+            onEdit={handleEditChatbot}
+            onToggleStatus={handleToggleStatus}
+            onDelete={handleDeleteChatbot}
+            onTest={handleTestChatbot}
+            onViewAnalytics={setSelectedChatbotForAnalytics}
+          />
         </CardContent>
       </Card>
 
