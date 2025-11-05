@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
-import { Workflow, Activity } from "lucide-react";
+import { Workflow, Activity, Users, Calendar, MessageSquare, Clock, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -100,20 +100,6 @@ export default function AutomacoesSection() {
   const getNegocioNome = (negocioId: string) => {
     const negocio = negocios.find(n => n.id === negocioId);
     return negocio ? `${negocio.nome}${negocio.unidade ? ' - ' + negocio.unidade : ''}` : 'Negócio não encontrado';
-  };
-
-  const getTriggerIcon = (trigger: string) => {
-    return trigger;
-  };
-
-  const getTriggerLabel = (trigger: string) => {
-    const labels = {
-      novo_lead: 'Novo Lead',
-      agendamento: 'Agendamento',
-      follow_up: 'Follow-up',
-      tempo_decorrido: 'Tempo Decorrido',
-    };
-    return labels[trigger as keyof typeof labels] || trigger;
   };
 
   const getTriggerIcon = (trigger: string) => {
