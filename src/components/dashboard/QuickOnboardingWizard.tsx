@@ -51,7 +51,7 @@ export default function QuickOnboardingWizard() {
     setStep("loading");
 
     try {
-      console.log("🚀 Iniciando auto-setup...");
+      console.log("🚀 Iniciando auto-setup...", { userId: user?.id, empresaNome, segmento, numeroWhatsApp });
 
       const { data, error } = await supabase.functions.invoke("auto-setup", {
         body: {
@@ -62,27 +62,34 @@ export default function QuickOnboardingWizard() {
         },
       });
 
-      if (error) throw error;
+      console.log("📦 Resposta do auto-setup:", { data, error });
+
+      if (error) {
+        console.error("❌ Erro na chamada da função:", error);
+        throw error;
+      }
 
       if (!data?.success) {
+        console.error("❌ Setup falhou:", data?.error);
         throw new Error(data?.error || "Erro ao criar setup automático");
       }
 
-      console.log("✅ Setup concluído:", data);
+      console.log("✅ Setup concluído com sucesso:", data);
 
       setStep("success");
 
+      // Aguarda 2 segundos e força recarga completa
       setTimeout(() => {
-        navigate("/dashboard");
-        window.location.reload(); // Força reload para atualizar dados
-      }, 3000);
+        console.log("🔄 Recarregando dashboard...");
+        window.location.href = "/dashboard";
+      }, 2000);
 
     } catch (error) {
       console.error("❌ Erro no setup:", error);
       setStep("form");
       toast({
         title: "Erro ao configurar",
-        description: error instanceof Error ? error.message : "Tente novamente",
+        description: error instanceof Error ? error.message : "Tente novamente ou pule para explorar o dashboard",
         variant: "destructive",
       });
     }
@@ -97,20 +104,19 @@ export default function QuickOnboardingWizard() {
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <div className="text-center space-y-2">
                 <h3 className="text-xl font-semibold">Criando seu ambiente...</h3>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p className="flex items-center justify-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    Configurando negócio
-                  </p>
+                <p className="text-sm text-muted-foreground">
+                  Aguarde enquanto configuramos tudo para você
+                </p>
+                <div className="space-y-1 text-sm text-muted-foreground mt-4">
                   <p className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Criando chatbot inteligente
+                    Configurando negócio: {empresaNome}
                   </p>
-                  <p className="flex items-center justify-center gap-2 opacity-50">
-                    Preparando funil de vendas
+                  <p className="flex items-center justify-center gap-2 opacity-70">
+                    Segmento: {segmento}
                   </p>
-                  <p className="flex items-center justify-center gap-2 opacity-50">
-                    Adicionando leads de exemplo
+                  <p className="flex items-center justify-center gap-2 opacity-70">
+                    WhatsApp: {numeroWhatsApp}
                   </p>
                 </div>
               </div>

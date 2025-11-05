@@ -23,6 +23,7 @@ export default function OnboardingGate({ children }: OnboardingGateProps) {
 
     const checkOnboarding = async () => {
       try {
+        // Força query sem cache
         const { data, error } = await supabase
           .from("negocios")
           .select("id")
@@ -31,7 +32,15 @@ export default function OnboardingGate({ children }: OnboardingGateProps) {
 
         if (error) throw error;
 
-        setHasNegocios(data && data.length > 0);
+        const hasBusinesses = data && data.length > 0;
+        console.log("🔍 OnboardingGate check:", { userId: user.id, hasBusinesses, count: data?.length });
+        
+        setHasNegocios(hasBusinesses);
+        
+        // Se encontrou negócios, limpa o flag de "skipped"
+        if (hasBusinesses) {
+          localStorage.removeItem('onboarding-skipped');
+        }
       } catch (error) {
         console.error("Erro ao verificar onboarding:", error);
         setHasNegocios(false);
