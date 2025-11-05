@@ -30,6 +30,12 @@ export default function QuickOnboardingWizard() {
   const [segmento, setSegmento] = useState("");
   const [numeroWhatsApp, setNumeroWhatsApp] = useState("");
 
+  const handleSkip = () => {
+    // Permite acesso ao dashboard sem criar negócio
+    localStorage.setItem('onboarding-skipped', 'true');
+    window.location.href = "/dashboard";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -257,11 +263,23 @@ export default function QuickOnboardingWizard() {
               </ul>
             </div>
 
-            {/* Botão */}
-            <Button type="submit" size="lg" className="w-full h-12 text-base">
-              <Sparkles className="mr-2 h-5 w-5" />
-              Criar Meu Negócio Automaticamente
-            </Button>
+            {/* Botões */}
+            <div className="space-y-3">
+              <Button type="submit" size="lg" className="w-full h-12 text-base">
+                <Sparkles className="mr-2 h-5 w-5" />
+                Criar Meu Negócio Automaticamente
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                className="w-full"
+                onClick={handleSkip}
+              >
+                Pular por agora e explorar o dashboard
+              </Button>
+            </div>
 
             <p className="text-xs text-center text-muted-foreground">
               ⏱️ Leva apenas 10 segundos • Você pode editar tudo depois

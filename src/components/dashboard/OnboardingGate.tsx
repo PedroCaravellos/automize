@@ -12,9 +12,14 @@ export default function OnboardingGate({ children }: OnboardingGateProps) {
   const { user } = useAuth();
   const [hasNegocios, setHasNegocios] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [skipped, setSkipped] = useState(false);
 
   useEffect(() => {
     if (!user) return;
+
+    // Verificar se o usuário pulou o onboarding
+    const onboardingSkipped = localStorage.getItem('onboarding-skipped') === 'true';
+    setSkipped(onboardingSkipped);
 
     const checkOnboarding = async () => {
       try {
@@ -46,11 +51,11 @@ export default function OnboardingGate({ children }: OnboardingGateProps) {
     );
   }
 
-  // Se não tem negócios, mostra o wizard de onboarding
-  if (!hasNegocios) {
+  // Se não tem negócios E não pulou o onboarding, mostra o wizard
+  if (!hasNegocios && !skipped) {
     return <QuickOnboardingWizard />;
   }
 
-  // Se já tem negócios, mostra o conteúdo normal
+  // Se já tem negócios OU pulou, mostra o conteúdo normal
   return <>{children}</>;
 }
