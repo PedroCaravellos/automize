@@ -10,7 +10,6 @@ import AutomationModal from "./AutomationModal";
 import AutomationExecutionsTable from "./AutomationExecutionsTable";
 import { AutomacoesSectionHeader } from "./automacoes/AutomacoesSectionHeader";
 import { AutomacoesMetrics } from "./automacoes/AutomacoesMetrics";
-import { AutomacoesAICreator } from "./automacoes/AutomacoesAICreator";
 import { AutomacoesList } from "./automacoes/AutomacoesList";
 
 interface Automacao {
@@ -31,9 +30,7 @@ export default function AutomacoesSection() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAutomacao, setSelectedAutomacao] = useState<Automacao | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("automacoes");
-  const [nlDescription, setNlDescription] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const { negocios, hasAccess, user } = useAuth();
+  const { negocios, user } = useAuth();
 
   const waitForPropagation = () => new Promise(resolve => setTimeout(resolve, 200));
 
@@ -286,80 +283,6 @@ export default function AutomacoesSection() {
     setModalOpen(true);
   };
 
-  const handleGenerateFromNL = async () => {
-    if (!nlDescription.trim()) {
-      toast({
-        title: "Descrição vazia",
-        description: "Descreva o que você quer automatizar.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (negocios.length === 0) {
-      toast({
-        title: "Nenhum negócio cadastrado",
-        description: "Crie um negócio primeiro.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsGenerating(true);
-
-      const { data, error } = await supabase.functions.invoke('generate-automation', {
-        body: {
-          description: nlDescription,
-          negocioInfo: {
-            nome: negocios[0].nome,
-            segmento: negocios[0].segmento,
-            tipo: (negocios[0] as any).tipo_negocio || 'outros',
-          }
-        }
-      });
-
-      if (error) throw error;
-      if (!data?.automation) throw new Error('Falha ao gerar automação');
-
-      const automation = data.automation;
-      const automacaoData = {
-        user_id: user?.id,
-        negocio_id: negocios[0].id,
-        nome: automation.nome,
-        descricao: automation.descricao,
-        trigger_type: automation.trigger_type,
-        trigger_config: automation.trigger_config,
-        actions: automation.actions,
-        ativo: false,
-      };
-
-      const { error: insertError } = await supabase
-        .from('automacoes')
-        .insert([automacaoData]);
-
-      if (insertError) throw insertError;
-
-      toast({
-        title: "✨ Automação criada com IA!",
-        description: "Revise e ative quando estiver pronta.",
-      });
-
-      setNlDescription('');
-      await waitForPropagation();
-      await fetchAutomacoes();
-
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível gerar a automação.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleDeleteAutomacao = async (id: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir a automação "${nome}"?`)) {
       return;
@@ -414,11 +337,6 @@ export default function AutomacoesSection() {
       <AutomacoesSectionHeader 
         onNovaAutomacao={handleNovaAutomacao}
         onCriarExemplo={criarAutomacaoExemplo}
-      />
-
-      <AutomacoesAICreator 
-        onGenerate={handleGenerateFromNL}
-        isGenerating={isGenerating}
       />
 
       <AutomacoesMetrics 
