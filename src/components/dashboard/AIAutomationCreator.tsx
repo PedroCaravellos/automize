@@ -35,12 +35,13 @@ export default function AIAutomationCreator({
     if (!description.trim()) {
       toast({
         title: "Descrição vazia",
-        description: "Por favor, descreva como você quer sua automação.",
+        description: "Por favor, descreva sua automação ou clique em um dos exemplos acima.",
         variant: "destructive",
       });
       return;
     }
 
+    console.log("🚀 Gerando automação com IA...", { description, negocioInfo });
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-automation", {
@@ -50,7 +51,12 @@ export default function AIAutomationCreator({
         },
       });
 
-      if (error) throw error;
+      console.log("📦 Resposta da função:", { data, error });
+
+      if (error) {
+        console.error("❌ Erro na chamada da função:", error);
+        throw error;
+      }
 
       if (data.error) {
         if (data.error.includes("Limite de requisições") || data.error.includes("429")) {
@@ -112,7 +118,7 @@ export default function AIAutomationCreator({
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">
-                  Descreva sua automação
+                  Descreva sua automação *
                 </label>
                 <Textarea
                   value={description}
@@ -121,14 +127,25 @@ export default function AIAutomationCreator({
                   rows={6}
                   className="resize-none"
                 />
+                {description.trim() && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ✓ Descrição pronta para gerar
+                  </p>
+                )}
               </div>
 
               <div>
-                <p className="text-sm font-medium mb-2">Exemplos para se inspirar:</p>
+                <p className="text-sm font-medium mb-2">Exemplos para se inspirar (clique para usar):</p>
                 <div className="space-y-2">
                   {examplePrompts.map((prompt, index) => (
-                    <Alert key={index} className="cursor-pointer hover:bg-accent/50 transition-colors"
-                      onClick={() => setDescription(prompt)}>
+                    <Alert key={index} className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary/50"
+                      onClick={() => {
+                        setDescription(prompt);
+                        toast({
+                          title: "Exemplo carregado!",
+                          description: "Você pode editar o texto ou gerar diretamente.",
+                        });
+                      }}>
                       <AlertDescription className="text-xs">
                         {prompt}
                       </AlertDescription>
