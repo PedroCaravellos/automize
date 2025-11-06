@@ -19,6 +19,73 @@ interface AutomationModalProps {
   onSave: (data: any) => void;
 }
 
+// Função para converter automação do banco para blocos visuais
+const convertAutomacaoToBlocks = (automacao: any): any[] => {
+  const blocks: any[] = [];
+  
+  // 1. Criar bloco de trigger
+  const triggerLabels: Record<string, string> = {
+    novo_lead: "Novo Lead",
+    agendamento_criado: "Agendamento Criado",
+    lead_atualizado: "Lead Atualizado",
+    status_mudou: "Status Mudou",
+  };
+  
+  blocks.push({
+    id: `trigger-${Date.now()}`,
+    tipo: "trigger",
+    label: triggerLabels[automacao.trigger_type] || "Gatilho",
+    posicao: { x: 250, y: 50 },
+    config: automacao.trigger_config || {},
+  });
+  
+  // 2. Converter actions para blocos
+  if (automacao.actions && Array.isArray(automacao.actions)) {
+    automacao.actions.forEach((action: any, index: number) => {
+      let label = "";
+      let tipo = action.type || "message";
+      
+      switch (action.type) {
+        case "send_message":
+          tipo = "message";
+          label = action.message ? 
+            (action.message.length > 50 ? action.message.substring(0, 47) + "..." : action.message) :
+            "Enviar Mensagem";
+          break;
+        case "delay":
+          tipo = "delay";
+          const minutes = action.minutes || 0;
+          const hours = Math.floor(minutes / 60);
+          const mins = minutes % 60;
+          label = hours > 0 ? 
+            `Aguardar ${hours}h${mins > 0 ? ` ${mins}min` : ''}` :
+            `Aguardar ${mins} minutos`;
+          break;
+        case "webhook":
+          tipo = "webhook";
+          label = action.url ? `Webhook: ${action.url}` : "Chamar Webhook";
+          break;
+        case "condition":
+          tipo = "condition";
+          label = action.field ? `Se ${action.field} ${action.operator || '='} ${action.value || '...'}` : "Condição";
+          break;
+        default:
+          label = action.type || "Ação";
+      }
+      
+      blocks.push({
+        id: `block-${Date.now()}-${index}`,
+        tipo,
+        label,
+        posicao: { x: 250, y: 150 + (index * 100) },
+        config: action,
+      });
+    });
+  }
+  
+  return blocks;
+};
+
 export default function AutomationModal({ open, onOpenChange, automacao, onSave }: AutomationModalProps) {
   const { negocios, syncNegociosFromDB } = useAuth();
   const [activeTab, setActiveTab] = useState(automacao ? "flow" : "ai");
@@ -34,8 +101,13 @@ export default function AutomationModal({ open, onOpenChange, automacao, onSave 
     actions: automacao?.actions || {},
   });
 
+  // Converter automação existente para blocos visuais
   useEffect(() => {
     if (automacao) {
+      console.log("🔄 Convertendo automação para blocos visuais:", automacao);
+      const blocks = convertAutomacaoToBlocks(automacao);
+      console.log("✅ Blocos gerados:", blocks);
+      setGeneratedBlocks(blocks);
       setActiveTab("flow");
     } else {
       setActiveTab("ai");
