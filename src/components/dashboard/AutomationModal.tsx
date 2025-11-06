@@ -27,8 +27,11 @@ const convertAutomacaoToBlocks = (automacao: any): any[] => {
   const triggerLabels: Record<string, string> = {
     novo_lead: "Novo Lead",
     agendamento_criado: "Agendamento Criado",
+    agendamento: "Agendamento",
     lead_atualizado: "Lead Atualizado",
     status_mudou: "Status Mudou",
+    follow_up: "Follow-up",
+    tempo_decorrido: "Tempo Decorrido",
   };
   
   blocks.push({
@@ -40,47 +43,82 @@ const convertAutomacaoToBlocks = (automacao: any): any[] => {
   });
   
   // 2. Converter actions para blocos
-  if (automacao.actions && Array.isArray(automacao.actions)) {
-    automacao.actions.forEach((action: any, index: number) => {
-      let label = "";
-      let tipo = action.type || "message";
-      
-      switch (action.type) {
-        case "send_message":
-          tipo = "message";
-          label = action.message ? 
-            (action.message.length > 50 ? action.message.substring(0, 47) + "..." : action.message) :
-            "Enviar Mensagem";
-          break;
-        case "delay":
-          tipo = "delay";
-          const minutes = action.minutes || 0;
-          const hours = Math.floor(minutes / 60);
-          const mins = minutes % 60;
-          label = hours > 0 ? 
-            `Aguardar ${hours}h${mins > 0 ? ` ${mins}min` : ''}` :
-            `Aguardar ${mins} minutos`;
-          break;
-        case "webhook":
-          tipo = "webhook";
-          label = action.url ? `Webhook: ${action.url}` : "Chamar Webhook";
-          break;
-        case "condition":
-          tipo = "condition";
-          label = action.field ? `Se ${action.field} ${action.operator || '='} ${action.value || '...'}` : "Condição";
-          break;
-        default:
-          label = action.type || "Ação";
+  // O formato do auto-setup usa actions como objeto, não array
+  if (automacao.actions) {
+    let index = 0;
+    
+    // Se actions é um objeto (formato auto-setup)
+    if (!Array.isArray(automacao.actions) && typeof automacao.actions === 'object') {
+      // Caso tenha send_message
+      if (automacao.actions.send_message) {
+        const msg = automacao.actions.send_message;
+        const template = msg.template || msg.message || "Mensagem";
+        blocks.push({
+          id: `block-${Date.now()}-${index}`,
+          tipo: "message",
+          label: template.length > 50 ? template.substring(0, 47) + "..." : template,
+          posicao: { x: 250, y: 150 + (index * 100) },
+          config: msg,
+        });
+        index++;
       }
       
-      blocks.push({
-        id: `block-${Date.now()}-${index}`,
-        tipo,
-        label,
-        posicao: { x: 250, y: 150 + (index * 100) },
-        config: action,
+      // Caso tenha delay
+      if (automacao.trigger_config?.delay_hours) {
+        const hours = automacao.trigger_config.delay_hours;
+        blocks.push({
+          id: `block-${Date.now()}-${index}`,
+          tipo: "delay",
+          label: `Aguardar ${hours}h`,
+          posicao: { x: 250, y: 150 + (index * 100) },
+          config: { hours },
+        });
+        index++;
+      }
+    } 
+    // Se actions é array (formato novo da IA)
+    else if (Array.isArray(automacao.actions)) {
+      automacao.actions.forEach((action: any, idx: number) => {
+        let label = "";
+        let tipo = action.type || "message";
+        
+        switch (action.type) {
+          case "send_message":
+            tipo = "message";
+            label = action.message ? 
+              (action.message.length > 50 ? action.message.substring(0, 47) + "..." : action.message) :
+              "Enviar Mensagem";
+            break;
+          case "delay":
+            tipo = "delay";
+            const minutes = action.minutes || 0;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            label = hours > 0 ? 
+              `Aguardar ${hours}h${mins > 0 ? ` ${mins}min` : ''}` :
+              `Aguardar ${mins} minutos`;
+            break;
+          case "webhook":
+            tipo = "webhook";
+            label = action.url ? `Webhook: ${action.url}` : "Chamar Webhook";
+            break;
+          case "condition":
+            tipo = "condition";
+            label = action.field ? `Se ${action.field} ${action.operator || '='} ${action.value || '...'}` : "Condição";
+            break;
+          default:
+            label = action.type || "Ação";
+        }
+        
+        blocks.push({
+          id: `block-${Date.now()}-${idx}`,
+          tipo,
+          label,
+          posicao: { x: 250, y: 150 + (idx * 100) },
+          config: action,
+        });
       });
-    });
+    }
   }
   
   return blocks;
