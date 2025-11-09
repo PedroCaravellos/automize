@@ -79,6 +79,23 @@ const convertAutomacaoToBlocks = (automacao: any): any[] => {
     // Se actions é array (formato novo da IA)
     else if (Array.isArray(automacao.actions)) {
       automacao.actions.forEach((action: any, idx: number) => {
+        // Detectar formato do auto-setup primeiro
+        if (action.tipo === "enviar_whatsapp") {
+          blocks.push({
+            id: `block-${Date.now()}-${idx}`,
+            tipo: "message",
+            label: action.mensagem && action.mensagem.length > 50 
+              ? action.mensagem.substring(0, 47) + "..." 
+              : action.mensagem || "Enviar WhatsApp",
+            posicao: { x: 250, y: 150 + (idx * 100) },
+            config: {
+              message: action.mensagem,
+              delay: action.delay || 0
+            },
+          });
+          return; // Skip o resto do processamento
+        }
+        
         let label = "";
         let tipo = action.type || "message";
         
