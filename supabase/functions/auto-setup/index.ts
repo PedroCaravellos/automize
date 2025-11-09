@@ -81,34 +81,35 @@ const chatbotTemplates: Record<string, any> = {
 };
 
 // Leads de exemplo por segmento
+// Pipeline stages: inicial, interesse, visita_agendada, proposta, fechamento
 const exampleLeads: Record<string, any[]> = {
   academia: [
-    { nome: "João Silva (Exemplo)", telefone: "(11) 99999-0001", email: "joao.exemplo@email.com", origem: "WhatsApp", status: "novo", pipeline_stage: "novo", valor_estimado: 150, observacoes: "Interessado em musculação e avaliação física" },
-    { nome: "Maria Santos (Exemplo)", telefone: "(11) 99999-0002", email: "maria.exemplo@email.com", origem: "Instagram", status: "contato", pipeline_stage: "contato", valor_estimado: 200, observacoes: "Quer plano trimestral + personal" },
+    { nome: "João Silva (Exemplo)", telefone: "(11) 99999-0001", email: "joao.exemplo@email.com", origem: "WhatsApp", status: "novo", pipeline_stage: "inicial", valor_estimado: 150, observacoes: "Interessado em musculação e avaliação física" },
+    { nome: "Maria Santos (Exemplo)", telefone: "(11) 99999-0002", email: "maria.exemplo@email.com", origem: "Instagram", status: "contato", pipeline_stage: "interesse", valor_estimado: 200, observacoes: "Quer plano trimestral + personal" },
   ],
   salao: [
-    { nome: "Ana Costa (Exemplo)", telefone: "(11) 99999-0001", email: "ana.exemplo@email.com", origem: "WhatsApp", status: "novo", pipeline_stage: "novo", valor_estimado: 120, observacoes: "Interessada em coloração e corte" },
-    { nome: "Carla Souza (Exemplo)", telefone: "(11) 99999-0002", email: "carla.exemplo@email.com", origem: "Indicação", status: "qualificado", pipeline_stage: "qualificado", valor_estimado: 300, observacoes: "Quer pacote de noiva completo" },
+    { nome: "Ana Costa (Exemplo)", telefone: "(11) 99999-0001", email: "ana.exemplo@email.com", origem: "WhatsApp", status: "novo", pipeline_stage: "inicial", valor_estimado: 120, observacoes: "Interessada em coloração e corte" },
+    { nome: "Carla Souza (Exemplo)", telefone: "(11) 99999-0002", email: "carla.exemplo@email.com", origem: "Indicação", status: "qualificado", pipeline_stage: "visita_agendada", valor_estimado: 300, observacoes: "Quer pacote de noiva completo" },
   ],
   clinica: [
-    { nome: "Roberto Lima (Exemplo)", telefone: "(11) 99999-0001", email: "roberto.exemplo@email.com", origem: "Google", status: "novo", pipeline_stage: "novo", valor_estimado: 250, observacoes: "Consulta ortopedia" },
-    { nome: "Juliana Melo (Exemplo)", telefone: "(11) 99999-0002", email: "juliana.exemplo@email.com", origem: "WhatsApp", status: "contato", pipeline_stage: "contato", valor_estimado: 180, observacoes: "Check-up completo" },
+    { nome: "Roberto Lima (Exemplo)", telefone: "(11) 99999-0001", email: "roberto.exemplo@email.com", origem: "Google", status: "novo", pipeline_stage: "inicial", valor_estimado: 250, observacoes: "Consulta ortopedia" },
+    { nome: "Juliana Melo (Exemplo)", telefone: "(11) 99999-0002", email: "juliana.exemplo@email.com", origem: "WhatsApp", status: "contato", pipeline_stage: "interesse", valor_estimado: 180, observacoes: "Check-up completo" },
   ],
   restaurante: [
-    { nome: "Pedro Oliveira (Exemplo)", telefone: "(11) 99999-0001", email: "pedro.exemplo@email.com", origem: "Instagram", status: "novo", pipeline_stage: "novo", valor_estimado: 200, observacoes: "Reserva para jantar romântico" },
-    { nome: "Fernanda Dias (Exemplo)", telefone: "(11) 99999-0002", email: "fernanda.exemplo@email.com", origem: "WhatsApp", status: "qualificado", pipeline_stage: "qualificado", valor_estimado: 500, observacoes: "Evento corporativo para 20 pessoas" },
+    { nome: "Pedro Oliveira (Exemplo)", telefone: "(11) 99999-0001", email: "pedro.exemplo@email.com", origem: "Instagram", status: "novo", pipeline_stage: "inicial", valor_estimado: 200, observacoes: "Reserva para jantar romântico" },
+    { nome: "Fernanda Dias (Exemplo)", telefone: "(11) 99999-0002", email: "fernanda.exemplo@email.com", origem: "WhatsApp", status: "qualificado", pipeline_stage: "proposta", valor_estimado: 500, observacoes: "Evento corporativo para 20 pessoas" },
   ],
   consultoria: [
-    { nome: "Tech Solutions LTDA (Exemplo)", telefone: "(11) 99999-0001", email: "contato@techsolutions.com", origem: "LinkedIn", status: "qualificado", pipeline_stage: "qualificado", valor_estimado: 5000, observacoes: "Consultoria em gestão e processos" },
-    { nome: "Carlos Mendes (Exemplo)", telefone: "(11) 99999-0002", email: "carlos.exemplo@email.com", origem: "Indicação", status: "proposta", pipeline_stage: "proposta", valor_estimado: 3000, observacoes: "Planejamento estratégico 2025" },
+    { nome: "Tech Solutions LTDA (Exemplo)", telefone: "(11) 99999-0001", email: "contato@techsolutions.com", origem: "LinkedIn", status: "qualificado", pipeline_stage: "proposta", valor_estimado: 5000, observacoes: "Consultoria em gestão e processos" },
+    { nome: "Carlos Mendes (Exemplo)", telefone: "(11) 99999-0002", email: "carlos.exemplo@email.com", origem: "Indicação", status: "proposta", pipeline_stage: "fechamento", valor_estimado: 3000, observacoes: "Planejamento estratégico 2025" },
   ],
   ecommerce: [
-    { nome: "Luana Pereira (Exemplo)", telefone: "(11) 99999-0001", email: "luana.exemplo@email.com", origem: "Site", status: "novo", pipeline_stage: "novo", valor_estimado: 150, observacoes: "Abandonou carrinho - tênis esportivo" },
-    { nome: "Ricardo Alves (Exemplo)", telefone: "(11) 99999-0002", email: "ricardo.exemplo@email.com", origem: "WhatsApp", status: "negociacao", pipeline_stage: "negociacao", valor_estimado: 450, observacoes: "Compra recorrente - kit fitness" },
+    { nome: "Luana Pereira (Exemplo)", telefone: "(11) 99999-0001", email: "luana.exemplo@email.com", origem: "Site", status: "novo", pipeline_stage: "inicial", valor_estimado: 150, observacoes: "Abandonou carrinho - tênis esportivo" },
+    { nome: "Ricardo Alves (Exemplo)", telefone: "(11) 99999-0002", email: "ricardo.exemplo@email.com", origem: "WhatsApp", status: "negociacao", pipeline_stage: "proposta", valor_estimado: 450, observacoes: "Compra recorrente - kit fitness" },
   ],
   default: [
-    { nome: "Cliente Exemplo 1", telefone: "(11) 99999-0001", email: "exemplo1@email.com", origem: "WhatsApp", status: "novo", pipeline_stage: "novo", valor_estimado: 100, observacoes: "Lead de exemplo para teste" },
-    { nome: "Cliente Exemplo 2", telefone: "(11) 99999-0002", email: "exemplo2@email.com", origem: "Site", status: "contato", pipeline_stage: "contato", valor_estimado: 200, observacoes: "Lead de exemplo para teste" },
+    { nome: "Cliente Exemplo 1", telefone: "(11) 99999-0001", email: "exemplo1@email.com", origem: "WhatsApp", status: "novo", pipeline_stage: "inicial", valor_estimado: 100, observacoes: "Lead de exemplo para teste" },
+    { nome: "Cliente Exemplo 2", telefone: "(11) 99999-0002", email: "exemplo2@email.com", origem: "Site", status: "contato", pipeline_stage: "interesse", valor_estimado: 200, observacoes: "Lead de exemplo para teste" },
   ]
 };
 
