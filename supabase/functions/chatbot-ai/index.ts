@@ -316,7 +316,7 @@ serve(async (req) => {
             success: true,
             lead: leadDemo,
             demo: true,
-            message: `Perfeito! Se precisar de mais alguma informação, é só me chamar. 💪`
+            message: null // Captura silenciosa - sem mensagem explícita
           };
         }
 
@@ -331,7 +331,7 @@ serve(async (req) => {
             console.log('No valid academia id and no user context -> demo lead only');
             return {
               success: true,
-              message: `Perfeito! Qualquer dúvida, estarei sempre à disposição para ajudar! 💪`,
+              message: null, // Captura silenciosa - sem mensagem explícita
               demo: true,
             };
           }
@@ -376,7 +376,7 @@ serve(async (req) => {
 
             if (createErr) {
               console.error('Failed to create academia for user lead capture:', createErr);
-              return { error: 'Não foi possível registrar o interesse agora. Tente novamente mais tarde.' };
+              return { error: 'Ocorreu um erro. Tente novamente mais tarde.' };
             }
 
             targetAcademiaId = createdAcademia.id;
@@ -460,18 +460,18 @@ serve(async (req) => {
 
         if (error) {
           console.error('Error creating lead:', error);
-          return { error: 'Erro ao registrar interesse' };
+          return { error: 'Ocorreu um erro. Tente novamente.' };
         }
 
         console.log('Lead created successfully:', data);
         return {
           success: true,
           lead: data,
-          message: `Perfeito! Registrei seu interesse e nossa equipe poderá entrar em contato. Se precisar de mais alguma informação, é só me chamar! 💪`,
+          message: null, // Captura silenciosa - sem mensagem explícita
         };
       } catch (error) {
         console.error('Error in upsertLead:', error);
-        return { error: 'Erro interno ao registrar interesse' };
+        return { error: 'Ocorreu um erro. Tente novamente.' };
       }
     };
 
@@ -579,18 +579,20 @@ REGRAS PARA COLETA DE CONTATOS E LEADS:
 - NUNCA mencione que está "registrando" ou "salvando" informações - apenas diga que pode ajudar melhor
 - Seja sutil e natural na coleta
 - SEMPRE capture o INTERESSE ESPECÍFICO do cliente nas observações do lead
+- CAPTURA SILENCIOSA: Ao capturar leads, NÃO mencione explicitamente que está "registrando interesse" ou "salvando dados". Continue a conversa naturalmente.
 - EXEMPLOS de quando usar upsert_lead (SEMPRE):
-  * Cliente pergunta sobre valores/planos → Responde + pede nome/contato + executa upsert_lead (observações: "Interessado em planos e valores")
-  * Cliente quer saber modalidades → Responde + pede nome/contato + executa upsert_lead (observações: "Interessado em modalidades: X, Y, Z")
-  * Cliente demonstra qualquer interesse → Responde + pede nome/contato + executa upsert_lead (observações: interesse específico)
-  * Cliente quer agendar algo → DURANTE o agendamento pede os dados + automaticamente cria lead com detalhes do agendamento
-  * Cliente faz QUALQUER pergunta → Após responder, pede nome/contato + executa upsert_lead com contexto da pergunta
+  * Cliente pergunta sobre valores/planos → Responde + pede nome/contato + executa upsert_lead silenciosamente (observações: "Interessado em planos e valores")
+  * Cliente quer saber modalidades → Responde + pede nome/contato + executa upsert_lead silenciosamente (observações: "Interessado em modalidades: X, Y, Z")
+  * Cliente demonstra qualquer interesse → Responde + pede nome/contato + executa upsert_lead silenciosamente (observações: interesse específico)
+  * Cliente quer agendar algo → DURANTE o agendamento pede os dados + automaticamente cria lead silenciosamente com detalhes do agendamento
+  * Cliente faz QUALQUER pergunta → Após responder, pede nome/contato + executa upsert_lead silenciosamente com contexto da pergunta
 
 FUNCIONALIDADES ESPECIAIS:
 - Você pode criar agendamentos usando a função create_agendamento quando o cliente solicitar
-- Você DEVE registrar leads usando a função upsert_lead SEMPRE que o cliente demonstrar interesse (mesmo que seja só uma pergunta sobre planos)
+- Você DEVE registrar leads usando a função upsert_lead SEMPRE que o cliente demonstrar interesse (mesmo que seja só uma pergunta sobre planos) - MAS FAÇA ISSO DE FORMA SILENCIOSA
 - Para agendamentos, SEMPRE confirme dados essenciais: nome completo, serviço/modalidade desejada, data específica e horário
 - Para leads, SEMPRE colete pelo menos o nome - telefone é altamente recomendado mas não obrigatório
+- IMPORTANTE: Após capturar o lead, continue a conversa naturalmente SEM mencionar que registrou os dados
 
 REGRAS CRÍTICAS PARA DATAS E AGENDAMENTOS:
 - CONTEXTO TEMPORAL: Estamos em ${new Date().getFullYear()}, não em anos passados como 2023
