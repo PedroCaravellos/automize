@@ -28,39 +28,60 @@ serve(async (req) => {
         const diff = Date.now() - new Date(l.created_at).getTime();
         return diff > 2 * 24 * 60 * 60 * 1000 && l.status === 'novo';
       }).length || 0,
+      leadsEmNegociacao: leads?.filter((l: any) => l.pipeline_stage === 'proposta' || l.pipeline_stage === 'negociacao').length || 0,
       totalChatbots: chatbots?.length || 0,
       chatbotsAtivos: chatbots?.filter((c: any) => c.ativo).length || 0,
+      chatbotsInativos: chatbots?.filter((c: any) => !c.ativo).length || 0,
       totalAutomacoes: automacoes?.length || 0,
       automacoesAtivas: automacoes?.filter((a: any) => a.ativo).length || 0,
+      automacoesInativas: automacoes?.filter((a: any) => !a.ativo).length || 0,
       tiposNegocio: negocios?.map((n: any) => n.tipo_negocio).filter(Boolean) || [],
     };
 
     const prompt = `Você é um consultor de negócios especializado em automação e vendas.
 
-Analise os dados do negócio:
+Analise CRITICAMENTE os dados do negócio e identifique oportunidades DIVERSIFICADAS:
+
+DADOS ATUAIS:
 - Total de leads: ${context.totalLeads}
-- Leads novos sem resposta: ${context.leadsNovos}
-- Leads há mais de 2 dias sem resposta: ${context.leadsSemResposta}
-- Chatbots ativos: ${context.chatbotsAtivos} de ${context.totalChatbots}
-- Automações ativas: ${context.automacoesAtivas} de ${context.totalAutomacoes}
-- Tipos de negócio: ${context.tiposNegocio.join(', ')}
+- Leads novos: ${context.leadsNovos}
+- Leads sem resposta há +2 dias: ${context.leadsSemResposta}
+- Leads em negociação: ${context.leadsEmNegociacao}
+- Chatbots: ${context.chatbotsAtivos} ativos / ${context.chatbotsInativos} inativos (total: ${context.totalChatbots})
+- Automações: ${context.automacoesAtivas} ativas / ${context.automacoesInativas} inativas (total: ${context.totalAutomacoes})
+- Tipos de negócio: ${context.tiposNegocio.join(', ') || 'não especificado'}
 
-Identifique 3-5 oportunidades CONCRETAS de melhorias, seguindo EXATAMENTE este formato JSON:
+REGRAS CRÍTICAS:
+1. NÃO sugira ações sobre dados zerados (ex: se leads = 0, não sugira "ativar chatbot para leads")
+2. Identifique no MÁXIMO 4 oportunidades DIFERENTES entre si
+3. Varie as categorias: leads, chatbots, automações, estratégia
+4. Seja ESPECÍFICO com os números reais
+5. Se algo já está ótimo, marque como "automatic" e status "completed"
+6. Priorize ações de MAIOR impacto primeiro
 
+Retorne APENAS JSON válido neste formato:
 {
   "opportunities": [
     {
-      "type": "automatic" ou "suggested",
-      "priority": "high" ou "medium" ou "low",
-      "title": "título curto e direto",
-      "description": "descrição específica do que foi detectado e o que fazer",
-      "impact": "impacto esperado (ex: +40% conversão)",
-      "action": "qual ação concreta tomar"
+      "type": "suggested",
+      "priority": "high",
+      "title": "título curto (max 50 caracteres)",
+      "description": "descrição específica do problema E solução (max 150 caracteres)",
+      "impact": "métrica clara (ex: +30% conversão)",
+      "action": "ação concreta"
     }
   ]
 }
 
-Seja específico e acionável. Foque em oportunidades reais baseadas nos números.`;
+EXEMPLOS BONS:
+- Se há 5 leads sem resposta há 3+ dias: "Reativar 5 leads antigos" → "Enviar follow-up automático para os 5 leads que não responderam há mais de 3 dias"
+- Se há 1 automação inativa: "Ativar automação pausada" → "Você tem 1 automação inativa que poderia estar gerando leads automaticamente"
+- Se chatbot está ativo mas sem leads: "Divulgar link do chatbot" → "Compartilhe o link do chatbot nas redes sociais para começar a captar leads"
+
+EXEMPLOS RUINS (não faça isso):
+- "Ativar Chatbots para Geração de Leads" quando total de leads é 0
+- Três sugestões diferentes todas sobre leads
+- Sugestões genéricas sem números específicos`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -71,10 +92,9 @@ Seja específico e acionável. Foque em oportunidades reais baseadas nos número
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'Você é um consultor especialista. Retorne APENAS JSON válido, sem texto adicional.' },
+          { role: 'system', content: 'Você é um consultor especialista. Analise os dados criticamente e retorne APENAS JSON válido sem markdown ou texto adicional.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
       }),
     });
 

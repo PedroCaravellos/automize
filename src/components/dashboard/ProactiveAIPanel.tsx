@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, TrendingUp, Clock, Zap, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { LeadItem, ChatbotItem, NegocioItem, AutomacaoItem } from "@/types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -27,13 +27,32 @@ interface ProactiveAIPanelProps {
 export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes }: ProactiveAIPanelProps) {
   const [actions, setActions] = useState<AIAction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const lastAnalysisRef = useRef<number>(0);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+  // Memorizar contexto para evitar recálculos desnecessários
+  const businessContext = useMemo(() => ({
+    totalLeads: leads.length,
+    chatbotsCount: chatbots.length,
+    automacoesCount: automacoes.length,
+    negociosCount: negocios.length,
+  }), [leads.length, chatbots.length, automacoes.length, negocios.length]);
 
   useEffect(() => {
-    analyzeOpportunities();
-  }, [leads.length, chatbots.length, automacoes.length]);
+    const now = Date.now();
+    const timeSinceLastAnalysis = now - lastAnalysisRef.current;
+    
+    // Só analisa se passou tempo suficiente desde a última análise
+    if (timeSinceLastAnalysis > CACHE_DURATION || lastAnalysisRef.current === 0) {
+      analyzeOpportunities();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessContext]);
 
   const analyzeOpportunities = async () => {
     setIsLoading(true);
+    lastAnalysisRef.current = Date.now();
+    
     try {
       const { data, error } = await supabase.functions.invoke('ai-analyze-opportunities', {
         body: { 
@@ -46,7 +65,7 @@ export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes
 
       if (error) throw error;
 
-      if (data?.opportunities) {
+      if (data?.opportunities && Array.isArray(data.opportunities)) {
         const aiActions: AIAction[] = data.opportunities.map((opp: any, idx: number) => ({
           id: `ai-${Date.now()}-${idx}`,
           type: opp.type || 'suggested',
