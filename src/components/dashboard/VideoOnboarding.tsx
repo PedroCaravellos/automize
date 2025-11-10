@@ -12,11 +12,14 @@ export const VideoOnboarding = () => {
 
   useEffect(() => {
     const hasWatched = localStorage.getItem(VIDEO_WATCHED_KEY);
-    if (!hasWatched) {
-      // Show after 2 seconds
+    const hasCompletedSetup = localStorage.getItem('onboarding-skipped') === 'true' || 
+                              localStorage.getItem('setup-completed') === 'true';
+    
+    // Só mostra o vídeo se já tiver completado o setup inicial
+    if (!hasWatched && hasCompletedSetup) {
       const timer = setTimeout(() => {
         setOpen(true);
-      }, 2000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -35,18 +38,21 @@ export const VideoOnboarding = () => {
 
   return (
     <>
-      {/* Floating tooltip for manual access */}
-      <div className="fixed bottom-24 right-6 z-40">
-        <Button
-          onClick={() => setOpen(true)}
-          size="lg"
-          className="rounded-full shadow-lg"
-          variant="default"
-        >
-          <Play className="h-4 w-4 mr-2" />
-          Ver vídeo rápido
-        </Button>
-      </div>
+      {/* Floating button only appears if user has completed setup */}
+      {(localStorage.getItem('onboarding-skipped') === 'true' || 
+        localStorage.getItem('setup-completed') === 'true') && (
+        <div className="fixed bottom-24 right-6 z-40">
+          <Button
+            onClick={() => setOpen(true)}
+            size="sm"
+            className="rounded-full shadow-lg"
+            variant="outline"
+          >
+            <Play className="h-4 w-4 mr-2" />
+            Tutorial
+          </Button>
+        </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[700px]">

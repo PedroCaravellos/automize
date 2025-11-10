@@ -78,7 +78,8 @@ export default function QuickOnboardingWizard() {
 
       setStep("success");
 
-      // Aguarda 2 segundos e força recarga completa
+      // Marca setup como completo e recarrega
+      localStorage.setItem('setup-completed', 'true');
       setTimeout(() => {
         console.log("🔄 Recarregando dashboard...");
         window.location.href = "/dashboard";
