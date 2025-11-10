@@ -8,7 +8,6 @@ import { NegocioItem, ChatbotItem, LeadItem, AutomacaoItem } from "@/types";
 import InlineActionCard from "./InlineActionCard";
 import ProactiveAIPanel from "./ProactiveAIPanel";
 import ProgressiveOnboarding from "./ProgressiveOnboarding";
-import NaturalLanguageAutomation from "./NaturalLanguageAutomation";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdaptiveDashboardProps {
@@ -227,7 +226,6 @@ export default function AdaptiveDashboard({
               negocios={negocios}
               automacoes={automacoes}
             />
-            <NaturalLanguageAutomation automacoes={automacoes} />
           </div>
         );
 
@@ -289,8 +287,6 @@ export default function AdaptiveDashboard({
                 />
               ))}
             </div>
-
-            <NaturalLanguageAutomation automacoes={automacoes} />
           </div>
         );
 
