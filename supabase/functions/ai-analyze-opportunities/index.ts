@@ -15,6 +15,13 @@ serve(async (req) => {
   try {
     const { leads, chatbots, automacoes, negocios } = await req.json();
     
+    console.log('📊 Dados recebidos:', {
+      totalLeads: leads?.length || 0,
+      totalChatbots: chatbots?.length || 0,
+      totalAutomacoes: automacoes?.length || 0,
+      totalNegocios: negocios?.length || 0
+    });
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
@@ -30,11 +37,11 @@ serve(async (req) => {
       }).length || 0,
       leadsEmNegociacao: leads?.filter((l: any) => l.pipeline_stage === 'proposta' || l.pipeline_stage === 'negociacao').length || 0,
       totalChatbots: chatbots?.length || 0,
-      chatbotsAtivos: chatbots?.filter((c: any) => c.ativo).length || 0,
-      chatbotsInativos: chatbots?.filter((c: any) => !c.ativo).length || 0,
+      chatbotsAtivos: chatbots?.filter((c: any) => c.status === 'Ativo').length || 0,
+      chatbotsInativos: chatbots?.filter((c: any) => c.status !== 'Ativo').length || 0,
       totalAutomacoes: automacoes?.length || 0,
-      automacoesAtivas: automacoes?.filter((a: any) => a.ativo).length || 0,
-      automacoesInativas: automacoes?.filter((a: any) => !a.ativo).length || 0,
+      automacoesAtivas: automacoes?.filter((a: any) => a.ativa).length || 0,
+      automacoesInativas: automacoes?.filter((a: any) => !a.ativa).length || 0,
       tiposNegocio: negocios?.map((n: any) => n.tipo_negocio).filter(Boolean) || [],
     };
 
@@ -51,13 +58,15 @@ DADOS ATUAIS:
 - Automações: ${context.automacoesAtivas} ativas / ${context.automacoesInativas} inativas (total: ${context.totalAutomacoes})
 - Tipos de negócio: ${context.tiposNegocio.join(', ') || 'não especificado'}
 
-REGRAS CRÍTICAS:
-1. NÃO sugira ações sobre dados zerados (ex: se leads = 0, não sugira "ativar chatbot para leads")
-2. Identifique no MÁXIMO 4 oportunidades DIFERENTES entre si
-3. Varie as categorias: leads, chatbots, automações, estratégia
-4. Seja ESPECÍFICO com os números reais
-5. Se algo já está ótimo, marque como "automatic" e status "completed"
-6. Priorize ações de MAIOR impacto primeiro
+REGRAS CRÍTICAS (OBRIGATÓRIAS):
+1. NUNCA sugira ações sobre dados zerados ou inexistentes (ex: se leads = 0, NÃO sugira nada sobre leads)
+2. SEMPRE verifique os números reais antes de sugerir qualquer ação
+3. Identifique EXATAMENTE 3 oportunidades COMPLETAMENTE DIFERENTES entre si
+4. Varie OBRIGATORIAMENTE as categorias: leads, chatbots, automações, estratégia
+5. Seja ESPECÍFICO com os números reais fornecidos
+6. Se algo já está perfeito, NÃO crie sugestão genérica - marque como "automatic" com status "completed"
+7. Priorize ações de MAIOR impacto primeiro
+8. VALIDE: Os dados mostram que existem ${context.totalChatbots} chatbots, ${context.totalLeads} leads, ${context.totalAutomacoes} automações
 
 Retorne APENAS JSON válido neste formato:
 {
@@ -106,6 +115,8 @@ EXEMPLOS RUINS (não faça isso):
     const data = await response.json();
     const content = data.choices[0].message.content;
     
+    console.log('🤖 Resposta da IA:', content.substring(0, 200) + '...');
+    
     // Extrair JSON do conteúdo
     let opportunities;
     try {
@@ -117,9 +128,12 @@ EXEMPLOS RUINS (não faça isso):
       if (jsonMatch) {
         opportunities = JSON.parse(jsonMatch[1]);
       } else {
+        console.error('❌ Falha ao parsear resposta da IA');
         throw new Error('Failed to parse AI response');
       }
     }
+
+    console.log('✅ Oportunidades identificadas:', opportunities.opportunities?.length || 0);
 
     return new Response(
       JSON.stringify(opportunities),

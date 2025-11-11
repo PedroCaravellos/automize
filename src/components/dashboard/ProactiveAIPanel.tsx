@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, TrendingUp, Clock, Zap, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { LeadItem, ChatbotItem, NegocioItem, AutomacaoItem } from "@/types";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -24,34 +24,75 @@ interface ProactiveAIPanelProps {
   automacoes: AutomacaoItem[];
 }
 
+const CACHE_KEY = 'proactive_ai_cache';
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
+
+interface CachedData {
+  actions: AIAction[];
+  timestamp: number;
+  dataHash: string;
+}
+
 export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes }: ProactiveAIPanelProps) {
   const [actions, setActions] = useState<AIAction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const lastAnalysisRef = useRef<number>(0);
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
-  // Memorizar contexto para evitar recálculos desnecessários
-  const businessContext = useMemo(() => ({
-    totalLeads: leads.length,
-    chatbotsCount: chatbots.length,
-    automacoesCount: automacoes.length,
-    negociosCount: negocios.length,
-  }), [leads.length, chatbots.length, automacoes.length, negocios.length]);
+  // Criar hash dos dados para detectar mudanças reais
+  const dataHash = useMemo(() => {
+    return JSON.stringify({
+      leadsCount: leads.length,
+      chatbotsCount: chatbots.length,
+      automacoesCount: automacoes.length,
+      negociosCount: negocios.length,
+      leadsNovos: leads.filter(l => l.status === 'novo').length,
+      chatbotsAtivos: chatbots.filter(c => c.status === 'Ativo').length,
+      automacoesAtivas: automacoes.filter(a => a.ativa).length,
+    });
+  }, [leads, chatbots, automacoes, negocios]);
 
+  // Carregar cache ao montar
   useEffect(() => {
-    const now = Date.now();
-    const timeSinceLastAnalysis = now - lastAnalysisRef.current;
-    
-    // Só analisa se passou tempo suficiente desde a última análise
-    if (timeSinceLastAnalysis > CACHE_DURATION || lastAnalysisRef.current === 0) {
-      analyzeOpportunities();
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const cachedData: CachedData = JSON.parse(cached);
+        const now = Date.now();
+        const isExpired = now - cachedData.timestamp > CACHE_DURATION;
+        const dataChanged = cachedData.dataHash !== dataHash;
+        
+        if (!isExpired && !dataChanged) {
+          console.log('📦 Usando cache da IA Proativa');
+          setActions(cachedData.actions.map(a => ({ ...a, timestamp: new Date(a.timestamp) })));
+          return;
+        } else if (dataChanged) {
+          console.log('🔄 Dados mudaram, recalculando análise');
+        }
+      } catch (e) {
+        console.error('Erro ao ler cache:', e);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessContext]);
+    
+    // Se não tem cache válido, analisa
+    analyzeOpportunities();
+  }, [dataHash]);
 
   const analyzeOpportunities = async () => {
+    // Validar se tem dados suficientes
+    const hasData = leads.length > 0 || chatbots.length > 0 || automacoes.length > 0 || negocios.length > 0;
+    
+    if (!hasData) {
+      console.log('⏭️ Sem dados para analisar, pulando IA Proativa');
+      setActions([]);
+      return;
+    }
+
     setIsLoading(true);
-    lastAnalysisRef.current = Date.now();
+    console.log('🤖 Iniciando análise da IA Proativa', {
+      leads: leads.length,
+      chatbots: chatbots.length,
+      automacoes: automacoes.length,
+      negocios: negocios.length
+    });
     
     try {
       const { data, error } = await supabase.functions.invoke('ai-analyze-opportunities', {
@@ -75,10 +116,20 @@ export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes
           impact: opp.impact,
           timestamp: new Date()
         }));
+        
         setActions(aiActions);
+        
+        // Salvar no cache
+        const cacheData: CachedData = {
+          actions: aiActions,
+          timestamp: Date.now(),
+          dataHash
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        console.log('✅ IA Proativa: análise completa e salva no cache');
       }
     } catch (error) {
-      console.error('Error analyzing opportunities:', error);
+      console.error('❌ Erro ao analisar oportunidades:', error);
       toast.error('Erro ao analisar oportunidades');
     } finally {
       setIsLoading(false);
