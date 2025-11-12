@@ -36,6 +36,8 @@ interface CachedData {
 export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes }: ProactiveAIPanelProps) {
   const [actions, setActions] = useState<AIAction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastAnalysis, setLastAnalysis] = useState<Date | null>(null);
+  const [cacheStatus, setCacheStatus] = useState<'fresh' | 'cached' | 'expired'>('expired');
 
   // Criar hash dos dados para detectar mudanças reais
   const dataHash = useMemo(() => {
@@ -49,6 +51,12 @@ export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes
       automacoesAtivas: automacoes.filter(a => a.ativa).length,
     });
   }, [leads, chatbots, automacoes, negocios]);
+  
+  // Calcular tempo desde última análise
+  const minutesSinceLastAnalysis = useMemo(() => {
+    if (!lastAnalysis) return null;
+    return Math.floor((Date.now() - lastAnalysis.getTime()) / 1000 / 60);
+  }, [lastAnalysis]);
 
   // Carregar cache ao montar
   useEffect(() => {
@@ -63,9 +71,12 @@ export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes
         if (!isExpired && !dataChanged) {
           console.log('📦 Usando cache da IA Proativa');
           setActions(cachedData.actions.map(a => ({ ...a, timestamp: new Date(a.timestamp) })));
+          setLastAnalysis(new Date(cachedData.timestamp));
+          setCacheStatus('cached');
           return;
         } else if (dataChanged) {
           console.log('🔄 Dados mudaram, recalculando análise');
+          setCacheStatus('expired');
         }
       } catch (e) {
         console.error('Erro ao ler cache:', e);
@@ -127,6 +138,8 @@ export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes
         };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
         console.log('✅ IA Proativa: análise completa e salva no cache');
+        setLastAnalysis(new Date());
+        setCacheStatus('fresh');
       }
     } catch (error) {
       console.error('❌ Erro ao analisar oportunidades:', error);
@@ -134,6 +147,13 @@ export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const handleForceRefresh = () => {
+    console.log('🔄 Forçando nova análise...');
+    localStorage.removeItem(CACHE_KEY);
+    setCacheStatus('expired');
+    analyzeOpportunities();
   };
 
   const handleApplyAction = (actionId: string) => {
@@ -190,22 +210,48 @@ export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes
     return date.toLocaleDateString('pt-BR');
   };
 
+  const pendingActions = actions.filter(a => a.status === 'pending').length;
+
   return (
     <Card className="p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Sparkles className="h-5 w-5 text-primary" />
-        <h2 className="text-xl font-semibold">IA Proativa</h2>
-        <Badge variant="secondary" className="ml-auto">
-          {actions.filter(a => a.status === 'pending').length} ações pendentes
-        </Badge>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={analyzeOpportunities}
-          disabled={isLoading}
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-        </Button>
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">Sugestões Inteligentes da IA</h2>
+            {pendingActions > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {pendingActions} pendentes
+              </Badge>
+            )}
+            {cacheStatus === 'cached' && (
+              <Badge variant="outline" className="ml-2 text-xs">
+                📦 Cache
+              </Badge>
+            )}
+            {cacheStatus === 'fresh' && (
+              <Badge variant="outline" className="ml-2 text-xs">
+                ✨ Novo
+              </Badge>
+            )}
+          </div>
+          {minutesSinceLastAnalysis !== null && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Última análise: {minutesSinceLastAnalysis === 0 ? 'agora' : `há ${minutesSinceLastAnalysis} min`}
+            </p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleForceRefresh}
+            disabled={isLoading}
+            title="Forçar nova análise (ignora cache)"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">
