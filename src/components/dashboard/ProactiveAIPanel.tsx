@@ -39,16 +39,22 @@ export default function ProactiveAIPanel({ leads, chatbots, negocios, automacoes
   const [lastAnalysis, setLastAnalysis] = useState<Date | null>(null);
   const [cacheStatus, setCacheStatus] = useState<'fresh' | 'cached' | 'expired'>('expired');
 
-  // Criar hash dos dados para detectar mudanças reais
+  // Criar hash dos dados com cálculo endurecido de "ativos"
   const dataHash = useMemo(() => {
     return JSON.stringify({
       leadsCount: leads.length,
       chatbotsCount: chatbots.length,
       automacoesCount: automacoes.length,
       negociosCount: negocios.length,
-      leadsNovos: leads.filter(l => l.status === 'novo').length,
-      chatbotsAtivos: chatbots.filter(c => c.status === 'Ativo').length,
-      automacoesAtivas: automacoes.filter(a => a.ativa).length,
+      leadsNovos: leads.filter(l => (l.status || '').toLowerCase() === 'novo').length,
+      // Check both boolean field and string status for "active"
+      chatbotsAtivos: chatbots.filter(c => 
+        (c as any).ativo === true || (c.status || '').toLowerCase() === 'ativo'
+      ).length,
+      // Check both ativa and ativo boolean fields
+      automacoesAtivas: automacoes.filter(a => 
+        a.ativa === true || (a as any).ativo === true
+      ).length,
     });
   }, [leads, chatbots, automacoes, negocios]);
   

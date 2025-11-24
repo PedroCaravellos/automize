@@ -23,9 +23,9 @@ import IntegrationsSection from "@/components/dashboard/IntegrationsSection";
 import { SecurityDashboard } from "@/components/dashboard/SecurityDashboard";
 import QuickCommandPalette from "@/components/dashboard/QuickCommandPalette";
 import { supabase } from "@/integrations/supabase/client";
-import { NegocioItem, ChatbotItem, LeadItem, AutomacaoItem } from "@/types";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { useSecurityMonitor } from "@/hooks/useSecurityMonitor";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 export default function Dashboard() {
   const { isHydrating, user } = useAuth();
@@ -45,12 +45,14 @@ export default function Dashboard() {
   const [selectedLeadForSchedule, setSelectedLeadForSchedule] = useState<string | undefined>();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
-  // Data states for AdaptiveDashboard
-  const [negocios, setNegocios] = useState<any[]>([]);
-  const [chatbots, setChatbots] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
-  const [automacoes, setAutomacoes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use centralized data hook (fonte da verdade) - returns raw DB data
+  const { 
+    negocios, 
+    chatbots, 
+    leads, 
+    automacoes, 
+    isLoading: loading 
+  } = useDashboardData();
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -85,55 +87,6 @@ export default function Dashboard() {
       description: 'Testar chatbot',
     },
   ]);
-
-  // Load dashboard data with performance monitoring
-  useEffect(() => {
-    if (!user) return;
-
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        await measure('dashboard-data-load', async () => {
-          const negociosResult = await (supabase as any)
-            .from('negocios')
-            .select('*')
-            .eq('user_id', user.id);
-          
-          const chatbotsResult = await (supabase as any)
-            .from('chatbots')
-            .select('*')
-            .eq('user_id', user.id);
-          
-          const leadsResult = await (supabase as any)
-            .from('leads')
-            .select('*')
-            .eq('user_id', user.id);
-          
-          const automacoesResult = await (supabase as any)
-            .from('automacoes')
-            .select('*')
-            .eq('user_id', user.id);
-
-          setNegocios(negociosResult.data || []);
-          setChatbots(chatbotsResult.data || []);
-          setLeads(leadsResult.data || []);
-          setAutomacoes(automacoesResult.data || []);
-        });
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        logEvent({
-          type: 'suspicious_activity',
-          severity: 'high',
-          message: 'Failed to load dashboard data',
-          metadata: { error: String(error), userId: user.id }
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [user, measure, logEvent]);
 
   // Add event listener for navigation between tabs
   useEffect(() => {
@@ -253,10 +206,10 @@ export default function Dashboard() {
                 <>
                   {activeTab === "overview" && (
                     <AdaptiveDashboard
-                      negocios={negocios}
-                      chatbots={chatbots}
-                      leads={leads}
-                      automacoes={automacoes}
+                      negocios={negocios as any}
+                      chatbots={chatbots as any}
+                      leads={leads as any}
+                      automacoes={automacoes as any}
                       onOpenSimulator={() => setSimulatorOpen(true)}
                       onOpenSchedule={handleOpenSchedule}
                       onActionClick={handleActionClick}
@@ -287,10 +240,10 @@ export default function Dashboard() {
           <QuickCommandPalette
             open={commandPaletteOpen}
             onOpenChange={setCommandPaletteOpen}
-            leads={leads}
-            negocios={negocios}
-            chatbots={chatbots}
-            automacoes={automacoes}
+            leads={leads as any}
+            negocios={negocios as any}
+            chatbots={chatbots as any}
+            automacoes={automacoes as any}
             onCommand={handleCommandPalette}
           />
 
@@ -312,16 +265,7 @@ export default function Dashboard() {
             onAgendamentoCriado={() => {
               setNovoAgendamentoModalOpen(false);
               setSelectedLeadForSchedule(undefined);
-              if (user) {
-                const fetchLeads = async () => {
-                  const result = await (supabase as any)
-                    .from('leads')
-                    .select('*')
-                    .eq('user_id', user.id);
-                  if (result.data) setLeads(result.data);
-                };
-                fetchLeads();
-              }
+              // Data will be refreshed by useDashboardData hook
             }}
           />
           <AutomationModal
@@ -329,16 +273,7 @@ export default function Dashboard() {
             onOpenChange={setNovaAutomacaoModalOpen}
             onSave={() => {
               setNovaAutomacaoModalOpen(false);
-              if (user) {
-                const fetchAuto = async () => {
-                  const result = await (supabase as any)
-                    .from('automacoes')
-                    .select('*')
-                    .eq('user_id', user.id);
-                  if (result.data) setAutomacoes(result.data);
-                };
-                fetchAuto();
-              }
+              // Data will be refreshed by useDashboardData hook
             }}
           />
 
@@ -347,19 +282,10 @@ export default function Dashboard() {
             <ChatbotSimulator
               open={simulatorOpen}
               onOpenChange={setSimulatorOpen}
-              chatbot={chatbots[0]}
-              negocio={negocios.find(n => n.id === chatbots[0]?.negocioId) || null}
+              chatbot={chatbots[0] as any}
+              negocio={(negocios.find(n => n.id === (chatbots[0] as any)?.negocio_id) || null) as any}
               onConversationEnd={() => {
-                if (user) {
-                  const fetchLeads = async () => {
-                    const result = await (supabase as any)
-                      .from('leads')
-                      .select('*')
-                      .eq('user_id', user.id);
-                    if (result.data) setLeads(result.data);
-                  };
-                  fetchLeads();
-                }
+                // Data will be refreshed by useDashboardData hook
               }}
             />
           )}
