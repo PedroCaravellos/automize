@@ -142,27 +142,98 @@ serve(async (req) => {
   }
 
   try {
-    const { leads, chatbots, automacoes, negocios } = await req.json();
+    // Get auth header and create authenticated Supabase client (backend as source of truth)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    console.log('👤 Usuario autenticado:', user.id);
+
+    // Fetch real data from database (backend as source of truth)
+    console.log('🔍 Buscando dados reais do banco...');
     
-    // Preparar contexto para análise
+    const { data: negocios, error: negociosError } = await supabaseClient
+      .from('negocios')
+      .select('id, tipo_negocio')
+      .eq('user_id', user.id);
+
+    if (negociosError) {
+      console.error('Erro ao buscar negócios:', negociosError);
+      throw negociosError;
+    }
+
+    const negocioIds = negocios?.map(n => n.id) || [];
+    console.log('📋 Negocios encontrados:', negocioIds.length);
+
+    // Fetch chatbots, leads, and automacoes in parallel
+    const [chatbotsResult, leadsResult, automacoesResult] = await Promise.all([
+      supabaseClient.from('chatbots').select('*').in('negocio_id', negocioIds),
+      supabaseClient.from('leads').select('*').in('negocio_id', negocioIds),
+      supabaseClient.from('automacoes').select('*').eq('user_id', user.id)
+    ]);
+
+    const chatbots = chatbotsResult.data || [];
+    const leads = leadsResult.data || [];
+    const automacoes = automacoesResult.data || [];
+
+    console.log('📊 DADOS REAIS DO BANCO:', { 
+      negocios: negocios?.length || 0,
+      chatbots: chatbots.length,
+      leads: leads.length, 
+      automacoes: automacoes.length
+    });
+    
+    // Preparar contexto para análise com dados reais do banco
+    const now = Date.now();
     const context = {
-      totalLeads: leads?.length || 0,
-      leadsNovos: leads?.filter((l: any) => l.status === 'novo').length || 0,
-      leadsSemResposta: leads?.filter((l: any) => {
-        const diff = Date.now() - new Date(l.created_at).getTime();
-        return diff > 2 * 24 * 60 * 60 * 1000 && l.status === 'novo';
-      }).length || 0,
-      leadsEmNegociacao: leads?.filter((l: any) => l.pipeline_stage === 'proposta' || l.pipeline_stage === 'negociacao').length || 0,
-      totalChatbots: chatbots?.length || 0,
-      chatbotsAtivos: chatbots?.filter((c: any) => c.status === 'Ativo').length || 0,
-      chatbotsInativos: chatbots?.filter((c: any) => c.status !== 'Ativo').length || 0,
-      totalAutomacoes: automacoes?.length || 0,
-      automacoesAtivas: automacoes?.filter((a: any) => a.ativa).length || 0,
-      automacoesInativas: automacoes?.filter((a: any) => !a.ativa).length || 0,
+      totalNegocios: negocios?.length || 0,
+      totalLeads: leads.length,
+      leadsNovos: leads.filter((l: any) => (l.status || '').toLowerCase() === 'novo').length,
+      leadsSemResposta: leads.filter((l: any) => {
+        const diff = now - new Date(l.created_at).getTime();
+        return diff > 2 * 24 * 60 * 60 * 1000 && (l.status || '').toLowerCase() === 'novo';
+      }).length,
+      leadsEmNegociacao: leads.filter((l: any) => {
+        const stage = (l.pipeline_stage || '').toLowerCase();
+        return stage === 'proposta' || stage === 'negociacao';
+      }).length,
+      totalChatbots: chatbots.length,
+      // Check both boolean field and string status
+      chatbotsAtivos: chatbots.filter((c: any) => 
+        c.ativo === true || (c.status || '').toLowerCase() === 'ativo'
+      ).length,
+      chatbotsInativos: chatbots.filter((c: any) => 
+        c.ativo !== true && (c.status || '').toLowerCase() !== 'ativo'
+      ).length,
+      totalAutomacoes: automacoes.length,
+      // Check both ativa and ativo fields
+      automacoesAtivas: automacoes.filter((a: any) => 
+        a.ativa === true || a.ativo === true
+      ).length,
+      automacoesInativas: automacoes.filter((a: any) => 
+        a.ativa !== true && a.ativo !== true
+      ).length,
       tiposNegocio: negocios?.map((n: any) => n.tipo_negocio).filter(Boolean) || [],
     };
     
-    console.log('📊 CONTEXTO COMPLETO:', JSON.stringify(context, null, 2));
+    console.log('📊 CONTEXTO COMPLETO (FONTE DA VERDADE):', JSON.stringify(context, null, 2));
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -351,45 +422,31 @@ LEMBRE-SE: Use EXATAMENTE os números: ${context.totalChatbots} chatbots, ${cont
   } catch (error) {
     console.error('❌ ERRO em ai-analyze-opportunities:', error);
     
-    // Tentar usar fallback mesmo em caso de erro
-    try {
-      const { leads, chatbots, automacoes, negocios } = await req.json();
-      const context = {
-        totalLeads: leads?.length || 0,
-        leadsNovos: leads?.filter((l: any) => l.status === 'novo').length || 0,
-        leadsSemResposta: leads?.filter((l: any) => {
-          const diff = Date.now() - new Date(l.created_at).getTime();
-          return diff > 2 * 24 * 60 * 60 * 1000 && l.status === 'novo';
-        }).length || 0,
-        leadsEmNegociacao: leads?.filter((l: any) => l.pipeline_stage === 'proposta' || l.pipeline_stage === 'negociacao').length || 0,
-        totalChatbots: chatbots?.length || 0,
-        chatbotsAtivos: chatbots?.filter((c: any) => c.status === 'Ativo').length || 0,
-        chatbotsInativos: chatbots?.filter((c: any) => c.status !== 'Ativo').length || 0,
-        totalAutomacoes: automacoes?.length || 0,
-        automacoesAtivas: automacoes?.filter((a: any) => a.ativa).length || 0,
-        automacoesInativas: automacoes?.filter((a: any) => !a.ativa).length || 0,
-        tiposNegocio: negocios?.map((n: any) => n.tipo_negocio).filter(Boolean) || [],
-      };
-      
-      console.log('🔧 Usando fallback devido a erro');
-      const fallbackOpportunities = generateRuleBasedSuggestions(context);
-      
-      return new Response(
-        JSON.stringify({ opportunities: fallbackOpportunities }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (fallbackError) {
-      console.error('❌ Fallback também falhou:', fallbackError);
-      return new Response(
-        JSON.stringify({ 
-          error: error.message,
-          opportunities: [] 
-        }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    // Usar fallback com contexto vazio em caso de erro
+    console.log('🔧 Usando fallback devido a erro');
+    const fallbackContext = {
+      totalLeads: 0,
+      leadsNovos: 0,
+      leadsSemResposta: 0,
+      leadsEmNegociacao: 0,
+      totalChatbots: 0,
+      chatbotsAtivos: 0,
+      chatbotsInativos: 0,
+      totalAutomacoes: 0,
+      automacoesAtivas: 0,
+      automacoesInativas: 0,
+      tiposNegocio: [],
+    };
+    const fallbackOpportunities = generateRuleBasedSuggestions(fallbackContext);
+    
+    return new Response(
+      JSON.stringify({ 
+        opportunities: fallbackOpportunities,
+        error: 'Failed to analyze, using fallback suggestions'
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });

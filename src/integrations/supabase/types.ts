@@ -730,11 +730,77 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_setup_tickets: {
+        Row: {
+          admin_notes: string | null
+          business_segment: string | null
+          company_name: string
+          completed_at: string | null
+          created_at: string
+          dialog360_api_key: string | null
+          dialog360_client_id: string | null
+          id: string
+          negocio_id: string | null
+          notes: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          webhook_url: string | null
+          whatsapp_number: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          business_segment?: string | null
+          company_name: string
+          completed_at?: string | null
+          created_at?: string
+          dialog360_api_key?: string | null
+          dialog360_client_id?: string | null
+          id?: string
+          negocio_id?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          webhook_url?: string | null
+          whatsapp_number: string
+        }
+        Update: {
+          admin_notes?: string | null
+          business_segment?: string | null
+          company_name?: string
+          completed_at?: string | null
+          created_at?: string
+          dialog360_api_key?: string | null
+          dialog360_client_id?: string | null
+          id?: string
+          negocio_id?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          webhook_url?: string | null
+          whatsapp_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_setup_tickets_negocio_id_fkey"
+            columns: ["negocio_id"]
+            isOneToOne: false
+            referencedRelation: "negocios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      complete_whatsapp_setup_ticket: {
+        Args: { ticket_id: string }
+        Returns: undefined
+      }
       current_user_has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
