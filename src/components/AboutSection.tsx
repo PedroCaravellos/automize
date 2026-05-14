@@ -2,52 +2,57 @@ import { Bot, Target, Zap } from "lucide-react";
 
 const AboutSection = () => {
   return (
-    <section id="como-funciona" className="py-20 bg-background">
+    <section id="como-funciona" className="py-24 bg-muted/40">
       <div className="container px-4 mx-auto">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-6">
-            O que é o <span className="text-primary">Automiza</span>?
-          </h2>
-          
-          <p className="text-lg md:text-xl text-muted-foreground mb-12 max-w-3xl mx-auto font-body">
-            Somos uma plataforma de automatização que cria chatbots inteligentes e personalizados 
-            para qualquer tipo de negócio. Nossa IA cuida do atendimento, agendamentos e vendas 
-            enquanto você foca no que mais importa: fazer seu negócio crescer.
-          </p>
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="mb-16">
+            <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">
+              Sobre a plataforma
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+              O que é o <span className="text-primary">Automiza</span>?
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+              Uma plataforma de automatização que cria chatbots inteligentes e personalizados
+              para qualquer tipo de negócio. Nossa IA cuida do atendimento, agendamentos e
+              vendas enquanto você foca no crescimento.
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-gradient-card p-8 rounded-2xl shadow-card">
-              <div className="bg-primary p-4 rounded-xl w-fit mx-auto mb-6">
-                <Bot className="h-8 w-8 text-primary-foreground" />
+          {/* Cards */}
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: Bot,
+                title: "IA Personalizada",
+                description:
+                  "Cada chatbot é treinado especificamente para seu negócio, entendendo seus serviços e falando com a voz da sua marca.",
+              },
+              {
+                icon: Target,
+                title: "Foco no Resultado",
+                description:
+                  "Não apenas respondemos perguntas — convertemos visitantes em clientes e clientes em vendas recorrentes.",
+              },
+              {
+                icon: Zap,
+                title: "Simples e Rápido",
+                description:
+                  "Configure em minutos, não em semanas. Nossa plataforma foi pensada para ser intuitiva e eficiente.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-card border border-white/[0.06] rounded-xl p-6 hover:border-white/[0.12] transition-colors"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-5">
+                  <item.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
               </div>
-              <h3 className="text-xl font-heading font-semibold mb-4">IA Personalizada</h3>
-              <p className="text-muted-foreground font-body">
-                Cada chatbot é treinado especificamente para seu negócio, 
-                entendendo seus serviços e falando com a voz da sua marca.
-              </p>
-            </div>
-
-            <div className="bg-gradient-card p-8 rounded-2xl shadow-card">
-              <div className="bg-secondary p-4 rounded-xl w-fit mx-auto mb-6">
-                <Target className="h-8 w-8 text-primary-foreground" />
-              </div>
-              <h3 className="text-xl font-heading font-semibold mb-4">Foco no Resultado</h3>
-              <p className="text-muted-foreground font-body">
-                Não apenas respondemos perguntas, convertemos visitantes em clientes 
-                e clientes em vendas recorrentes.
-              </p>
-            </div>
-
-            <div className="bg-gradient-card p-8 rounded-2xl shadow-card">
-              <div className="bg-primary p-4 rounded-xl w-fit mx-auto mb-6">
-                <Zap className="h-8 w-8 text-primary-foreground" />
-              </div>
-              <h3 className="text-xl font-heading font-semibold mb-4">Simples e Rápido</h3>
-              <p className="text-muted-foreground font-body">
-                Configure em minutos, não em semanas. Nossa plataforma foi 
-                pensada para ser intuitiva e eficiente.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </div>

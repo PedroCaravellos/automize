@@ -47,149 +47,146 @@ const DemoSection = () => {
     setActiveDemo(type);
     setShowChat(true);
     setCurrentMessage(0);
-    
-    // Simulate typing messages
-    const messages = demos[type].messages;
-    messages.forEach((_, index) => {
-      setTimeout(() => {
-        setCurrentMessage(index + 1);
-      }, (index + 1) * 1500);
+    demos[type].messages.forEach((_, index) => {
+      setTimeout(() => setCurrentMessage(index + 1), (index + 1) * 1500);
     });
   };
 
   return (
-    <section className="py-20 bg-gradient-hero relative overflow-hidden">
+    <section className="py-24 bg-background">
       <div className="container px-4 mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-heading font-bold text-primary-foreground mb-6">
-            Veja o Automiza em ação
-          </h2>
-          <p className="text-xl text-primary-foreground/90 max-w-3xl mx-auto font-body">
-            Demonstração real de como nossos chatbots convertem visitantes em clientes
-          </p>
-        </div>
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="mb-16">
+            <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">
+              Demonstração
+            </p>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+              Veja o Automiza em ação
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+              Demonstração real de como nossos chatbots convertem visitantes em clientes.
+            </p>
+          </div>
 
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          {/* Controls */}
-          <div className="space-y-6">
-            <h3 className="text-2xl font-heading font-semibold text-primary-foreground mb-8">
-              Escolha seu segmento:
-            </h3>
-            
-            <div className="space-y-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* Controls */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground mb-6">Escolha seu segmento:</p>
+
               {Object.entries(demos).map(([key, demo]) => (
-                <Button
+                <button
                   key={key}
-                  variant={activeDemo === key ? "hero" : "outline-hero"}
-                  size="lg"
-                  className="w-full justify-start text-left"
-                  onClick={() => startDemo(key as any)}
+                  onClick={() => startDemo(key as 'academia' | 'salao' | 'clinica')}
+                  className={`w-full text-left p-4 rounded-xl border transition-all ${
+                    activeDemo === key
+                      ? "border-primary/40 bg-primary/[0.06] text-foreground"
+                      : "border-white/[0.06] bg-card text-muted-foreground hover:border-white/[0.12] hover:text-foreground"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Play className="h-5 w-5" />
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      activeDemo === key ? "bg-primary/15" : "bg-white/[0.04]"
+                    }`}>
+                      <Play className={`h-4 w-4 ${activeDemo === key ? "text-primary" : "text-muted-foreground"}`} />
+                    </div>
                     <div>
-                      <div className="font-semibold">{demo.title}</div>
-                      <div className="text-sm opacity-80">
+                      <p className="text-sm font-medium">{demo.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {key === 'academia' && 'Conversão de leads fitness'}
                         {key === 'salao' && 'Agendamento de serviços'}
                         {key === 'clinica' && 'Consultas médicas'}
-                      </div>
+                      </p>
                     </div>
                   </div>
-                </Button>
+                </button>
               ))}
-            </div>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mt-8">
-              <h4 className="font-heading font-semibold text-primary-foreground mb-4">
-                Resultados típicos:
-              </h4>
-              <div className="space-y-3 text-primary-foreground/90">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-secondary" />
-                  <span>40-60% mais conversões</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-secondary" />
-                  <span>Resposta em menos de 5 segundos</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-secondary" />
-                  <span>Atendimento 24/7 automatizado</span>
+              {/* Results */}
+              <div className="bg-card border border-white/[0.06] rounded-xl p-5 mt-6">
+                <p className="text-sm font-medium text-foreground mb-4">Resultados típicos:</p>
+                <div className="space-y-3">
+                  {[
+                    "40-60% mais conversões",
+                    "Resposta em menos de 5 segundos",
+                    "Atendimento 24/7 automatizado",
+                  ].map((item) => (
+                    <div key={item} className="flex items-center gap-3">
+                      <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm text-muted-foreground">{item}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Chat Demo */}
-          <div className="relative">
-            <div className="bg-white rounded-2xl shadow-hero overflow-hidden">
-              {/* Chat Header */}
-              <div className="bg-gradient-to-r from-primary to-primary-glow text-white p-4">
-                <div className="flex items-center gap-3">
-                  <MessageSquare className="h-6 w-6" />
-                  <span className="font-heading font-semibold">
+            {/* Chat Window */}
+            <div className="relative">
+              <div className="bg-card rounded-xl border border-white/[0.08] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+                {/* Chat Header */}
+                <div className="flex items-center gap-3 p-4 border-b border-white/[0.06] bg-muted/30">
+                  <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">
                     {demos[activeDemo].title}
                   </span>
-                  <div className="ml-auto flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-sm">Online</span>
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                    <span className="text-xs text-muted-foreground">Online</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Chat Messages */}
-              <div className="h-96 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                {!showChat ? (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    <div className="text-center">
-                      <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Clique em um botão acima para ver a demonstração</p>
-                    </div>
-                  </div>
-                ) : (
-                  demos[activeDemo].messages.slice(0, currentMessage).map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                          message.type === 'user'
-                            ? 'bg-primary text-white'
-                            : 'bg-white border shadow-sm'
-                        }`}
-                      >
-                        <p className="text-sm">{message.text}</p>
-                        <div className="flex items-center gap-1 mt-1 opacity-60">
-                          <Clock className="h-3 w-3" />
-                          <span className="text-xs">agora</span>
-                        </div>
+                {/* Messages */}
+                <div className="h-80 overflow-y-auto p-4 space-y-3 bg-background/40">
+                  {!showChat ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <MessageSquare className="h-10 w-10 mx-auto mb-3 text-white/[0.08]" />
+                        <p className="text-sm text-muted-foreground">
+                          Clique em um segmento para ver a demonstração
+                        </p>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  ) : (
+                    demos[activeDemo].messages.slice(0, currentMessage).map((message, index) => (
+                      <div
+                        key={index}
+                        className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
+                            message.type === 'user'
+                              ? 'bg-primary text-white rounded-tr-sm'
+                              : 'bg-card border border-white/[0.06] text-foreground rounded-tl-sm'
+                          }`}
+                        >
+                          <p>{message.text}</p>
+                          <div className="flex items-center gap-1 mt-1 opacity-50">
+                            <Clock className="h-3 w-3" />
+                            <span className="text-[10px]">agora</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
 
-              {/* Chat Input */}
-              <div className="p-4 border-t bg-white">
-                <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
-                  <input
-                    type="text"
-                    placeholder="Digite sua mensagem..."
-                    className="flex-1 bg-transparent outline-none"
-                    disabled
-                  />
-                  <ArrowRight className="h-5 w-5 text-gray-400" />
+                {/* Input */}
+                <div className="p-4 border-t border-white/[0.06]">
+                  <div className="flex items-center gap-2 bg-muted rounded-lg px-4 py-2.5 border border-white/[0.06]">
+                    <span className="flex-1 text-sm text-muted-foreground">Digite sua mensagem...</span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {showChat && (
-              <div className="absolute -bottom-4 -right-4 bg-secondary text-white px-4 py-2 rounded-full font-semibold animate-pulse">
-                Lead convertido! 🎉
-              </div>
-            )}
+              {showChat && (
+                <div className="absolute -bottom-3 -right-3 bg-primary text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-[0_4px_12px_rgba(37,99,235,0.4)]">
+                  Lead convertido! 🎉
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

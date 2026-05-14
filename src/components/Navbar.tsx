@@ -42,7 +42,6 @@ const Navbar = () => {
         if (element) {
           const offsetTop = element.offsetTop;
           const offsetHeight = element.offsetHeight;
-          
           if (scrollY >= offsetTop && scrollY < offsetTop + offsetHeight) {
             setActiveSection(section);
             break;
@@ -64,43 +63,36 @@ const Navbar = () => {
     }
   };
 
-  const handleDashboard = () => {
-    navigate("/dashboard");
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const handleDashboard = () => navigate("/dashboard");
+  const handleSignOut = async () => await signOut();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.06] bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <button 
-              onClick={() => handleLinkClick("#topo")}
-              className="flex items-center"
-              aria-label="Voltar ao início"
-            >
-              <img 
-                src="/lovable-uploads/e5a8ad53-861c-44df-877e-161c8f96702f.png" 
-                alt="Automiza - Seu negócio no piloto automático" 
-                className="h-8"
-              />
-            </button>
-          </div>
+          <button
+            onClick={() => handleLinkClick("#topo")}
+            className="flex items-center shrink-0"
+            aria-label="Voltar ao início"
+          >
+            <img
+              src="/lovable-uploads/e5a8ad53-861c-44df-877e-161c8f96702f.png"
+              alt="Automiza"
+              className="h-8"
+            />
+          </button>
 
-          {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-            <div className="flex items-center space-x-8">
+          {/* Desktop: nav links + CTAs (right side) */}
+          <div className="hidden md:flex items-center gap-8">
+            <div className="flex items-center gap-6">
               {navLinks.map((link) => (
                 <button
                   key={link.id}
                   onClick={() => handleLinkClick(link.href)}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
-                    activeSection === link.id 
-                      ? "text-primary" 
+                  className={`text-sm transition-colors hover:text-foreground ${
+                    activeSection === link.id
+                      ? "text-foreground font-medium"
                       : "text-muted-foreground"
                   }`}
                 >
@@ -108,164 +100,157 @@ const Navbar = () => {
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Profile Section */}
-          <div className="hidden md:flex items-center space-x-3">
-            {user && (
-              <>
-                {/* Trial Badge */}
-                {profile?.trial_ativo && (
-                  <Badge variant="outline" className="flex items-center space-x-1">
-                    <Clock className="h-3 w-3" />
-                    <span>Trial - {trialDaysRemaining()} dias restantes</span>
-                  </Badge>
-                )}
-
-                {/* Plan Badge */}
-                {profile?.plano_ativo && profile.nome_plano && (
-                  <Badge className="bg-primary text-xs">
-                    {profile.nome_plano}
-                  </Badge>
-                )}
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary/10">
-                          {getUserInitials(user.email || '', profile?.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end">
-                    <div className="flex items-center justify-start gap-2 p-2">
-                      <div className="flex flex-col space-y-1 leading-none">
-                        {profile?.name && (
-                          <p className="font-medium">{profile.name}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {user.email}
-                        </p>
+            <div className="flex items-center gap-3 pl-4 border-l border-white/[0.08]">
+              {user ? (
+                <>
+                  {profile?.trial_ativo && (
+                    <Badge variant="outline" className="flex items-center gap-1 border-white/10 text-muted-foreground text-xs">
+                      <Clock className="h-3 w-3" />
+                      {trialDaysRemaining()} dias
+                    </Badge>
+                  )}
+                  {profile?.plano_ativo && profile.nome_plano && (
+                    <Badge className="bg-primary/10 text-primary border border-primary/20 text-xs">
+                      {profile.nome_plano}
+                    </Badge>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            {getUserInitials(user.email || '', profile?.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end">
+                      <div className="flex items-center gap-2 p-2">
+                        <div className="flex flex-col space-y-0.5 leading-none">
+                          {profile?.name && <p className="font-medium text-sm">{profile.name}</p>}
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                        </div>
                       </div>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleDashboard}>
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      <span>Dashboard</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Perfil</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Configurações</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sair</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-            
-            {!user && (
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setAuthModalOpen(true)} aria-label="Entrar">
-                <User className="h-5 w-5" />
-              </Button>
-            )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleDashboard}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <User className="mr-2 h-4 w-4" />
+                        Perfil
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Configurações
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sair
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground text-sm"
+                    onClick={() => setAuthModalOpen(true)}
+                  >
+                    Entrar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-white px-4 text-sm"
+                    onClick={() => setAuthModalOpen(true)}
+                  >
+                    Começar grátis
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Mobile Menu */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Profile/Plan for Mobile */}
             {user ? (
-              <>
-                {profile?.plano_ativo && profile.nome_plano && (
-                  <Badge className="bg-primary text-xs">
-                    {profile.nome_plano}
-                  </Badge>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-primary/10 text-xs">
-                          {getUserInitials(user.email || '', profile?.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="flex items-center justify-start gap-2 p-2">
-                      <div className="flex flex-col space-y-1 leading-none">
-                        {profile?.name && (
-                          <p className="font-medium">{profile.name}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-9 w-9 rounded-full p-0">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                        {getUserInitials(user.email || '', profile?.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex items-center gap-2 p-2">
+                    <div className="flex flex-col space-y-0.5">
+                      {profile?.name && <p className="font-medium text-sm">{profile.name}</p>}
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleDashboard}>
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      <span>Dashboard</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Perfil</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Configurações</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sair</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleDashboard}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setAuthModalOpen(true)} aria-label="Entrar">
-                <User className="h-5 w-5" />
+              <Button variant="ghost" size="sm" onClick={() => setAuthModalOpen(true)}>
+                Entrar
               </Button>
             )}
-            
+
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Abrir menu">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <nav className="flex flex-col space-y-4 mt-8">
+              <SheetContent side="right" className="w-[280px] bg-card border-white/[0.06]">
+                <nav className="flex flex-col gap-1 mt-8">
                   {navLinks.map((link) => (
                     <button
                       key={link.id}
                       onClick={() => handleLinkClick(link.href)}
-                      className={`text-left text-lg font-medium transition-colors hover:text-primary ${
-                        activeSection === link.id 
-                          ? "text-primary" 
+                      className={`text-left px-3 py-2.5 rounded-lg text-sm transition-colors hover:bg-white/[0.05] hover:text-foreground ${
+                        activeSection === link.id
+                          ? "text-foreground font-medium bg-white/[0.04]"
                           : "text-muted-foreground"
                       }`}
                     >
                       {link.label}
                     </button>
                   ))}
+                  {!user && (
+                    <div className="mt-4 pt-4 border-t border-white/[0.06] flex flex-col gap-2">
+                      <Button variant="outline" className="w-full border-white/10" onClick={() => { setIsOpen(false); setAuthModalOpen(true); }}>
+                        Entrar
+                      </Button>
+                      <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => { setIsOpen(false); setAuthModalOpen(true); }}>
+                        Começar grátis
+                      </Button>
+                    </div>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
           </div>
         </div>
       </div>
-      
+
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </nav>
   );
